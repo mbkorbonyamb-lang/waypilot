@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WayPilot — Contrôle qualité e-commerce</title>
+  <meta name="description" content="WayPilot contrôle vos catalogues e-commerce, propose des corrections validées et prépare un CSV WooCommerce.">
+  <style>
+    :root { --blue:#1769ff; --navy:#15243b; --bg:#f4f7fb; --border:#e0e7f0; --muted:#627087; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Arial,sans-serif; color:var(--navy); background:var(--bg); }
+    header { background:white; border-bottom:1px solid var(--border); padding:20px 6%; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+    .brand { font-size:25px; font-weight:800; letter-spacing:-1px; } .brand span { color:var(--blue); }
+    .version { background:#eaf1ff; color:#2458b8; padding:6px 11px; border-radius:20px; font-size:12px; font-weight:700; }
+    main { max-width:1000px; margin:42px auto; padding:0 20px 50px; }
+    .hero { margin-bottom:28px; } .eyebrow { color:var(--blue); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; }
+    h1 { font-size:clamp(30px,5vw,44px); line-height:1.1; margin:12px 0; } .subtitle { color:var(--muted); font-size:17px; line-height:1.6; max-width:650px; }
+    .panel { background:white; border:1px solid var(--border); border-radius:16px; padding:25px; margin:20px 0; box-shadow:0 5px 22px #15243b08; }
+    h2 { font-size:19px; margin:0 0 8px; } h3 { font-size:16px; margin:18px 0 8px; }
+    .help { color:var(--muted); font-size:14px; line-height:1.5; }
+    .label { display:block; font-weight:700; margin-top:14px; }
+    .settings { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:4px 18px; }
+    .drop { display:block; border:2px dashed #b9c9df; border-radius:12px; background:#f9fbff; padding:30px 16px; text-align:center; margin-top:18px; cursor:pointer; }
+    .drop strong { display:block; margin:8px 0; font-size:16px; } .drop input { max-width:100%; margin-top:10px; }
+    button,.download { border:0; background:var(--blue); color:white; font-size:14px; font-weight:700; border-radius:9px; padding:13px 18px; cursor:pointer; text-decoration:none; display:inline-block; }
+    button:disabled { background:#aab6c8; cursor:not-allowed; } button.secondary { color:var(--navy); background:#eaf0f8; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; } .notice { margin-top:15px; color:var(--muted); font-size:13px; line-height:1.5; }
+    .message { margin-top:14px; font-size:14px; line-height:1.5; } .error { color:#b42318; } .success { color:#087443; }
+    .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0; }
+    .metric { border:1px solid var(--border); border-radius:12px; padding:18px; background:#fbfcff; } .metric span { display:block; color:var(--muted); font-size:13px; } .metric strong { display:block; font-size:30px; margin-top:7px; }
+    .table-wrap { overflow-x:auto; margin-top:18px; } table { border-collapse:collapse; width:100%; font-size:13px; } th,td { border-bottom:1px solid var(--border); padding:12px 10px; text-align:left; vertical-align:top; } th { background:#f5f8fc; }
+    .severity { font-weight:700; } .decision { min-width:150px; } .decision select { max-width:100%; padding:8px; border:1px solid var(--border); border-radius:7px; }
+    .field { width:100%; min-width:110px; padding:8px; border:1px solid var(--border); border-radius:7px; font:inherit; }
+    .needs-review { background:#fff0f0 !important; } .needs-review td { border-bottom-color:#f2b8b5; }
+    .review-tag { display:inline-block;background:#b42318;color:white;border-radius:5px;padding:3px 7px;font-weight:800;font-size:11px; }
+    .review-toolbar { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0; } .review-toolbar select { padding:10px;border:1px solid #e5a4a0;border-radius:8px; }
+    .review-card { border:1px solid #f0b7b3;background:#fffafa;border-radius:12px;padding:16px;margin:14px 0; }
+    .code { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted); display:block; margin-top:3px; }
+    .note { color:#8a5a00; font-size:12px; margin-top:5px; }
+    footer { text-align:center; padding:25px 15px; color:var(--muted); font-size:12px; } [hidden] { display:none !important; }
+    @media(max-width:600px) { main { margin-top:28px; padding:0 14px 35px; } .panel { padding:18px; } .metrics { grid-template-columns:1fr 1fr; gap:9px; } .metric strong { font-size:25px; } }
+  </style>
+</head>
+<body>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.7.0</div></header>
+<main>
+  <section class="hero">
+    <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
+    <h1>Moins d’erreurs.<br>Des catalogues prêts à vendre.</h1>
+    <p class="subtitle">Analysez vos produits, examinez les corrections proposées et choisissez ce qui sera appliqué avant de télécharger un fichier CSV destiné à WooCommerce.</p>
+  </section>
+
+  <section class="panel">
+    <h2>1. Importer votre catalogue</h2>
+    <p class="help">Sélectionnez un fichier CSV exporté depuis WooCommerce ou préparé dans un tableur. Le fichier reste dans votre navigateur : rien n’est envoyé sur un serveur.</p>
+    <div class="settings">
+      <div>
+        <label class="label" for="storeName">Nom de la boutique</label>
+        <input id="storeName" class="field" type="text" maxlength="100" placeholder="Ex. Boutique Fatou" style="margin-top:7px">
+      </div>
+      <div>
+        <label class="label" for="skuPrefix">Préfixe des UGS proposées</label>
+        <input id="skuPrefix" class="field" type="text" maxlength="20" placeholder="Généré à partir du nom" style="margin-top:7px;text-transform:uppercase">
+      </div>
+      <div>
+        <label class="label" for="decimal">Format des prix du fichier</label>
+        <select id="decimal" class="field" style="margin-top:7px">
+          <option value="auto">Détection automatique</option>
+          <option value=".">1 234.56 (point décimal)</option>
+          <option value=",">1 234,56 (virgule décimale)</option>
+        </select>
+      </div>
+    </div>
+    <p id="prefixHelp" class="notice" style="margin-top:6px">Saisissez le nom de la boutique : WayPilot proposera un préfixe de 3 lettres, modifiable.</p>
+    <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-weight:700"><input id="regenerateAllSkus" type="checkbox" style="margin-top:3px"> Régénérer toutes les UGS du catalogue (produits et variations)</label>
+    <p class="notice" style="margin-top:5px">Remplace les UGS existantes dans le CSV exporté. Ces remplacements ne sont jamais validés automatiquement. Une ligne sans ID WooCommerce risque d’être importée comme un nouveau produit.</p>
+    <label class="drop"><span style="font-size:30px">↑</span><strong>Choisir un fichier CSV</strong><span class="help">Limite : 15 Mo.</span><input id="file" type="file" accept=".csv,text/csv"></label>
+    <div id="fileInfo" class="message" aria-live="polite"></div>
+    <div class="actions"><button id="analyze" disabled>Analyser mon catalogue</button><button id="reset" class="secondary">Réinitialiser</button></div>
+    <p class="notice">WayPilot ne devine pas les prix, les tailles ou les stocks inconnus. Les corrections proposées doivent être vérifiées avant l’importation.</p>
+  </section>
+
+  <section id="results" class="panel" hidden>
+    <h2>2. Résultats du contrôle qualité</h2>
+    <div class="metrics">
+      <div class="metric"><span>Score qualité</span><strong id="score">0</strong></div>
+      <div class="metric"><span>Lignes analysées</span><strong id="productCount">0</strong></div>
+      <div class="metric"><span>Anomalies détectées</span><strong id="issueCount">0</strong></div>
+      <div class="metric"><span>Anomalies élevées</span><strong id="highCount">0</strong></div>
+      <div class="metric"><span>Avec correction proposée</span><strong id="actionCount">0</strong></div>
+      <div class="metric"><span>À vérifier / informations manquantes</span><strong id="reviewCount">0</strong></div>
+    </div>
+    <p class="help">Score qualité : part des lignes sans anomalie moyenne ou élevée.</p>
+    <div id="summary" class="message" aria-live="polite"></div>
+    <div class="review-toolbar">
+      <label for="issueFilter"><strong>Filtrer les anomalies :</strong></label>
+      <select id="issueFilter"><option value="all">Toutes les anomalies</option><option value="review">À vérifier (rouge)</option><option value="high">Gravité élevée</option><option value="variation">Variations manquantes</option></select>
+      <span class="review-tag">À VÉRIFIER</span>
+    </div>
+    <p class="help">Si vous avez vérifié dans WooCommerce qu’une variation signalée existe déjà, cochez sa ligne puis cliquez sur « Marquer comme déjà existante ». Elle ne sera pas ajoutée au CSV.</p>
+    <div class="actions"><button type="button" id="markExistingVariations" class="secondary">Marquer comme déjà existante(s) dans WooCommerce</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Confirmer</th><th>Ligne du fichier</th><th>Produit</th><th>Anomalie</th><th>Gravité</th><th>Suite à donner</th></tr></thead><tbody id="issueRows"></tbody></table></div>
+
+    <div id="manualFixes" class="review-card" hidden>
+      <h3 style="margin-top:0;color:#b42318">Ajouter les variations manquantes</h3>
+      <p class="help">Proposé seulement pour les produits dont les variations utilisent un seul attribut. Le prix est prérempli quand il est connu (prix du parent ou prix commun des autres variations) : vérifiez-le. La quantité en stock est facultative ; laissée vide, WayPilot n’écrit aucune valeur de stock. Les variations sont ajoutées au CSV, jamais directement à WooCommerce.</p>
+      <div id="manualVariationTable" class="table-wrap"></div>
+      <div class="actions"><button type="button" id="approveManualVariations">Valider les variations cochées</button><button type="button" id="selectManualVariations" class="secondary">Tout cocher</button></div>
+      <div id="manualSummary" class="message" aria-live="polite"></div>
+    </div>
+
+    <h3>3. Examiner et valider les corrections</h3>
+    <p class="help">Les corrections sûres (images répétées, orthographe d’une valeur alignée sur le parent, UGS manquante) peuvent être validées ensemble. Les changements de prix et le remplacement d’une UGS existante restent à examiner un par un. Les décisions ne modifient que le CSV téléchargé.</p>
+    <div class="actions"><button type="button" id="selectAll" class="secondary">Tout sélectionner</button><button type="button" id="clearSelection" class="secondary">Effacer la sélection</button><button type="button" id="approveSelected">Valider la sélection</button><button type="button" id="rejectSelected" class="secondary">Refuser la sélection</button><button type="button" id="approveSafe" class="secondary">Valider les corrections sûres</button></div>
+    <div id="proposals" class="table-wrap"></div>
+    <div id="approvalSummary" class="message" aria-live="polite"></div>
+    <div class="actions">
+      <button id="downloadReport">Télécharger le rapport CSV</button>
+      <button id="downloadCorrected">Télécharger le catalogue corrigé pour WooCommerce</button>
+      <button id="downloadOriginal" class="secondary">Télécharger le CSV original</button>
+    </div>
+    <p class="notice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
+  </section>
+</main>
+<footer>WayPilot · Contrôle qualité des catalogues e-commerce.</footer>
+<script src="engine.js"></script>
+<script>
+(() => {
+  const E = window.WayPilotEngine;
+  const $ = id => document.getElementById(id);
+  $("version").textContent = `BÊTA · V${E.VERSION}`;
+
+  const state = {
+    file: null, catalog: null, result: null,
+    verifiedExisting: new Set(),   // clés d’anomalies confirmées comme existantes dans WooCommerce
+    manual: new Map()              // clé -> variation à ajouter ; conservée entre deux affichages
+  };
+
+  // ---------- Paramètres ----------
+  let prefixManuallyEdited = false;
+  const suggestPrefix = name => (E.normalize(name).toUpperCase().match(/[A-Z0-9]+/) || [""])[0].slice(0, 3);
+  $("storeName").addEventListener("input", () => {
+    if (prefixManuallyEdited) return;
+    const p = suggestPrefix($("storeName").value);
+    $("skuPrefix").value = p;
+    $("prefixHelp").textContent = p ? `Préfixe proposé : ${p}. Exemple : ${p}-001, ${p}-002. Modifiable avant l’analyse.` : "Saisissez le nom de la boutique : WayPilot proposera un préfixe de 3 lettres, modifiable.";
+  });
+  $("skuPrefix").addEventListener("input", () => { prefixManuallyEdited = true; $("skuPrefix").value = $("skuPrefix").value.toUpperCase(); });
+  const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: $("decimal").value });
+
+  // ---------- Décisions ----------
+  const validatedVariationKeys = () => new Set([...state.manual.values()].filter(v => v.validated && v.selected).map(v => v.issueKey));
+  const followup = issue => E.followupFor(issue, { verifiedExisting: state.verifiedExisting, validatedVariations: validatedVariationKeys() });
+  const isOpen = f => f === E.FOLLOWUP.HUMAN || f === E.FOLLOWUP.MISSING_INFO;
+
+  function el(tag, props = {}, children = []) {
+    const node = document.createElement(tag);
+    Object.entries(props).forEach(([k, v]) => { if (k === "dataset") Object.assign(node.dataset, v); else node[k] = v; });
+    children.forEach(c => node.append(c));
+    return node;
+  }
+
+  // ---------- Analyse ----------
+  function runAnalysis() {
+    const hasDecisions = state.result && (state.result.proposals.some(p => p.status !== "pending") || [...state.manual.values()].some(v => v.validated));
+    if (hasDecisions && !confirm("Relancer l’analyse efface les décisions prises sur les corrections. Continuer ?")) return;
+    state.result = E.analyze(state.catalog, options());
+    // Conserver la saisie des variations manuelles déjà commencée (même clé = même variation).
+    const next = new Map();
+    state.result.manualCandidates.forEach(c => next.set(c.key, state.manual.get(c.key) || c));
+    state.manual = next;
+    render();
+    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function render() {
+    const { issues, stats } = state.result;
+    $("results").hidden = false;
+    const followups = issues.map(followup);
+    $("score").textContent = `${stats.score} %`;
+    $("productCount").textContent = stats.rows;
+    $("issueCount").textContent = stats.issues;
+    $("highCount").textContent = stats.high;
+    $("actionCount").textContent = followups.filter(f => f === E.FOLLOWUP.PROPOSAL).length;
+    $("reviewCount").textContent = followups.filter(isOpen).length;
+    $("summary").className = "message " + (issues.length ? "" : "success");
+    $("summary").textContent = issues.length
+      ? `${stats.rows} lignes (${stats.products} produits, ${stats.variations} variations). ${issues.length} anomalies, dont ${followups.filter(f => f === E.FOLLOWUP.PROPOSAL).length} avec une correction proposée et ${followups.filter(isOpen).length} à vérifier ou à compléter.`
+      : "Aucune anomalie détectée par les contrôles actuels. Cela ne garantit pas que toutes les données du catalogue sont exactes.";
+    renderIssues(followups);
+    renderManual();
+    renderProposals();
+    applyFilter();
+  }
+
+  function renderIssues(followups) {
+    const body = $("issueRows");
+    body.replaceChildren();
+    state.result.issues.forEach((issue, i) => {
+      const f = followups[i];
+      const open = isOpen(f);
+      const missingVariation = issue.code === "VARIATION_VALUE_MISSING" && open;
+      const tr = el("tr", { dataset: { key: issue.key, review: open ? "review" : "ok", high: issue.severity === E.SEVERITY.HIGH ? "yes" : "no", variation: missingVariation ? "yes" : "no" } });
+      if (open) tr.classList.add("needs-review");
+      const check = missingVariation ? [el("input", { type: "checkbox", className: "existing-variation-check", ariaLabel: "Confirmer que cette variation existe déjà dans WooCommerce" })] : [];
+      tr.append(
+        el("td", {}, check),
+        el("td", { textContent: issue.line ?? "—" }),
+        el("td", { textContent: issue.product }),
+        el("td", {}, [issue.message, el("span", { className: "code", textContent: issue.code })]),
+        el("td", { className: "severity", textContent: issue.severity }),
+        el("td", {}, open ? [el("span", { className: "review-tag", textContent: "À VÉRIFIER" }), " ", f] : [f])
+      );
+      body.append(tr);
+    });
+  }
+
+  function applyFilter() {
+    const mode = $("issueFilter").value;
+    document.querySelectorAll("#issueRows tr").forEach(tr => {
+      tr.hidden = mode === "review" ? tr.dataset.review !== "review" : mode === "high" ? tr.dataset.high !== "yes" : mode === "variation" ? tr.dataset.variation !== "yes" : false;
+    });
+  }
+  $("issueFilter").addEventListener("change", applyFilter);
+
+  $("markExistingVariations").addEventListener("click", () => {
+    const keys = [...document.querySelectorAll("#issueRows tr")].filter(tr => tr.querySelector(".existing-variation-check:checked")).map(tr => tr.dataset.key);
+    if (!keys.length) { alert("Cochez les alertes de variations que vous avez vérifiées dans WooCommerce."); return; }
+    keys.forEach(k => state.verifiedExisting.add(k));
+    render(); // la saisie des variations manuelles est conservée
+  });
+
+  // ---------- Variations manuelles ----------
+  const visibleManual = () => [...state.manual.values()].filter(v => !state.verifiedExisting.has(v.issueKey));
+
+  function renderManual() {
+    const list = visibleManual();
+    $("manualFixes").hidden = !list.length;
+    const container = $("manualVariationTable");
+    container.replaceChildren();
+    if (!list.length) return;
+    const head = el("tr", {}, ["Ajouter", "Parent / valeur", "Nom de la variation", "Prix régulier", "Quantité en stock (facultatif)", "UGS (facultatif)", "Activée"].map(t => el("th", { textContent: t })));
+    const tbody = el("tbody");
+    list.forEach(v => {
+      const tr = el("tr", { className: v.validated ? "" : "needs-review" });
+      const input = (key, type = "text") => {
+        const field = el("input", { className: "field", type, value: v[key] });
+        field.addEventListener("input", () => { v[key] = field.value; v.validated = false; tr.classList.add("needs-review"); updateApprovalSummary(); });
+        return el("td", {}, [field]);
+      };
+      const pick = el("input", { type: "checkbox", checked: v.selected, ariaLabel: "Ajouter cette variation au CSV" });
+      pick.dataset.manualKey = v.key;
+      pick.addEventListener("change", () => { v.selected = pick.checked; v.validated = false; updateApprovalSummary(); });
+      const enabled = el("input", { type: "checkbox", checked: v.enabled, ariaLabel: "Variation activée à l’import" });
+      enabled.addEventListener("change", () => { v.enabled = enabled.checked; v.validated = false; });
+      const priceCell = input("price");
+      priceCell.append(el("div", { className: "help", textContent: v.priceSource }));
+      tr.append(
+        el("td", {}, [pick]),
+        el("td", { textContent: `${v.parentName} · ${v.attributeName} = ${v.attributeValue} · parent ${v.parentRef}` }),
+        input("name"), priceCell, input("stockQty", "number"), input("sku"),
+        el("td", {}, [enabled])
+      );
+      tbody.append(tr);
+    });
+    container.append(el("table", {}, [el("thead", {}, [head]), tbody]));
+    const done = list.filter(v => v.validated && v.selected).length;
+    $("manualSummary").textContent = `${list.length} variation(s) manquante(s) proposée(s), ${done} validée(s) pour ajout au CSV.`;
+  }
+
+  $("selectManualVariations").addEventListener("click", () => { visibleManual().forEach(v => { v.selected = true; }); renderManual(); });
+
+  $("approveManualVariations").addEventListener("click", () => {
+    const chosen = visibleManual().filter(v => v.selected);
+    if (!chosen.length) { alert("Cochez au moins une variation à ajouter."); return; }
+    const missing = E.missingColumnsForVariations(state.catalog);
+    if (missing.length) { alert("Le CSV ne contient pas les colonnes nécessaires : " + missing.join(", ") + ". Réexportez le catalogue WooCommerce avec les variations."); return; }
+    const errors = [];
+    const skuOwners = new Set(state.catalog.rows.map(r => E.normalize(state.catalog.col.sku >= 0 ? r[state.catalog.col.sku] : "")).filter(Boolean));
+    state.result.proposals.filter(p => p.kind === "sku" && p.status === "approved").forEach(p => skuOwners.add(E.normalize(p.after)));
+    chosen.forEach(v => {
+      const label = `${v.parentName} · ${v.attributeValue}`;
+      const price = E.parseAmount(v.price, $("decimal").value);
+      if (!v.name.trim()) errors.push(`${label} : nom manquant.`);
+      if (!Number.isFinite(price) || price <= 0) errors.push(`${label} : prix régulier manquant ou invalide.`);
+      if (String(v.stockQty).trim() !== "" && !(Number.isInteger(Number(v.stockQty)) && Number(v.stockQty) >= 0)) errors.push(`${label} : quantité en stock invalide (nombre entier, zéro ou plus).`);
+      const sku = E.normalize(v.sku);
+      if (sku) { if (skuOwners.has(sku)) errors.push(`${label} : UGS « ${v.sku} » déjà utilisée.`); skuOwners.add(sku); }
+    });
+    if (errors.length) { alert("Aucune variation n’a été validée :\n\n" + errors.join("\n")); return; }
+    // WooCommerce attend un point décimal.
+    chosen.forEach(v => { v.price = String(E.parseAmount(v.price, $("decimal").value)); v.validated = true; });
+    render();
+  });
+
+  // ---------- Propositions ----------
+  function renderProposals() {
+    const { proposals } = state.result;
+    const container = $("proposals");
+    container.replaceChildren();
+    if (!proposals.length) { container.textContent = "Aucune correction automatique n’est proposée. Les prix et les variations manquantes demandent des informations confirmées."; updateApprovalSummary(); return; }
+    const head = el("tr", {}, ["Sélection", "Ligne", "Produit", "Correction proposée", "Avant", "Valeur proposée", "Décision"].map(t => el("th", { textContent: t })));
+    const tbody = el("tbody");
+    proposals.forEach(p => {
+      const check = el("input", { type: "checkbox", className: "proposal-check", ariaLabel: "Sélectionner cette correction" });
+      check.dataset.proposalId = p.id;
+      const value = el("input", { className: "field", value: p.after, ariaLabel: "Valeur proposée" });
+      value.addEventListener("input", () => { p.after = value.value; p.status = "pending"; select.value = "pending"; updateApprovalSummary(); });
+      const select = el("select", { ariaLabel: "Valider ou refuser cette correction" }, [["pending", "À examiner"], ["approved", "Valider"], ["rejected", "Refuser"]].map(([v, t]) => el("option", { value: v, textContent: t })));
+      select.value = p.status;
+      select.addEventListener("change", () => { p.status = select.value; updateApprovalSummary(); });
+      const labelCell = el("td", {}, [p.label + (p.safe ? "" : " (à examiner)")]);
+      if (p.note) labelCell.append(el("div", { className: "note", textContent: p.note }));
+      tbody.append(el("tr", {}, [
+        el("td", {}, [check]), el("td", { textContent: p.line }), el("td", { textContent: p.product }),
+        labelCell, el("td", { textContent: p.before }), el("td", {}, [value]), el("td", { className: "decision" }, [select])
+      ]));
+    });
+    container.append(el("table", {}, [el("thead", {}, [head]), tbody]));
+    updateApprovalSummary();
+  }
+
+  function updateApprovalSummary() {
+    if (!state.result) return;
+    const { proposals, issues } = state.result;
+    const count = s => proposals.filter(p => p.status === s).length;
+    const open = issues.filter(i => isOpen(followup(i))).length;
+    $("approvalSummary").textContent = `Corrections validées : ${count("approved")} · en attente : ${count("pending")} · refusées : ${count("rejected")}. Anomalies encore à vérifier : ${open}. Le fichier corrigé n’applique que les corrections validées.`;
+  }
+
+  const selectedProposals = () => {
+    const ids = new Set([...document.querySelectorAll(".proposal-check:checked")].map(x => Number(x.dataset.proposalId)));
+    return state.result.proposals.filter(p => ids.has(p.id));
+  };
+  const setStatus = status => { const chosen = selectedProposals(); if (!chosen.length) { alert("Sélectionnez au moins une correction."); return; } chosen.forEach(p => { p.status = status; }); render(); };
+  $("selectAll").addEventListener("click", () => document.querySelectorAll(".proposal-check").forEach(x => { x.checked = true; }));
+  $("clearSelection").addEventListener("click", () => document.querySelectorAll(".proposal-check").forEach(x => { x.checked = false; }));
+  $("approveSelected").addEventListener("click", () => setStatus("approved"));
+  $("rejectSelected").addEventListener("click", () => setStatus("rejected"));
+  $("approveSafe").addEventListener("click", () => {
+    const safe = state.result.proposals.filter(p => p.safe && p.status === "pending");
+    if (!safe.length) { alert("Aucune correction sûre en attente."); return; }
+    if (!confirm(`Valider ${safe.length} correction(s) classée(s) comme sûre(s) ? Elles s’appliqueront uniquement au CSV téléchargé.`)) return;
+    safe.forEach(p => { p.status = "approved"; });
+    render();
+  });
+
+  // ---------- Téléchargements ----------
+  function download(text, name) {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8;" }));
+    const a = el("a", { href: url, download: name });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  const baseName = () => (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
+
+  $("downloadReport").addEventListener("click", () => {
+    if (!state.result) return;
+    download(E.buildReportCSV(state.result.issues, { verifiedExisting: state.verifiedExisting, validatedVariations: validatedVariationKeys() }), `${baseName()}_rapport_waypilot.csv`);
+  });
+  $("downloadOriginal").addEventListener("click", () => {
+    if (!state.file) { alert("Importez d’abord un catalogue CSV."); return; }
+    const url = URL.createObjectURL(state.file), a = el("a", { href: url, download: state.file.name });
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
+  $("downloadCorrected").addEventListener("click", () => {
+    if (!state.result) { alert("Importez et analysez d’abord un catalogue."); return; }
+    const pending = state.result.proposals.filter(p => p.status === "pending").length;
+    if (pending) { alert(`Il reste ${pending} correction(s) à examiner. Validez ou refusez chaque proposition avant de télécharger.`); return; }
+    const unvalidated = visibleManual().filter(v => v.selected && !v.validated).length;
+    if (unvalidated && !confirm(`${unvalidated} variation(s) cochée(s) n’ont pas été validées et ne seront pas ajoutées. Télécharger quand même ?`)) return;
+    const manual = visibleManual().filter(v => v.validated && v.selected);
+    download(E.buildCorrectedCSV(state.catalog, state.result.proposals, manual), `${baseName()}_corrige_waypilot.csv`);
+  });
+
+  // ---------- Fichier ----------
+  function clearState() {
+    Object.assign(state, { file: null, catalog: null, result: null });
+    state.verifiedExisting.clear();
+    state.manual.clear();
+    $("results").hidden = true;
+    $("analyze").disabled = true;
+    $("fileInfo").textContent = "";
+    $("fileInfo").className = "message";
+  }
+
+  $("file").addEventListener("change", async () => {
+    clearState();
+    const file = $("file").files[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) { $("fileInfo").textContent = "Fichier trop volumineux (limite : 15 Mo)."; $("fileInfo").classList.add("error"); $("file").value = ""; return; }
+    try {
+      state.catalog = E.parseCSV(await file.text());
+      state.file = file;
+      $("fileInfo").textContent = `${file.name} — ${state.catalog.rows.length} lignes prêtes à analyser.`;
+      $("fileInfo").classList.add("success");
+      $("analyze").disabled = false;
+    } catch (error) {
+      $("fileInfo").textContent = error.message || "Impossible de lire ce fichier CSV.";
+      $("fileInfo").classList.add("error");
+    }
+  });
+
+  $("analyze").addEventListener("click", () => {
+    try { runAnalysis(); }
+    catch (error) { $("fileInfo").textContent = "Erreur pendant l’analyse : " + error.message; $("fileInfo").className = "message error"; }
+  });
+
+  $("reset").addEventListener("click", () => {
+    clearState();
+    $("file").value = ""; $("storeName").value = ""; $("skuPrefix").value = ""; $("decimal").value = "auto";
+    $("regenerateAllSkus").checked = false; prefixManuallyEdited = false;
+    $("prefixHelp").textContent = "Saisissez le nom de la boutique : WayPilot proposera un préfixe de 3 lettres, modifiable.";
+  });
+})();
+</script>
+</body>
+</html>

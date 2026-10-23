@@ -1,0 +1,51 @@
+name: Tests et publication Hugging Face
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test tests/engine.test.js
+
+  publier:
+    # Publie index.html et engine.js sur le Space, uniquement depuis main et si les tests passent.
+    needs: tests
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install huggingface_hub==0.26.2
+      - name: Envoyer les fichiers sur le Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: waypilot/waypilot
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::Secret HF_TOKEN absent. Ajoutez un jeton Hugging Face (droit d'écriture) dans Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi, CommitOperationAdd
+
+          # Un seul commit pour les deux fichiers : la page ne fonctionne pas sans engine.js.
+          HfApi(token=os.environ["HF_TOKEN"]).create_commit(
+              repo_id=os.environ["HF_SPACE"],
+              repo_type="space",
+              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "engine.js")],
+              commit_message=f"Publication depuis GitHub ({os.environ['GITHUB_SHA'][:7]})",
+          )
+          print("Space mis à jour.")
+          PY
