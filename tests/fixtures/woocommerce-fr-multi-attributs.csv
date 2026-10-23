@@ -1,0 +1,11 @@
+ID;Type;UGS;Nom;Publié;Description courte;Description;En stock ?;Stock;Tarif promo;Tarif régulier;Catégories;Images;Parent;Nom de l’attribut 1;Valeur(s) de l’attribut 1;Attribut 1 visible;Attribut 1 global;Nom de l’attribut 2;Valeur(s) de l’attribut 2;Attribut 2 visible;Attribut 2 global
+10;simple;JAA-001;Bougie ambrée;1;;"<p>Bougie artisanale.</p>
+<p>Prix : 12.50 EUR</p>";1;5;;12.5;Maison;https://x.test/a.jpg;;;;;;;;;
+11;simple;JAA-002;Pantalon lin;1;;"Taille 42 300 DH";1;3;;300;Mode;https://x.test/b.jpg;;;;;;;;;
+12;simple;JAA-003;Tapis berbère;1;Grand tapis;;1;1;;1.200,00;Maison;https://x.test/c.jpg;;;;;;;;;
+13;grouped;JAA-004;Coffret découverte;1;Coffret;Lot de bougies;1;;;;Maison;https://x.test/d.jpg;;;;;;;;;
+20;variable;JAA-010;T-shirt coton;1;T-shirt;T-shirt en coton;1;;;;Mode;https://x.test/e.jpg;;Taille;S, M, L;1;1;Couleur;Rouge, Bleu;1;1
+21;variation;JAA-010-S-R;T-shirt coton - S, Rouge;1;;;1;4;;150;;;id:20;Taille;S;;1;Couleur;Rouge;;1
+22;variation;JAA-010-S-B;T-shirt coton - S, Bleu;1;;;1;4;;150;;;id:20;Taille;S;;1;Couleur;Bleu;;1
+23;variation;JAA-010-M-R;T-shirt coton - M, Rouge;1;;;1;0;;150;;;id:20;Taille;M;;1;Couleur;Rouge;;1
+24;"variation, virtual";JAA-010-M-B;T-shirt coton - M, Bleu;1;;;1;2;;150;;;id:20;Taille;M;;1;Couleur;Bleu;;1
