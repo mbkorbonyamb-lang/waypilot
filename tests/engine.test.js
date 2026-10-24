@@ -182,3 +182,20 @@ test("1.7.1 : le score tient compte des anomalies faibles", () => {
   const clean = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price,Description,Categories,Images\n1,simple,S1,A,10,Desc,Cat,https://x.test/1.jpg\n"), {});
   assert.equal(clean.stats.score, 100);
 });
+
+test("1.7.2 : en-tête du CSV corrigé lisible par l'import WooCommerce", () => {
+  const c = fixture("woocommerce-fr-theme-span.csv");
+  const out = E.buildCorrectedCSV(c, [], []);
+  // Le BOM ne doit pas être suivi d'un guillemet, sinon WooCommerce lit « "ID" » et ignore la colonne.
+  assert.ok(out.startsWith("﻿ID;Type;UGS;"), out.slice(0, 30));
+  // Les champs qui l'exigent restent entre guillemets, et le fichier se relit à l'identique.
+  const again = E.parseCSV(out);
+  assert.deepEqual(again.rows, c.rows);
+  assert.deepEqual(again.headers, c.headers);
+  // Fichier séparé par des virgules : une valeur contenant une virgule doit rester entre guillemets.
+  const en = fixture("woocommerce-en-parent-sku.csv");
+  const outEn = E.buildCorrectedCSV(en, [], []);
+  assert.ok(outEn.startsWith("\uFEFFID,Type,SKU,"));
+  assert.ok(outEn.includes(',"S, M, L, XL",'));
+  assert.deepEqual(E.parseCSV(outEn).rows, en.rows);
+});

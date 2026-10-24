@@ -1,3 +1,9 @@
+# WayPilot 1.7.2 — correctif import WooCommerce
+
+- Correction d'un bug bloquant trouvé lors du test JAARAY : le CSV corrigé était refusé en silence par l'import WooCommerce. Le fichier commençait par un BOM suivi de `"ID"` entre guillemets. L'importeur de WooCommerce lisait alors l'en-tête comme `"ID"`, guillemets compris : la colonne ID n'était pas reconnue, aucun produit existant n'était retrouvé et rien n'était mis à jour.
+- Le CSV corrigé n'utilise plus de guillemets que lorsqu'ils sont nécessaires, comme l'export WooCommerce.
+- Test ajouté. La lecture de l'en-tête a aussi été vérifiée avec la fonction PHP utilisée par WooCommerce (`fgetcsv`).
+
 # WayPilot 1.7.1 — retours du premier test réel (catalogue JAARAY)
 
 - Le score qualité compte maintenant les anomalies faibles. Chaque ligne perd 1 point par anomalie élevée, 0,5 par anomalie moyenne et 0,15 par anomalie faible, avec au plus 1 point par ligne. Avant, un catalogue sans aucun SKU obtenait 94 %.

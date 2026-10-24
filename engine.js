@@ -578,6 +578,13 @@
 
   function csvField(value) { return '"' + String(value ?? "").replace(/"/g, '""') + '"'; }
 
+  // Guillemets seulement si nécessaire, comme l’export WooCommerce. Indispensable pour la première colonne :
+  // après le BOM, l’importeur WooCommerce (fgetcsv) lirait « "ID" » avec ses guillemets et ne reconnaîtrait plus la colonne ID.
+  function csvFieldIfNeeded(value, delimiter) {
+    const s = String(value ?? "");
+    return s.includes(delimiter) || /["\r\n]/.test(s) || s !== s.trim() ? csvField(s) : s;
+  }
+
   // Neutralise les formules quand le fichier est ouvert dans un tableur (rapport uniquement).
   function safeCell(value) {
     const s = String(value ?? "");
@@ -623,7 +630,8 @@
       }
       corrected.push(row);
     });
-    const lines = [headers.map(csvField).join(delimiter), ...corrected.map(r => headers.map((_, i) => csvField(r[i] ?? "")).join(delimiter))];
+    const field = v => csvFieldIfNeeded(v, delimiter);
+    const lines = [headers.map(field).join(delimiter), ...corrected.map(r => headers.map((_, i) => field(r[i] ?? "")).join(delimiter))];
     return "﻿" + lines.join("\r\n");
   }
 
@@ -634,7 +642,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.7.1", SEVERITY, FOLLOWUP, normalize, parseCSV, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.7.2", SEVERITY, FOLLOWUP, normalize, parseCSV, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
