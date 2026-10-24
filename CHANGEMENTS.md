@@ -1,3 +1,9 @@
+# WayPilot 1.10.2 — contact et mentions légales
+
+- Les boutons de contact de l'accueil ouvrent WhatsApp avec un message pré-rempli. Le numéro figure en pied de page.
+- L'étude de cas nomme JAARAY, avec son accord.
+- Nouvelle page `mentions-legales.html` (éditeur Wayzure SAS, hébergeur, données), reliée depuis l'accueil et l'outil, et publiée par le workflow.
+
 # WayPilot 1.10.1 — page d'accueil commerciale
 
 - `index.html` devient une page d'accueil : ce que WayPilot trouve, comment ça marche, un cas réel (anonymisé), les offres (audit gratuit en libre-service, audit accompagné, suivi mensuel), la sécurité.
