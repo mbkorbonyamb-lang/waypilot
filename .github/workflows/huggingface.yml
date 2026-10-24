@@ -16,6 +16,7 @@ jobs:
           node-version: 20
       - run: node --test tests/engine.test.js tests/woo.test.js
       - run: python3 -m unittest discover -s tests -p "relais_test.py"
+      - run: node --test tests/relais-cloudflare.test.mjs
 
   publier:
     # Publie index.html (accueil), app.html (outil), mentions-legales.html, engine.js et woo.js sur le Space, uniquement depuis main et si les tests passent.
@@ -28,6 +29,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install huggingface_hub==0.26.2
+      - name: Adresse du relais de l'audit express
+        # Variable de dépôt RELAIS_URL (ex. https://waypilot-relais.xxx.workers.dev) : remplace l'adresse écrite dans app.html.
+        env:
+          RELAIS_URL: ${{ vars.RELAIS_URL }}
+        run: |
+          if [ -n "$RELAIS_URL" ]; then
+            sed -i "s#const RELAY_URL = \"[^\"]*\";#const RELAY_URL = \"${RELAIS_URL%/}\";#" app.html
+            grep -n "const RELAY_URL" app.html
+          fi
       - name: Envoyer les fichiers sur le Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -51,6 +61,8 @@ jobs:
           print("Space mis à jour.")
           PY
       - name: Publier le relais de l'audit express (Space Docker waypilot/relais)
+        # Les Spaces Docker exigent un abonnement Hugging Face PRO : étape activée seulement si la variable PUBLIER_RELAIS_HF vaut « oui ».
+        if: vars.PUBLIER_RELAIS_HF == 'oui'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -64,3 +76,26 @@ jobs:
                             commit_message=f"Relais depuis GitHub ({os.environ['GITHUB_SHA'][:7]})")
           print("Relais mis à jour : https://waypilot-relais.hf.space")
           PY
+
+  relais-cloudflare:
+    # Déploie relais-cloudflare/worker.js sur Cloudflare Workers (gratuit), si les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID existent.
+    needs: tests
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier les secrets Cloudflare
+        id: secrets
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then echo "ok=oui" >> "$GITHUB_OUTPUT"; else echo "Secrets Cloudflare absents : relais non déployé."; fi
+      - name: Déployer le relais
+        if: steps.secrets.outputs.ok == 'oui'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: relais-cloudflare
+          command: deploy
