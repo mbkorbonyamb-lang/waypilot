@@ -22,6 +22,10 @@
     .button { display:inline-block; border-radius:9px; padding:14px 20px; font-weight:700; font-size:15px; text-decoration:none; }
     .primary { background:var(--blue); color:white; } .secondary { background:#eaf0f8; color:var(--navy); }
     .note { font-size:13px; color:var(--muted); margin-top:10px; }
+    .quick { display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; max-width:620px; }
+    .quick input { flex:1 1 240px; min-width:0; border:1px solid var(--border); border-radius:9px; padding:13px 14px; font:inherit; font-size:16px; }
+    .quick button { border:0; cursor:pointer; font-family:inherit; }
+    .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
     section.band { background:var(--bg); padding:52px 0; }
     section.plain { padding:52px 0; }
     h2 { font-size:26px; margin:0 0 8px; } .sub { color:var(--muted); margin:0 0 26px; max-width:680px; }
@@ -53,11 +57,13 @@
     <div class="eyebrow">Catalogues WooCommerce</div>
     <h1>Votre catalogue WooCommerce, vérifié produit par produit.</h1>
     <p class="lead">Une taille affichée mais impossible à commander. Un prix différent entre la fiche et la description. Des variations en double après un import raté. Ces erreurs ne se voient pas dans l’administration. Vos clients, eux, les voient.</p>
-    <div class="cta">
-      <a class="button primary" href="app.html">Lancer un audit gratuit</a>
-      <a class="button secondary contact-link" href="#" hidden>Demander un audit accompagné</a>
-    </div>
-    <p class="note">Lecture seule : une clé WooCommerce en droit « Lecture » suffit. WayPilot ne peut rien modifier.</p>
+    <form class="quick" action="app.html" method="get">
+      <label for="boutique" class="sr">Adresse de votre boutique WooCommerce</label>
+      <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
+      <button class="button primary" type="submit">Auditer ma boutique</button>
+    </form>
+    <p class="note">Gratuit. L’adresse suffit : pas de clé, rien à installer, rien n’est modifié. WayPilot lit votre catalogue comme un client le voit.</p>
+    <div class="cta"><a class="button secondary contact-link" href="#" hidden>Demander un audit accompagné</a></div>
   </div>
 
   <section class="band" id="probleme">
@@ -78,7 +84,7 @@
       <h2>Comment ça marche</h2>
       <p class="sub">Tout se passe dans votre navigateur. Vos clés et vos données ne passent par aucun serveur WayPilot.</p>
       <div class="grid">
-        <div class="card"><div class="step">1</div><h3>Connexion</h3><p>Vous créez une clé API dans WooCommerce (Réglages › Avancé › API REST) et la collez dans WayPilot. Un CSV exporté fonctionne aussi.</p></div>
+        <div class="card"><div class="step">1</div><h3>L’adresse de la boutique</h3><p>Pour un premier audit, l’adresse suffit : WayPilot lit le catalogue public. Pour un audit complet et des corrections, une clé API WooCommerce ou un export CSV.</p></div>
         <div class="card"><div class="step">2</div><h3>Audit</h3><p>WayPilot lit les produits et les variations, donne un score et classe chaque problème selon son effet sur vos ventes.</p></div>
         <div class="card"><div class="step">3</div><h3>Corrections validées</h3><p>Vous examinez chaque correction proposée. Seules celles que vous validez sont appliquées, avec un journal et la possibilité d’annuler.</p></div>
       </div>
@@ -106,7 +112,7 @@
       <h2>Offres</h2>
       <p class="sub">Pour les boutiques WooCommerce et pour les agences qui en gèrent plusieurs.</p>
       <div class="grid">
-        <div class="card offer"><span class="tag">Gratuit</span><h3>Audit en libre-service</h3><p>Vous lancez l’audit vous-même, en lecture seule, et téléchargez le rapport.</p><a class="button primary" style="margin-top:auto;text-align:center" href="app.html">Lancer l’audit</a></div>
+        <div class="card offer"><span class="tag">Gratuit</span><h3>Audit en libre-service</h3><p>Vous entrez l’adresse de votre boutique et téléchargez le rapport. Aucune clé, rien à installer.</p><a class="button primary" style="margin-top:auto;text-align:center" href="app.html">Lancer l’audit</a></div>
         <div class="card offer"><h3>Audit et correction accompagnés</h3><p>Nous faisons l’audit, vous présentons les corrections, puis les appliquons après votre accord et une sauvegarde.</p><div class="price">Sur devis</div></div>
         <div class="card offer"><h3>Suivi mensuel</h3><p>Chaque mois : nouvel audit, corrections validées, journal des modifications et rapport. Forfait dégressif pour les agences.</p><div class="price">Sur devis, sans engagement long</div></div>
       </div>
@@ -119,6 +125,8 @@
       <h2>Sécurité</h2>
       <div class="faq">
         <dl>
+          <dt>Comment WayPilot lit-il ma boutique sans clé ?</dt>
+          <dd>Par l’API publique de WooCommerce, celle que votre boutique utilise pour afficher ses produits. WayPilot voit ce que voit un visiteur, rien de plus : ni commandes, ni clients, ni brouillons.</dd>
           <dt>Où vont mes clés et mes données ?</dt>
           <dd>Nulle part ailleurs que sur votre boutique. WayPilot tourne dans votre navigateur : les clés restent dans l’onglet et disparaissent quand vous le fermez.</dd>
           <dt>WayPilot peut-il casser ma boutique ?</dt>

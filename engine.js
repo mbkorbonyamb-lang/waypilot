@@ -116,6 +116,7 @@
     status: ["status", "statut"],
     published: ["publie", "published"],
     images: ["images", "image", "images du produit", "product images"],
+    purchasable: ["purchasable", "achetable"],
     gtin: ["gtin, upc, ean, or isbn", "gtin, upc, ean ou isbn", "gtin", "ean", "upc", "isbn", "code-barres", "code barre", "global unique id", "global_unique_id"]
   };
 
@@ -378,6 +379,11 @@
       if (saleRaw) {
         if (!Number.isFinite(sale) || sale <= 0) add(i, "SALE_INVALID", SEVERITY.HIGH, `Prix promotionnel invalide ou nul (« ${saleRaw} »)`);
         else if (Number.isFinite(regular) && regular > 0 && sale >= regular) add(i, "SALE_NOT_LOWER", SEVERITY.MEDIUM, "Prix promotionnel supérieur ou égal au prix régulier");
+      }
+
+      // Achetable : connu par l’audit express (API publique). Un prix absent est déjà signalé à part.
+      if (col.purchasable >= 0 && clean(get(row, "purchasable")) === "0" && !t.isVariable && !t.isGrouped && Number.isFinite(regular) && regular > 0) {
+        add(i, "NOT_PURCHASABLE", SEVERITY.HIGH, "Affiché sur la boutique, mais WooCommerce refuse de l’ajouter au panier");
       }
 
       // Description
@@ -736,6 +742,7 @@
   ];
   const REPORT_CODES = {
     PRICE_MISSING: ["sales", "Prix absent : le produit ne peut pas être acheté"],
+    NOT_PURCHASABLE: ["sales", "Affiché mais impossible à ajouter au panier"],
     PRICE_INVALID: ["sales", "Prix illisible"],
     PRICE_NON_POSITIVE: ["sales", "Prix nul ou négatif"],
     SALE_INVALID: ["sales", "Prix promotionnel invalide"],
@@ -840,7 +847,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.11.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.12.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
