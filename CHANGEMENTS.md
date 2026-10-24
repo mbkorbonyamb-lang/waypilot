@@ -1,3 +1,13 @@
+# WayPilot 1.8.0 — connexion directe WooCommerce
+
+- Nouveau : WayPilot peut lire le catalogue directement dans la boutique (API REST WooCommerce, clé « Lecture/Écriture ») et y écrire les corrections validées. Plus besoin d'exporter puis de réimporter un CSV, étape qui a échoué lors du test JAARAY.
+- Corrections envoyées : UGS, prix régulier, images en double retirées (les images sont conservées dans la médiathèque), valeur d'attribut d'une variation, création des variations manquantes. Si l'attribut du parent n'est pas coché « Utilisé pour les variations », WayPilot le coche, sinon la nouvelle variation ne serait pas commandable.
+- Rien n'est envoyé sans validation, ni sans confirmation. Un tableau donne le résultat élément par élément (une UGS déjà prise, par exemple, est signalée sans bloquer le reste).
+- Les clés restent dans l'onglet du navigateur. HTTPS obligatoire. Authentification par paramètres d'URL, car beaucoup d'hébergeurs suppriment l'en-tête Authorization.
+- Le CSV reste disponible en solution de repli.
+- Bug corrigé : avec un format de prix imposé (point ou virgule), un prix entier comme « 445 » était lu 44,445.
+- Nouveau fichier `woo.js`, 6 tests ajoutés (23 au total).
+
 # WayPilot 1.7.2 — correctif import WooCommerce
 
 - Correction d'un bug bloquant trouvé lors du test JAARAY : le CSV corrigé était refusé en silence par l'import WooCommerce. Le fichier commençait par un BOM suivi de `"ID"` entre guillemets. L'importeur de WooCommerce lisait alors l'en-tête comme `"ID"`, guillemets compris : la colonne ID n'était pas reconnue, aucun produit existant n'était retrouvé et rien n'était mis à jour.

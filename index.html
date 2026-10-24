@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.7.2</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -78,6 +78,16 @@
     <div id="fileInfo" class="message" aria-live="polite"></div>
     <div class="actions"><button id="analyze" disabled>Analyser mon catalogue</button><button id="reset" class="secondary">Réinitialiser</button></div>
     <p class="notice">WayPilot ne devine pas les prix, les tailles ou les stocks inconnus. Les corrections proposées doivent être vérifiées avant l’importation.</p>
+
+    <h3>Ou connecter directement votre boutique WooCommerce</h3>
+    <p class="help">Plus besoin d’exporter puis de réimporter un CSV : WayPilot lit le catalogue et, après votre validation, écrit les corrections dans la boutique. Créez une clé dans WooCommerce › Réglages › Avancé › API REST › Ajouter une clé, avec les droits « Lecture/Écriture ». Les clés restent dans cet onglet : elles ne sont ni enregistrées ni envoyées ailleurs qu’à votre boutique. Révoquez la clé après usage si vous le souhaitez.</p>
+    <div class="settings">
+      <div><label class="label" for="wooUrl">Adresse de la boutique</label><input id="wooUrl" class="field" type="url" placeholder="https://maboutique.com" style="margin-top:7px" autocomplete="url"></div>
+      <div><label class="label" for="wooKey">Clé client (ck_…)</label><input id="wooKey" class="field" type="password" placeholder="ck_…" style="margin-top:7px" autocomplete="off"></div>
+      <div><label class="label" for="wooSecret">Secret client (cs_…)</label><input id="wooSecret" class="field" type="password" placeholder="cs_…" style="margin-top:7px" autocomplete="off"></div>
+    </div>
+    <div class="actions"><button id="wooConnect" class="secondary">Lire le catalogue de la boutique</button></div>
+    <div id="wooInfo" class="message" aria-live="polite"></div>
   </section>
 
   <section id="results" class="panel" hidden>
@@ -103,14 +113,14 @@
 
     <div id="manualFixes" class="review-card" hidden>
       <h3 style="margin-top:0;color:#b42318">Ajouter les variations manquantes</h3>
-      <p class="help">Proposé seulement pour les produits dont les variations utilisent un seul attribut. Le prix est prérempli quand il est connu (prix du parent ou prix commun des autres variations) : vérifiez-le. La quantité en stock est facultative ; laissée vide, WayPilot n’écrit aucune valeur de stock. Les variations sont ajoutées au CSV, jamais directement à WooCommerce.</p>
+      <p class="help">Proposé seulement pour les produits dont les variations utilisent un seul attribut. Le prix est prérempli quand il est connu (prix du parent ou prix commun des autres variations) : vérifiez-le. La quantité en stock est facultative ; laissée vide, WayPilot n’écrit aucune valeur de stock. Les variations validées sont ajoutées au CSV corrigé, ou créées dans la boutique si elle est connectée et que vous cliquez sur « Appliquer ».</p>
       <div id="manualVariationTable" class="table-wrap"></div>
       <div class="actions"><button type="button" id="approveManualVariations">Valider les variations cochées</button><button type="button" id="selectManualVariations" class="secondary">Tout cocher</button></div>
       <div id="manualSummary" class="message" aria-live="polite"></div>
     </div>
 
     <h3>3. Examiner et valider les corrections</h3>
-    <p class="help">Les corrections sûres (images répétées, orthographe d’une valeur alignée sur le parent, UGS manquante) peuvent être validées ensemble. Les changements de prix et le remplacement d’une UGS existante restent à examiner un par un. Les décisions ne modifient que le CSV téléchargé.</p>
+    <p class="help">Les corrections sûres (images répétées, orthographe d’une valeur alignée sur le parent, UGS manquante) peuvent être validées ensemble. Les changements de prix et le remplacement d’une UGS existante restent à examiner un par un. Les décisions ne modifient rien tant que vous n’avez pas téléchargé le CSV ou cliqué sur « Appliquer » (boutique connectée).</p>
     <div class="actions"><button type="button" id="selectAll" class="secondary">Tout sélectionner</button><button type="button" id="clearSelection" class="secondary">Effacer la sélection</button><button type="button" id="approveSelected">Valider la sélection</button><button type="button" id="rejectSelected" class="secondary">Refuser la sélection</button><button type="button" id="approveSafe" class="secondary">Valider les corrections sûres</button></div>
     <div id="proposals" class="table-wrap"></div>
     <div id="approvalSummary" class="message" aria-live="polite"></div>
@@ -119,19 +129,29 @@
       <button id="downloadCorrected">Télécharger le catalogue corrigé pour WooCommerce</button>
       <button id="downloadOriginal" class="secondary">Télécharger le CSV original</button>
     </div>
-    <p class="notice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
+    <p class="notice" id="csvNotice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
+    <div id="wooApply" class="review-card" hidden>
+      <h3 style="margin-top:0">Appliquer sur la boutique</h3>
+      <p class="help">Seules les corrections et les variations validées sont envoyées. Les modifications sont immédiates sur la boutique : faites une sauvegarde avant le premier essai.</p>
+      <div class="actions"><button type="button" id="wooApplyButton">Appliquer les corrections validées sur la boutique</button><button type="button" id="wooReload" class="secondary">Relire la boutique et réanalyser</button></div>
+      <div id="wooApplySummary" class="message" aria-live="polite"></div>
+      <div id="wooResults" class="table-wrap"></div>
+    </div>
   </section>
 </main>
 <footer>WayPilot · Contrôle qualité des catalogues e-commerce.</footer>
 <script src="engine.js"></script>
+<script src="woo.js"></script>
 <script>
 (() => {
   const E = window.WayPilotEngine;
+  const W = window.WayPilotWoo;
   const $ = id => document.getElementById(id);
   $("version").textContent = `BÊTA · V${E.VERSION}`;
 
   const state = {
     file: null, catalog: null, result: null,
+    woo: null,                     // client de la boutique connectée (clés en mémoire uniquement)
     verifiedExisting: new Set(),   // clés d’anomalies confirmées comme existantes dans WooCommerce
     manual: new Map()              // clé -> variation à ajouter ; conservée entre deux affichages
   };
@@ -146,7 +166,9 @@
     $("prefixHelp").textContent = p ? `Préfixe proposé : ${p}. Exemple : ${p}-001, ${p}-002. Modifiable avant l’analyse.` : "Saisissez le nom de la boutique : WayPilot proposera un préfixe de 3 lettres, modifiable.";
   });
   $("skuPrefix").addEventListener("input", () => { prefixManuallyEdited = true; $("skuPrefix").value = $("skuPrefix").value.toUpperCase(); });
-  const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: $("decimal").value });
+  // L’API WooCommerce renvoie toujours les prix avec un point décimal.
+  const decimalMode = () => state.catalog && state.catalog.source === "woocommerce" ? "." : $("decimal").value;
+  const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: decimalMode() });
 
   // ---------- Décisions ----------
   const validatedVariationKeys = () => new Set([...state.manual.values()].filter(v => v.validated && v.selected).map(v => v.issueKey));
@@ -190,6 +212,9 @@
     $("summary").textContent = issues.length
       ? `${stats.rows} lignes (${stats.products} produits, ${stats.variations} variations). ${issues.length} anomalies, dont ${followups.filter(f => f === E.FOLLOWUP.PROPOSAL).length} avec une correction proposée et ${followups.filter(isOpen).length} à vérifier ou à compléter.`
       : "Aucune anomalie détectée par les contrôles actuels. Cela ne garantit pas que toutes les données du catalogue sont exactes.";
+    const fromWoo = state.catalog.source === "woocommerce";
+    $("wooApply").hidden = !fromWoo;
+    $("csvNotice").hidden = fromWoo;
     renderIssues(followups);
     renderManual();
     renderProposals();
@@ -283,7 +308,7 @@
     state.result.proposals.filter(p => p.kind === "sku" && p.status === "approved").forEach(p => skuOwners.add(E.normalize(p.after)));
     chosen.forEach(v => {
       const label = `${v.parentName} · ${v.attributeValue}`;
-      const price = E.parseAmount(v.price, $("decimal").value);
+      const price = E.parseAmount(v.price, decimalMode());
       if (!v.name.trim()) errors.push(`${label} : nom manquant.`);
       if (!Number.isFinite(price) || price <= 0) errors.push(`${label} : prix régulier manquant ou invalide.`);
       if (String(v.stockQty).trim() !== "" && !(Number.isInteger(Number(v.stockQty)) && Number(v.stockQty) >= 0)) errors.push(`${label} : quantité en stock invalide (nombre entier, zéro ou plus).`);
@@ -292,7 +317,7 @@
     });
     if (errors.length) { alert("Aucune variation n’a été validée :\n\n" + errors.join("\n")); return; }
     // WooCommerce attend un point décimal.
-    chosen.forEach(v => { v.price = String(E.parseAmount(v.price, $("decimal").value)); v.validated = true; });
+    chosen.forEach(v => { v.price = String(E.parseAmount(v.price, decimalMode())); v.validated = true; });
     render();
   });
 
@@ -376,9 +401,72 @@
     download(E.buildCorrectedCSV(state.catalog, state.result.proposals, manual), `${baseName()}_corrige_waypilot.csv`);
   });
 
+  // ---------- Connexion directe WooCommerce ----------
+  async function loadFromStore() {
+    const info = $("wooInfo");
+    info.className = "message";
+    try {
+      const client = W.createClient({ url: $("wooUrl").value, key: $("wooKey").value, secret: $("wooSecret").value });
+      $("wooConnect").disabled = true;
+      info.textContent = "Lecture du catalogue…";
+      const data = await client.fetchCatalog(text => { info.textContent = text; });
+      const catalog = W.toCatalog(E, data);
+      clearState();
+      $("file").value = "";
+      Object.assign(state, { catalog, woo: client });
+      info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations lus.`;
+      info.classList.add("success");
+      $("analyze").disabled = false;
+      runAnalysis();
+    } catch (error) {
+      info.textContent = error.message || "Connexion impossible.";
+      info.classList.add("error");
+    } finally {
+      $("wooConnect").disabled = false;
+    }
+  }
+  $("wooConnect").addEventListener("click", loadFromStore);
+  $("wooReload").addEventListener("click", () => {
+    if (state.result && state.result.proposals.some(p => p.status === "approved") && !$("wooResults").childElementCount && !confirm("Des corrections validées n’ont pas été appliquées. Relire la boutique quand même ?")) return;
+    state.result = null; // pas de seconde confirmation dans runAnalysis
+    loadFromStore();
+  });
+
+  $("wooApplyButton").addEventListener("click", async () => {
+    if (!state.result || !state.woo) return;
+    const manual = visibleManual().filter(v => v.validated && v.selected);
+    let plan;
+    try { plan = W.buildChanges(state.catalog, state.result.proposals, manual); }
+    catch (error) { alert(error.message); return; }
+    if (!plan.count) { alert("Aucune correction validée à appliquer."); return; }
+    const created = Object.values(plan.variations).reduce((n, v) => n + v.create.length, 0);
+    const pending = state.result.proposals.filter(p => p.status === "pending").length;
+    const lines = [`${plan.count} modification(s) sur ${state.woo.site}`, created ? `dont ${created} variation(s) créée(s)` : "", pending ? `${pending} correction(s) encore à examiner ne seront pas envoyées` : "", plan.skipped.length ? `${plan.skipped.length} correction(s) non prise(s) en charge, ignorée(s)` : ""].filter(Boolean);
+    if (!confirm(lines.join("\n") + "\n\nLes changements sont immédiats sur la boutique. Continuer ?")) return;
+    $("wooApplyButton").disabled = true;
+    $("wooApplySummary").className = "message";
+    $("wooApplySummary").textContent = "Envoi en cours…";
+    try {
+      const results = await state.woo.applyChanges(plan, n => { $("wooApplySummary").textContent = `Envoi en cours… ${n}/${plan.count}`; });
+      plan.skipped.forEach(s => results.push({ label: s.label, ok: false, error: "Ignorée : " + s.reason }));
+      const ok = results.filter(r => r.ok).length;
+      $("wooApplySummary").textContent = `${ok} modification(s) appliquée(s), ${results.length - ok} en échec ou ignorée(s). Relisez la boutique pour vérifier le résultat.`;
+      $("wooApplySummary").classList.add(ok === results.length ? "success" : "error");
+      const tbody = el("tbody", {}, results.map(r => el("tr", { className: r.ok ? "" : "needs-review" }, [el("td", { textContent: r.label }), el("td", { textContent: r.ok ? "Appliquée" : r.error })])));
+      $("wooResults").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, [el("th", { textContent: "Élément" }), el("th", { textContent: "Résultat" })])]), tbody]));
+    } catch (error) {
+      $("wooApplySummary").textContent = error.message;
+      $("wooApplySummary").classList.add("error");
+    } finally {
+      $("wooApplyButton").disabled = false;
+    }
+  });
+
   // ---------- Fichier ----------
   function clearState() {
-    Object.assign(state, { file: null, catalog: null, result: null });
+    Object.assign(state, { file: null, catalog: null, result: null, woo: null });
+    $("wooResults").replaceChildren();
+    $("wooApplySummary").textContent = "";
     state.verifiedExisting.clear();
     state.manual.clear();
     $("results").hidden = true;

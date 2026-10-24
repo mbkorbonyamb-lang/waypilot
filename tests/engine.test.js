@@ -18,6 +18,9 @@ test("parseAmount : formats de prix courants", () => {
   assert.equal(E.parseAmount("0.500"), 0.5);
   assert.equal(E.parseAmount("-3"), -3);
   assert.ok(Number.isNaN(E.parseAmount("12 EUR")));
+  // Format imposé : un entier sans séparateur reste un entier.
+  assert.equal(E.parseAmount("445", "."), 445);
+  assert.equal(E.parseAmount("445", ","), 445);
   assert.ok(Number.isNaN(E.parseAmount("1.2.3,4")));
   assert.ok(Number.isNaN(E.parseAmount("")));
 });
