@@ -122,3 +122,44 @@ test("client : lecture paginée et application par lots", async () => {
 test("client : clés au mauvais format refusées avant tout appel", () => {
   assert.throws(() => W.createClient({ url: "https://shop.test", key: "abc", secret: "cs_x", fetchImpl: async () => {} }), /ck_/);
 });
+
+test("doublons de variations : l’ID le plus ancien est gardé, les autres sont proposés à la suppression", () => {
+  const data = api();
+  // L’API renvoie les variations les plus récentes d’abord.
+  data.variations[170] = [
+    { id: 336, sku: "", regular_price: "", status: "publish", attributes: [{ id: 1, name: "Taille", option: "M" }] },
+    ...data.variations[170]
+  ];
+  const c = W.toCatalog(E, data);
+  const csvLike = E.analyze(c, { skuPrefix: "JAA", decimal: "." });
+  assert.ok(!csvLike.proposals.some(p => p.kind === "deleteVariation"), "pas de suppression proposée sans connexion directe");
+
+  const r = E.analyze(c, { skuPrefix: "JAA", decimal: ".", allowDelete: true });
+  const dup = r.issues.find(i => i.code === "VARIATION_DUPLICATE");
+  assert.equal(dup.productId, "336");
+  assert.match(dup.message, /ID 171/);
+  const del = r.proposals.find(p => p.kind === "deleteVariation");
+  assert.equal(del.productId, "336");
+  assert.equal(del.safe, false);
+  assert.deepEqual(dup.proposalIds, [del.id]);
+  assert.ok(!r.proposals.some(p => p.kind === "sku" && p.productId === "336"), "pas d’UGS pour un doublon");
+
+  r.proposals.forEach(p => { p.status = "approved"; });
+  const plan = W.buildChanges(c, r.proposals, []);
+  assert.deepEqual(plan.variations[170].delete.map(d => d.payload), [336]);
+  assert.ok(!plan.variations[170].update.some(u => u.payload.id === 336));
+});
+
+test("client : les suppressions partent avant les mises à jour", async () => {
+  const log = [];
+  const fetchImpl = async (url, init) => {
+    const body = JSON.parse(init.body);
+    log.push(Object.keys(body)[0]);
+    const kind = Object.keys(body)[0];
+    return { ok: true, status: 200, text: async () => JSON.stringify({ [kind]: body[kind].map(x => ({ id: typeof x === "number" ? x : x.id })) }), headers: { get: () => null } };
+  };
+  const client = W.createClient({ url: "https://shop.test", key: "ck_a", secret: "cs_b", fetchImpl });
+  const res = await client.applyChanges({ products: [], variations: { 1: { delete: [{ label: "d", payload: 9 }], update: [{ label: "u", payload: { id: 2 } }], create: [] } } });
+  assert.deepEqual(log, ["delete", "update"]);
+  assert.ok(res.every(r => r.ok));
+});
