@@ -278,3 +278,10 @@ test("audit express : lecture sans clé, variations par lots, message clair si l
   const blocked = W.createPublicClient({ url: "shop.test", fetchImpl: async () => ({ ok: false, status: 401, text: async () => "{\"message\":\"non\"}", headers: { get: () => null } }) });
   await assert.rejects(blocked.fetchCatalog(), /bloque la lecture publique/);
 });
+
+test("audit express via le relais : seule l’adresse de la boutique est transmise", async () => {
+  const urls = [];
+  const fetchImpl = async url => { urls.push(url); return { ok: true, status: 200, text: async () => "[]", headers: { get: () => "1" } }; };
+  await W.createPublicClient({ url: "https://www.jaaray.site/", relay: "https://relais.test/", fetchImpl }).fetchCatalog();
+  assert.equal(urls[0], "https://relais.test/products?site=www.jaaray.site&per_page=100&page=1");
+});

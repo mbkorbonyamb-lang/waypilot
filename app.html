@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.12.0</div></header>
+<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.12.1</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -487,11 +487,13 @@
   const imagesNote = catalog => catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "";
 
   // ---------- Audit express (API publique, sans clé) ----------
+  // WooCommerce bloque cette API depuis un autre site (CORS) : la lecture passe par le relais WayPilot (dossier relais/).
+  const RELAY_URL = "https://waypilot-relais.hf.space";
   async function quickAudit() {
     const info = $("quickInfo");
     info.className = "message";
     try {
-      const client = W.createPublicClient({ url: $("quickUrl").value });
+      const client = W.createPublicClient({ url: $("quickUrl").value, relay: RELAY_URL });
       $("quickAudit").disabled = true;
       info.textContent = "Lecture du catalogue public…";
       const data = await client.fetchCatalog(text => { info.textContent = text; });
@@ -507,7 +509,8 @@
       $("analyze").disabled = false;
       runAnalysis();
     } catch (error) {
-      info.textContent = error.message || "Lecture impossible.";
+      const sleeping = /pas du JSON|n’a pas répondu|HTTP 50[234]/.test(error.message || "");
+      info.textContent = (error.message || "Lecture impossible.") + (sleeping ? " Le service de lecture se réveille peut-être après une période sans usage : réessayez dans une minute." : "");
       info.classList.add("error");
     } finally {
       $("quickAudit").disabled = false;
