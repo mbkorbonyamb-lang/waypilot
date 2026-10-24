@@ -128,6 +128,8 @@
       };
       await run("/products/batch", "update", plan.products);
       for (const [parentId, v] of Object.entries(plan.variations)) {
+        // Suppressions d’abord : les doublons ne gênent plus les UGS des variations gardées.
+        await run(`/products/${parentId}/variations/batch`, "delete", v.delete || []);
         await run(`/products/${parentId}/variations/batch`, "update", v.update);
         await run(`/products/${parentId}/variations/batch`, "create", v.create);
       }
@@ -169,7 +171,8 @@
       rows.push(row);
       meta.push({ kind: "product", id: p.id, images: (p.images || []).map(i => ({ id: i.id, src: i.src })), attributes: attrs });
 
-      (variations[p.id] || []).forEach(v => {
+      // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
+      (variations[p.id] || []).slice().sort((a, b) => a.id - b.id).forEach(v => {
         const vAttrs = v.attributes || [];
         const optionFor = a => {
           const m = vAttrs.find(x => (a.id && x.id === a.id) || (!a.id && clean(x.name).toLowerCase() === clean(a.name).toLowerCase()));
@@ -204,7 +207,8 @@
     if (!meta) throw new Error("Ce catalogue ne vient pas de la connexion WooCommerce.");
     const productUpd = new Map(), variationUpd = new Map(), skipped = [];
     const variations = {};
-    const slot = pid => (variations[pid] = variations[pid] || { update: [], create: [] });
+    const slot = pid => (variations[pid] = variations[pid] || { update: [], create: [], delete: [] });
+    const deleted = new Set(proposals.filter(p => p.status === "approved" && p.kind === "deleteVariation").map(p => p.row));
     const labelOf = p => `${p.product} (ID ${meta[p.row].id})`;
     const entry = (m, label) => {
       const map = m.kind === "product" ? productUpd : variationUpd;
@@ -215,6 +219,11 @@
     proposals.filter(p => p.status === "approved").forEach(p => {
       const m = meta[p.row];
       if (!m) return;
+      if (p.kind === "deleteVariation") {
+        if (m.kind === "variation") slot(m.parentId).delete.push({ label: `${labelOf(p)} : suppression du doublon`, payload: m.id });
+        return;
+      }
+      if (deleted.has(p.row)) return; // inutile de corriger une variation supprimée
       const e = entry(m, labelOf(p));
       if (p.kind === "sku") { e.payload.sku = clean(p.after); e.parts.push(`UGS ${clean(p.after)}`); }
       else if (p.kind === "priceRegular") { e.payload.regular_price = clean(p.after); e.parts.push(`prix ${clean(p.after)}`); }
@@ -266,7 +275,7 @@
     const finish = e => ({ label: `${e.label} : ${e.parts.join(", ")}`, payload: e.payload });
     const products = [...productUpd.values()].map(finish);
     variationUpd.forEach(e => slot(e.parentId).update.push(finish(e)));
-    const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.create.length, 0);
+    const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.create.length + v.delete.length, 0);
     return { products, variations, skipped, count };
   }
 

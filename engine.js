@@ -416,6 +416,7 @@
     // ---------- Variations ----------
     const variationsByParent = new Map(); // parentIndex -> [rowIndex]
     const seenCombos = new Map();
+    const duplicateVariations = new Map(); // ligne en double -> ligne gardée
     rows.forEach((row, i) => {
       if (!types[i].isVariation) return;
       const p = resolveParent(get(row, "parent"));
@@ -430,8 +431,12 @@
       if (!attrs.length) { add(i, "VARIATION_NO_ATTRIBUTE", SEVERITY.HIGH, "Attribut de variation manquant"); return; }
       const combo = attrs.map(a => `${normalize(a.name)}=${normalize(a.value) || "*"}`).sort().join("&");
       const key = `${p}|${combo}`;
-      if (seenCombos.has(key)) add(i, "VARIATION_DUPLICATE", SEVERITY.HIGH, `Combinaison de variation en double (ligne ${lines[seenCombos.get(key)]})`);
-      else seenCombos.set(key, i);
+      if (seenCombos.has(key)) {
+        const first = seenCombos.get(key);
+        const firstId = cleanId(get(rows[first], "id"));
+        add(i, "VARIATION_DUPLICATE", SEVERITY.HIGH, `Combinaison de variation en double (ligne ${lines[first]}${firstId ? `, ID ${firstId}` : ""})`);
+        duplicateVariations.set(i, first);
+      } else seenCombos.set(key, i);
     });
 
     const manualCandidates = [];
@@ -496,6 +501,28 @@
       });
     });
 
+    // ---------- Suppression des variations en double (connexion directe seulement : l’import CSV ne supprime rien) ----------
+    if (options.allowDelete) {
+      const describe = r => {
+        const parts = [`prix ${clean(get(rows[r], "price")) || "vide"}`];
+        const pub = clean(get(rows[r], "published"));
+        parts.push(pub === "1" ? "publiée" : pub === "-1" ? "privée" : "non publiée");
+        const qty = clean(get(rows[r], "stockQuantity"));
+        if (qty) parts.push(`stock ${qty}`);
+        return parts.join(", ");
+      };
+      duplicateVariations.forEach((first, i) => {
+        const firstId = cleanId(get(rows[first], "id"));
+        propose({
+          row: i, kind: "deleteVariation", col: -1,
+          label: `Supprimer cette variation en double${firstId ? ` (garder l’ID ${firstId})` : ""}`,
+          before: describe(i), after: "supprimée",
+          safe: false, resolves: ["VARIATION_DUPLICATE"],
+          note: `Variation gardée : ${describe(first)}. Suppression définitive : vérifiez que la variation gardée a le bon prix.`
+        });
+      });
+    }
+
     // ---------- Propositions de SKU ----------
     if (col.sku >= 0) {
       const regenerateAll = !!options.regenerateAllSkus;
@@ -507,6 +534,7 @@
       rows.forEach((r, i) => { if (!types[i].isVariation) seqOf[i] = ++seq; });
       const firstSkuOwner = new Map();
       rows.forEach((row, i) => {
+        if (options.allowDelete && duplicateVariations.has(i)) return; // à supprimer, pas à référencer
         const current = clean(get(row, "sku"));
         const k = normalize(current);
         const isDuplicate = current && firstSkuOwner.has(k);
@@ -642,7 +670,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.8.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.8.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

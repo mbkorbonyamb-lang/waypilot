@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.0</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.1</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -168,7 +168,7 @@
   $("skuPrefix").addEventListener("input", () => { prefixManuallyEdited = true; $("skuPrefix").value = $("skuPrefix").value.toUpperCase(); });
   // L’API WooCommerce renvoie toujours les prix avec un point décimal.
   const decimalMode = () => state.catalog && state.catalog.source === "woocommerce" ? "." : $("decimal").value;
-  const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: decimalMode() });
+  const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: decimalMode(), allowDelete: !!(state.catalog && state.catalog.source === "woocommerce") });
 
   // ---------- Décisions ----------
   const validatedVariationKeys = () => new Set([...state.manual.values()].filter(v => v.validated && v.selected).map(v => v.issueKey));
@@ -341,7 +341,7 @@
       if (p.note) labelCell.append(el("div", { className: "note", textContent: p.note }));
       tbody.append(el("tr", {}, [
         el("td", {}, [check]), el("td", { textContent: p.line }), productCell(p),
-        labelCell, el("td", { textContent: p.before }), el("td", {}, [value]), el("td", { className: "decision" }, [select])
+        labelCell, el("td", { textContent: p.before }), el("td", {}, [p.kind === "deleteVariation" ? el("strong", { className: "error", textContent: "Supprimée" }) : value]), el("td", { className: "decision" }, [select])
       ]));
     });
     container.append(el("table", {}, [el("thead", {}, [head]), tbody]));
@@ -440,8 +440,9 @@
     catch (error) { alert(error.message); return; }
     if (!plan.count) { alert("Aucune correction validée à appliquer."); return; }
     const created = Object.values(plan.variations).reduce((n, v) => n + v.create.length, 0);
+    const removed = Object.values(plan.variations).reduce((n, v) => n + v.delete.length, 0);
     const pending = state.result.proposals.filter(p => p.status === "pending").length;
-    const lines = [`${plan.count} modification(s) sur ${state.woo.site}`, created ? `dont ${created} variation(s) créée(s)` : "", pending ? `${pending} correction(s) encore à examiner ne seront pas envoyées` : "", plan.skipped.length ? `${plan.skipped.length} correction(s) non prise(s) en charge, ignorée(s)` : ""].filter(Boolean);
+    const lines = [`${plan.count} modification(s) sur ${state.woo.site}`, created ? `dont ${created} variation(s) créée(s)` : "", removed ? `dont ${removed} variation(s) SUPPRIMÉE(S) définitivement` : "", pending ? `${pending} correction(s) encore à examiner ne seront pas envoyées` : "", plan.skipped.length ? `${plan.skipped.length} correction(s) non prise(s) en charge, ignorée(s)` : ""].filter(Boolean);
     if (!confirm(lines.join("\n") + "\n\nLes changements sont immédiats sur la boutique. Continuer ?")) return;
     $("wooApplyButton").disabled = true;
     $("wooApplySummary").className = "message";

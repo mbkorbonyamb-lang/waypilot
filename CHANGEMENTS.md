@@ -1,3 +1,11 @@
+# WayPilot 1.8.1 — variations en double (retour du test JAARAY en connexion directe)
+
+- Constat sur JAARAY : 30 variations dans la boutique pour 10 tailles réelles. Les 20 doublons ont des ID récents et viennent très probablement des imports CSV faits quand la colonne ID n'était pas reconnue (bug corrigé en 1.7.2).
+- La variation la plus ancienne (ID le plus bas) sert désormais de référence. Avant, l'API renvoyant les plus récentes d'abord, c'est l'originale qui était signalée comme doublon.
+- Connexion directe : WayPilot propose de supprimer chaque doublon, en affichant le prix et le statut du doublon et de la variation gardée. La suppression est à valider une par une (jamais incluse dans « corrections sûres ») et est définitive. Les doublons ne reçoivent pas d'UGS.
+- Avec un CSV, aucune suppression n'est proposée : l'import WooCommerce ne sait pas supprimer.
+- 2 tests ajoutés (25 au total).
+
 # WayPilot 1.8.0 — connexion directe WooCommerce
 
 - Nouveau : WayPilot peut lire le catalogue directement dans la boutique (API REST WooCommerce, clé « Lecture/Écriture ») et y écrire les corrections validées. Plus besoin d'exporter puis de réimporter un CSV, étape qui a échoué lors du test JAARAY.
