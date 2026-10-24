@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.11.0</div></header>
+<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.12.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -51,7 +51,16 @@
   </section>
 
   <section class="panel">
-    <h2>1. Importer votre catalogue</h2>
+    <h2>1. Audit express : l’adresse suffit</h2>
+    <p class="help">Entrez l’adresse d’une boutique WooCommerce. WayPilot lit son catalogue public, tel que les clients le voient : sans clé, sans installation, et sans rien modifier.</p>
+    <div class="settings"><div><label class="label" for="quickUrl">Adresse de la boutique</label><input id="quickUrl" class="field" type="url" placeholder="maboutique.com" style="margin-top:7px" autocomplete="url"></div></div>
+    <div class="actions"><button id="quickAudit">Lancer l’audit express</button></div>
+    <div id="quickInfo" class="message" aria-live="polite"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Ou : importer un CSV, ou connecter la boutique avec une clé</h2>
+    <p class="help">Pour un audit complet (brouillons, stocks, codes-barres) et pour appliquer des corrections.</p>
     <p class="help">Sélectionnez un fichier CSV exporté depuis WooCommerce ou préparé dans un tableur. Le fichier reste dans votre navigateur : rien n’est envoyé sur un serveur.</p>
     <div class="settings">
       <div>
@@ -108,8 +117,9 @@
       <select id="issueFilter"><option value="all">Toutes les anomalies</option><option value="review">À vérifier (rouge)</option><option value="high">Gravité élevée</option><option value="variation">Variations manquantes</option></select>
       <span class="review-tag">À VÉRIFIER</span>
     </div>
-    <p class="help">Si vous avez vérifié dans WooCommerce qu’une variation signalée existe déjà, cochez sa ligne puis cliquez sur « Marquer comme déjà existante ». Elle ne sera pas ajoutée au CSV.</p>
-    <div class="actions"><button type="button" id="markExistingVariations" class="secondary">Marquer comme déjà existante(s) dans WooCommerce</button></div>
+    <p id="publicNotice" class="message" hidden><strong>Audit express :</strong> ce rapport montre ce que voient les clients. Pour corriger ces erreurs, importez un CSV ou connectez la boutique avec une clé API.</p>
+    <p class="help" id="markExistingHelp">Si vous avez vérifié dans WooCommerce qu’une variation signalée existe déjà, cochez sa ligne puis cliquez sur « Marquer comme déjà existante ». Elle ne sera pas ajoutée au CSV.</p>
+    <div class="actions" id="markExistingActions"><button type="button" id="markExistingVariations" class="secondary">Marquer comme déjà existante(s) dans WooCommerce</button></div>
     <div class="table-wrap"><table><thead><tr><th>Confirmer</th><th>Ligne du fichier</th><th>Produit</th><th>Anomalie</th><th>Gravité</th><th>Suite à donner</th></tr></thead><tbody id="issueRows"></tbody></table></div>
 
     <div id="manualFixes" class="review-card" hidden>
@@ -120,11 +130,13 @@
       <div id="manualSummary" class="message" aria-live="polite"></div>
     </div>
 
+    <div id="corrections">
     <h3>3. Examiner et valider les corrections</h3>
     <p class="help">Les corrections sûres (images répétées, orthographe d’une valeur alignée sur le parent, UGS manquante) peuvent être validées ensemble. Les changements de prix et le remplacement d’une UGS existante restent à examiner un par un. Les décisions ne modifient rien tant que vous n’avez pas téléchargé le CSV ou cliqué sur « Appliquer » (boutique connectée).</p>
     <div class="actions"><button type="button" id="selectAll" class="secondary">Tout sélectionner</button><button type="button" id="clearSelection" class="secondary">Effacer la sélection</button><button type="button" id="approveSelected">Valider la sélection</button><button type="button" id="rejectSelected" class="secondary">Refuser la sélection</button><button type="button" id="approveSafe" class="secondary">Valider les corrections sûres</button></div>
     <div id="proposals" class="table-wrap"></div>
     <div id="approvalSummary" class="message" aria-live="polite"></div>
+    </div>
     <div class="actions">
       <button id="downloadAudit">Télécharger le rapport d’audit client</button>
       <button id="downloadReport" class="secondary">Télécharger le rapport CSV</button>
@@ -176,7 +188,7 @@
   });
   $("skuPrefix").addEventListener("input", () => { prefixManuallyEdited = true; $("skuPrefix").value = $("skuPrefix").value.toUpperCase(); });
   // L’API WooCommerce renvoie toujours les prix avec un point décimal.
-  const decimalMode = () => state.catalog && state.catalog.source === "woocommerce" ? "." : $("decimal").value;
+  const decimalMode = () => state.catalog && state.catalog.source ? "." : $("decimal").value;
   const options = () => ({ skuPrefix: $("skuPrefix").value, regenerateAllSkus: $("regenerateAllSkus").checked, decimal: decimalMode(), allowDelete: !!(state.catalog && state.catalog.source === "woocommerce") });
 
   // ---------- Décisions ----------
@@ -225,9 +237,15 @@
     $("wooApply").hidden = !fromWoo;
     $("wooApplyButton").hidden = state.readOnly;
     $("wooReadOnlyNotice").hidden = !state.readOnly;
-    $("csvNotice").hidden = fromWoo;
+    const isPublic = state.catalog.source === "public";
+    if (isPublic && issues.length) $("summary").textContent = `${stats.products} produits et ${stats.variations} variations visibles par les clients. ${issues.length} anomalies, dont ${stats.high} de gravité élevée.`;
+    $("csvNotice").hidden = fromWoo || isPublic;
+    $("publicNotice").hidden = !isPublic;
+    ["corrections", "downloadCorrected", "markExistingHelp", "markExistingActions"].forEach(id => { $(id).hidden = isPublic; });
+    $("downloadOriginal").hidden = !state.file;
     renderIssues(followups);
     renderManual();
+    if (isPublic) $("manualFixes").hidden = true;
     renderProposals();
     applyFilter();
   }
@@ -406,7 +424,8 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
-  const baseName = () => state.woo ? new URL(state.woo.site).hostname.replace(/^www\./, "")
+  const siteOf = () => state.woo ? state.woo.site : (state.catalog && state.catalog.site) || "";
+  const baseName = () => siteOf() ? new URL(siteOf()).hostname.replace(/^www\./, "")
     : (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
 
   $("downloadReport").addEventListener("click", () => {
@@ -417,7 +436,7 @@
     if (!state.result) return;
     const html = E.buildAuditReportHTML(state.result, {
       store: $("storeName").value.trim(),
-      source: state.woo ? state.woo.site : (state.file ? state.file.name : "")
+      source: siteOf() || (state.file ? state.file.name : "")
     });
     const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
@@ -466,6 +485,35 @@
     catalog.imagesSkipped = all.length - urls.length;
   }
   const imagesNote = catalog => catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "";
+
+  // ---------- Audit express (API publique, sans clé) ----------
+  async function quickAudit() {
+    const info = $("quickInfo");
+    info.className = "message";
+    try {
+      const client = W.createPublicClient({ url: $("quickUrl").value });
+      $("quickAudit").disabled = true;
+      info.textContent = "Lecture du catalogue public…";
+      const data = await client.fetchCatalog(text => { info.textContent = text; });
+      if (!data.products.length) throw new Error("Aucun produit public trouvé à cette adresse.");
+      const catalog = W.publicToCatalog(E, data);
+      catalog.site = client.site;
+      await measureImages(catalog, text => { info.textContent = text; });
+      clearState();
+      $("file").value = "";
+      Object.assign(state, { catalog, readOnly: true });
+      info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations visibles par les clients.${imagesNote(catalog)}`;
+      info.classList.add("success");
+      $("analyze").disabled = false;
+      runAnalysis();
+    } catch (error) {
+      info.textContent = error.message || "Lecture impossible.";
+      info.classList.add("error");
+    } finally {
+      $("quickAudit").disabled = false;
+    }
+  }
+  $("quickAudit").addEventListener("click", quickAudit);
 
   // ---------- Connexion directe WooCommerce ----------
   async function loadFromStore() {
@@ -609,6 +657,10 @@
     $("regenerateAllSkus").checked = false; prefixManuallyEdited = false;
     $("prefixHelp").textContent = "Saisissez le nom de la boutique : WayPilot proposera un préfixe de 3 lettres, modifiable.";
   });
+
+  // Lien depuis la page d’accueil : app.html?boutique=maboutique.com lance l’audit express.
+  const linked = new URLSearchParams(location.search).get("boutique");
+  if (linked) { $("quickUrl").value = linked; quickAudit(); }
 })();
 </script>
 </body>

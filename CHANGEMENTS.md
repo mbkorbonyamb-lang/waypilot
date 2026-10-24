@@ -1,3 +1,13 @@
+# WayPilot 1.12.0 — audit express : l’adresse de la boutique suffit
+
+- **Audit sans clé.** On entre l’adresse d’une boutique WooCommerce, WayPilot lit son catalogue par l’API publique (Store API), celle que la boutique utilise pour s’afficher. Aucune clé, aucune installation, rien n’est modifié. On voit ce que voit un client : produits publiés et variations proposées à la vente.
+- Les prix (en unités mineures dans cette API) et les valeurs de variation (parfois en slug, « xl ») sont convertis. Les variations sont lues par lots de 100.
+- Nouveau contrôle « Affiché mais impossible à ajouter au panier » (WooCommerce déclare le produit non achetable alors qu’il a un prix).
+- En audit express, les corrections et le CSV corrigé sont masqués : il faut une clé ou un export pour corriger. Le rapport client reste disponible.
+- Page d’accueil : un champ « adresse de la boutique » lance l’audit (`app.html?boutique=…`). Nouvelle question dans la FAQ.
+- Limites : brouillons, stocks chiffrés et codes-barres ne sont pas visibles ; une boutique peut bloquer cette API.
+- 2 tests ajoutés (33 au total).
+
 # WayPilot 1.11.0 — contrôles pour Google Shopping
 
 - **Codes-barres (GTIN, EAN, UPC, ISBN).** Lus depuis la colonne « GTIN, UPC, EAN, or ISBN » de l’export CSV, ou par la connexion directe (champ natif de WooCommerce 9.2 et plus, ou champ d’une extension EAN/GTIN). Signalés : longueur fausse, clé de contrôle fausse (faute de frappe), plage réservée (2, 02, 04) ou de coupon (05, 98, 99), ISBN à 10 chiffres, code en double. Un GTIN absent n’est signalé que si d’autres produits du catalogue en ont un : une marque propre n’en a souvent aucun. WayPilot ne propose jamais de GTIN, il ne s’invente pas.

@@ -213,3 +213,68 @@ test("toCatalog : GTIN natif ou d’extension, texte alternatif des images", () 
   // Boutique sans champ GTIN (WooCommerce ancien) : pas de colonne, pas de contrôle.
   assert.equal(W.toCatalog(E, api()).col.gtin, -1);
 });
+
+// Réponses de l’API publique (Store API), relevées sur jaaray.site : montants en unités mineures, valeurs de variation en slug.
+const storeApi = () => ({
+  products: [
+    { id: 176, type: "variable", name: "Ensemble orange", sku: "AAR-001", short_description: "", description: "<p>Ensemble</p>", on_sale: false,
+      prices: { price: "42100", regular_price: "42100", sale_price: "42100", currency_minor_unit: 2 },
+      images: [{ id: 32, src: "https://x.test/o.jpg", alt: "Ensemble orange" }], categories: [{ id: 3, name: "Ensembles" }],
+      attributes: [{ id: 2, name: "Taille", taxonomy: "pa_taille", has_variations: true, terms: [{ id: 5, name: "M", slug: "m" }, { id: 6, name: "L", slug: "l" }, { id: 7, name: "XL", slug: "xl" }, { id: 8, name: "Taille unique", slug: "taille-unique" }] }],
+      variations: [{ id: 177, attributes: [{ name: "pa_taille", value: "xl" }] }, { id: 308, attributes: [{ name: "pa_taille", value: "m" }] }, { id: 309, attributes: [{ name: "pa_taille", value: "taille-unique" }] }],
+      is_purchasable: true, is_in_stock: true },
+    { id: 200, type: "simple", name: "Kimono", sku: "", short_description: "", description: "<p>Kimono</p>", on_sale: true,
+      prices: { price: "39900", regular_price: "44600", sale_price: "39900", currency_minor_unit: 2 },
+      images: [{ id: 21, src: "https://x.test/k.jpg", alt: "" }], categories: [{ id: 4, name: "Kimonos" }], attributes: [], variations: [],
+      is_purchasable: false, is_in_stock: true }
+  ],
+  variations: {
+    176: [
+      { id: 309, parent: 176, type: "variation", sku: "AAR-001-TU", on_sale: false, prices: { regular_price: "42100", sale_price: "42100", currency_minor_unit: 2 }, images: [], is_purchasable: true, is_in_stock: true },
+      { id: 177, parent: 176, type: "variation", sku: "AAR-001-XL", on_sale: false, prices: { regular_price: "42100", sale_price: "42100", currency_minor_unit: 2 }, images: [{ src: "https://x.test/o.jpg", alt: "" }], is_purchasable: true, is_in_stock: true },
+      { id: 308, parent: 176, type: "variation", sku: "AAR-001-M", on_sale: false, prices: { regular_price: "42100", sale_price: "42100", currency_minor_unit: 2 }, images: [], is_purchasable: true, is_in_stock: false }
+    ]
+  }
+});
+
+test("audit express : catalogue public converti (montants, slugs, achetable) et analysé", () => {
+  const c = W.publicToCatalog(E, storeApi());
+  assert.equal(c.source, "public");
+  assert.equal(c.rows.length, 5);
+  const kimono = c.rows.find(r => r[0] === "200");
+  assert.equal(kimono[c.col.price], "446");
+  assert.equal(kimono[c.col.salePrice], "399");
+  assert.equal(kimono[c.col.purchasable], "0");
+  const xl = c.rows.find(r => r[0] === "177");
+  assert.equal(xl[c.attrCols[0].valueCol], "XL", "slug remplacé par le nom du terme");
+  assert.equal(c.rows.find(r => r[0] === "309")[c.attrCols[0].valueCol], "Taille unique");
+  assert.deepEqual(c.rows.map(r => r[0]), ["176", "177", "308", "309", "200"], "variations triées par ID");
+
+  const r = E.analyze(c, { decimal: "." });
+  const found = r.issues.map(i => `${i.productId}:${i.code}`);
+  assert.ok(found.includes("200:NOT_PURCHASABLE"));
+  assert.ok(r.issues.some(i => i.code === "VARIATION_VALUE_MISSING" && i.value === "L"), "taille L affichée sans variation visible");
+  assert.ok(found.includes("200:IMAGE_ALT_MISSING"));
+  assert.ok(!found.some(x => x.startsWith("176:PRICE")), "pas de prix attendu sur le parent variable");
+});
+
+test("audit express : lecture sans clé, variations par lots, message clair si l’API est bloquée", async () => {
+  const data = storeApi();
+  const calls = [];
+  const fetchImpl = async url => {
+    const u = new URL(url);
+    calls.push(u.pathname + u.search);
+    assert.ok(!u.searchParams.has("consumer_key"), "aucune clé envoyée");
+    const body = u.searchParams.get("type") === "variation" ? data.variations[176].filter(v => u.searchParams.get("include").split(",").includes(String(v.id))) : data.products;
+    return { ok: true, status: 200, text: async () => JSON.stringify(body), headers: { get: () => "1" } };
+  };
+  const client = W.createPublicClient({ url: "jaaray.site", fetchImpl });
+  const got = await client.fetchCatalog();
+  assert.equal(got.products.length, 2);
+  assert.equal(got.variations[176].length, 3);
+  assert.ok(calls[0].startsWith("/wp-json/wc/store/v1/products?"));
+  assert.ok(calls.some(c => c.includes("include=177%2C308%2C309")));
+
+  const blocked = W.createPublicClient({ url: "shop.test", fetchImpl: async () => ({ ok: false, status: 401, text: async () => "{\"message\":\"non\"}", headers: { get: () => null } }) });
+  await assert.rejects(blocked.fetchCatalog(), /bloque la lecture publique/);
+});
