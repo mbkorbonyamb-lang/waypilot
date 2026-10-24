@@ -438,6 +438,12 @@
         const distinct = alts.filter((a, k) => alts.findIndex(b => b.src === a.src) === k);
         const without = distinct.filter(a => !clean(a.alt)).length;
         if (without) add(i, "IMAGE_ALT_MISSING", SEVERITY.LOW, `${without} image(s) sur ${distinct.length} sans texte alternatif : utile au référencement Google et aux lecteurs d’écran`);
+        // Correction seulement par la connexion avec clé : l’audit express ne peut rien écrire.
+        const base = displayName(get(row, "name"));
+        if (without && base && catalog.source === "woocommerce") {
+          propose({ row: i, kind: "imageAlt", col: -1, label: "Ajouter un texte alternatif aux images à partir du nom du produit", before: `${without} image(s) sans texte`, after: base, safe: true, resolves: ["IMAGE_ALT_MISSING"],
+            note: "La 2e image reçoit « … – vue 2 », la 3e « … – vue 3 », etc. Les textes déjà remplis ne changent pas. Le texte est enregistré sur l’image de la médiathèque : il vaut pour tous les produits qui l’utilisent." });
+        }
       }
 
       // GTIN (code-barres EAN, UPC, ISBN) : jamais généré, seulement contrôlé.
@@ -847,7 +853,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.12.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.13.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
