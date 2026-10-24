@@ -199,7 +199,7 @@
       }
     }
     let intPart = s, fracPart = "";
-    if (dec) {
+    if (dec && s.includes(dec)) {
       const idx = s.lastIndexOf(dec);
       if (s.indexOf(dec) !== idx) return NaN;
       intPart = s.slice(0, idx); fracPart = s.slice(idx + 1);
@@ -642,7 +642,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.7.2", SEVERITY, FOLLOWUP, normalize, parseCSV, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.8.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
