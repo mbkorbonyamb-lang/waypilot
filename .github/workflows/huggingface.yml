@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: 20
       - run: node --test tests/engine.test.js tests/woo.test.js
+      - run: python3 -m unittest discover -s tests -p "relais_test.py"
 
   publier:
     # Publie index.html (accueil), app.html (outil), mentions-legales.html, engine.js et woo.js sur le Space, uniquement depuis main et si les tests passent.
@@ -48,4 +49,18 @@ jobs:
               commit_message=f"Publication depuis GitHub ({os.environ['GITHUB_SHA'][:7]})",
           )
           print("Space mis à jour.")
+          PY
+      - name: Publier le relais de l'audit express (Space Docker waypilot/relais)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.create_repo("waypilot/relais", repo_type="space", space_sdk="docker", exist_ok=True)
+          api.upload_folder(repo_id="waypilot/relais", repo_type="space", folder_path="relais",
+                            commit_message=f"Relais depuis GitHub ({os.environ['GITHUB_SHA'][:7]})")
+          print("Relais mis à jour : https://waypilot-relais.hf.space")
           PY

@@ -1,3 +1,10 @@
+# WayPilot 1.12.1 — relais pour l’audit express
+
+- Constat après mise en ligne : WooCommerce n’autorise son API publique (Store API) que depuis le site de la boutique (`Authentication::send_cors_headers`). Depuis WayPilot, le navigateur était bloqué sur toutes les boutiques.
+- Nouveau relais (`relais/`, Space Docker `waypilot/relais`, publié par le workflow) : il lit le catalogue public à la place du navigateur. Il ne reçoit que l’adresse de la boutique, n’accepte que le chemin des produits et quelques paramètres, refuse les adresses privées (y compris après redirection), limite taille et débit, et ne tient aucun journal.
+- Si le relais dort (Space gratuit inactif depuis 48 h), le message invite à réessayer une minute plus tard.
+- Mentions légales et FAQ mises à jour. 1 test JS et 4 tests Python ajoutés.
+
 # WayPilot 1.12.0 — audit express : l’adresse de la boutique suffit
 
 - **Audit sans clé.** On entre l’adresse d’une boutique WooCommerce, WayPilot lit son catalogue par l’API publique (Store API), celle que la boutique utilise pour s’afficher. Aucune clé, aucune installation, rien n’est modifié. On voit ce que voit un client : produits publiés et variations proposées à la vente.

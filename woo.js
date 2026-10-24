@@ -35,13 +35,14 @@
    * Requêtes vers une API de la boutique (namespace « /wc/v3 » ou « /wc/store/v1 »), paramètres d’authentification éventuels.
    * Renvoie { request, getAll }.
    */
-  function httpClient({ site, namespace, auth = {}, fetchImpl, messages = API_MESSAGES }) {
+  function httpClient({ site, namespace, auth = {}, fetchImpl, messages = API_MESSAGES, urlFor }) {
     const doFetch = fetchImpl || (typeof fetch !== "undefined" ? fetch.bind(root) : null);
     if (!doFetch) throw new Error("fetch indisponible.");
     let mode = "pretty"; // /wp-json/... ; sinon ?rest_route=... (permaliens simples)
 
     const buildUrl = (path, query) => {
       const params = new URLSearchParams({ ...query, ...auth });
+      if (urlFor) return urlFor(path, params);
       return mode === "pretty"
         ? `${site}/wp-json${namespace}${path}?${params}`
         : `${site}/?rest_route=${encodeURIComponent(namespace + path)}&${params}`;
@@ -83,7 +84,7 @@
       try { return await send(method, path, opts); }
       catch (e) {
         // Permaliens « simples » : /wp-json/ n’existe pas, rest_route fonctionne.
-        if (mode === "pretty" && (e.status === 404 || (e.status && e.status < 300))) { mode = "plain"; return send(method, path, opts); }
+        if (!urlFor && mode === "pretty" && (e.status === 404 || (e.status && e.status < 300))) { mode = "plain"; return send(method, path, opts); }
         throw e;
       }
     }
@@ -159,10 +160,13 @@
    * Audit express : lecture seule, sans clé, par l’API publique de la boutique (Store API).
    * On voit exactement ce que voit un client : produits publiés, variations proposées à la vente.
    */
-  function createPublicClient({ url, fetchImpl }) {
+  function createPublicClient({ url, fetchImpl, relay }) {
     const site = normalizeStoreUrl(url);
+    // WooCommerce n’autorise cette API que depuis le site de la boutique (CORS) : depuis WayPilot,
+    // la lecture passe par le relais, qui ne reçoit que l’adresse de la boutique.
+    const urlFor = relay ? (path, params) => `${relay.replace(/\/+$/, "")}${path}?${new URLSearchParams({ site: new URL(site).host, ...Object.fromEntries(params) })}` : undefined;
     const { getAll } = httpClient({
-      site, namespace: "/wc/store/v1", fetchImpl,
+      site, namespace: "/wc/store/v1", fetchImpl, urlFor,
       messages: {
         denied: () => "La boutique bloque la lecture publique de son catalogue. Utilisez la connexion avec une clé API.",
         missing: "Catalogue public introuvable : ce n’est peut-être pas une boutique WooCommerce, ou son API publique est désactivée."
