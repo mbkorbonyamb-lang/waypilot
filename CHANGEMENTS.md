@@ -1,3 +1,10 @@
+# WayPilot 1.10.0 — journal des modifications et annulation
+
+- Après un envoi vers la boutique, « Télécharger le journal des modifications » donne un CSV avec une ligne par champ modifié : date, élément, champ, valeur avant, valeur après, résultat. C'est la preuve du travail fait, à remettre au client.
+- « Annuler les modifications envoyées » remet les anciennes valeurs (UGS, prix, images, attributs) et supprime les variations créées. Les variations supprimées ne peuvent pas être recréées : la sauvegarde reste indispensable, et la fenêtre de confirmation le rappelle.
+- Sécurité : après un envoi, un second envoi est bloqué tant que la boutique n'a pas été relue (il aurait recréé les mêmes variations).
+- 1 test ajouté (27 au total).
+
 # WayPilot 1.9.0 — mode audit en lecture seule et rapport d'audit client
 
 - Nouveau choix « Mode » dans la connexion directe : « Audit en lecture seule » (par défaut) ou « Audit et corrections ».

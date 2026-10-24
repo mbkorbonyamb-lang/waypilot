@@ -163,3 +163,36 @@ test("client : les suppressions partent avant les mises à jour", async () => {
   assert.deepEqual(log, ["delete", "update"]);
   assert.ok(res.every(r => r.ok));
 });
+
+test("journal et retour arrière : anciennes valeurs, variations créées supprimées, suppressions signalées", async () => {
+  const data = api();
+  data.variations[170] = [{ id: 336, sku: "", regular_price: "300", status: "publish", attributes: [{ id: 1, name: "Taille", option: "M" }] }, ...data.variations[170]];
+  const c = W.toCatalog(E, data);
+  const r = E.analyze(c, { skuPrefix: "JAA", decimal: ".", allowDelete: true });
+  r.proposals.forEach(p => { p.status = "approved"; });
+  r.manualCandidates.forEach(v => { v.validated = true; });
+  const plan = W.buildChanges(c, r.proposals, r.manualCandidates);
+
+  const sent = [];
+  const fetchImpl = async (url, init) => {
+    const body = JSON.parse(init.body); const kind = Object.keys(body)[0];
+    sent.push([new URL(url).pathname, body]);
+    return { ok: true, status: 200, headers: { get: () => null },
+      text: async () => JSON.stringify({ [kind]: body[kind].map((x, i) => ({ id: typeof x === "number" ? x : (x.id || 900 + i) })) }) };
+  };
+  const client = W.createClient({ url: "https://shop.test", key: "ck_a", secret: "cs_b", fetchImpl });
+  const results = await client.applyChanges(plan);
+  assert.ok(results.every(x => x.ok));
+
+  const journal = W.buildJournalCSV(results, { site: "https://shop.test", date: "2026-10-24" });
+  assert.match(journal, /"prix régulier";"445";"446";"Appliquée"/);
+  assert.match(journal, /"UGS";"";"JAA-002";"Appliquée"/);
+
+  const back = W.buildRollback(results);
+  const kimono = back.products.find(p => p.payload.id === 200).payload;
+  assert.deepEqual(kimono, { id: 200, sku: "", regular_price: "445", images: [{ id: 21 }, { id: 22 }, { id: 23 }] });
+  const parent = back.products.find(p => p.payload.id === 170).payload;
+  assert.equal(parent.attributes[0].variation, false);
+  assert.deepEqual(back.variations[170].delete.map(d => d.payload), [900, 901], "variations créées supprimées");
+  assert.equal(back.notReversible.length, 1, "la suppression du doublon n’est pas réversible");
+});

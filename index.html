@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.9.0</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.10.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -138,6 +138,7 @@
       <p class="help">Seules les corrections et les variations validées sont envoyées. Les modifications sont immédiates sur la boutique : faites une sauvegarde avant le premier essai.</p>
       <p id="wooReadOnlyNotice" class="message" hidden><strong>Mode lecture seule :</strong> aucune modification ne peut être envoyée à la boutique. Le rapport et le CSV restent disponibles. Pour appliquer des corrections, choisissez « Audit et corrections » puis relisez la boutique, avec une clé « Lecture/Écriture ».</p>
       <div class="actions"><button type="button" id="wooApplyButton">Appliquer les corrections validées sur la boutique</button><button type="button" id="wooReload" class="secondary">Relire la boutique et réanalyser</button></div>
+      <div class="actions" id="wooAfterApply" hidden><button type="button" id="wooJournal" class="secondary">Télécharger le journal des modifications</button><button type="button" id="wooUndo" class="secondary">Annuler les modifications envoyées</button></div>
       <div id="wooApplySummary" class="message" aria-live="polite"></div>
       <div id="wooResults" class="table-wrap"></div>
     </div>
@@ -157,6 +158,9 @@
     file: null, catalog: null, result: null,
     woo: null,                     // client de la boutique connectée (clés en mémoire uniquement)
     readOnly: false,               // audit en lecture seule : aucun envoi vers la boutique
+    journal: [],                   // résultats de tous les envois de la séance (corrections et annulations)
+    lastApply: null,               // résultats du dernier envoi, pour pouvoir l’annuler
+    journalSite: "",               // boutique à laquelle se rapporte le journal
     verifiedExisting: new Set(),   // clés d’anomalies confirmées comme existantes dans WooCommerce
     manual: new Map()              // clé -> variation à ajouter ; conservée entre deux affichages
   };
@@ -447,6 +451,7 @@
       const catalog = W.toCatalog(E, data);
       clearState();
       $("file").value = "";
+      if (state.journalSite !== client.site) { state.journal = []; state.journalSite = client.site; $("wooAfterApply").hidden = true; }
       Object.assign(state, { catalog, woo: client, readOnly: $("wooMode").value === "read" });
       info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations lus.`;
       info.classList.add("success");
@@ -468,6 +473,7 @@
 
   $("wooApplyButton").addEventListener("click", async () => {
     if (!state.result || !state.woo || state.readOnly) return;
+    if (state.lastApply) { alert("Des corrections viennent d’être envoyées. Relisez la boutique avant d’en appliquer d’autres : un second envoi créerait des variations en double."); return; }
     const manual = visibleManual().filter(v => v.validated && v.selected);
     let plan;
     try { plan = W.buildChanges(state.catalog, state.result.proposals, manual); }
@@ -484,11 +490,8 @@
     try {
       const results = await state.woo.applyChanges(plan, n => { $("wooApplySummary").textContent = `Envoi en cours… ${n}/${plan.count}`; });
       plan.skipped.forEach(s => results.push({ label: s.label, ok: false, error: "Ignorée : " + s.reason }));
-      const ok = results.filter(r => r.ok).length;
-      $("wooApplySummary").textContent = `${ok} modification(s) appliquée(s), ${results.length - ok} en échec ou ignorée(s). Relisez la boutique pour vérifier le résultat.`;
-      $("wooApplySummary").classList.add(ok === results.length ? "success" : "error");
-      const tbody = el("tbody", {}, results.map(r => el("tr", { className: r.ok ? "" : "needs-review" }, [el("td", { textContent: r.label }), el("td", { textContent: r.ok ? "Appliquée" : r.error })])));
-      $("wooResults").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, [el("th", { textContent: "Élément" }), el("th", { textContent: "Résultat" })])]), tbody]));
+      state.lastApply = results;
+      showResults(results, "appliquée(s)");
     } catch (error) {
       $("wooApplySummary").textContent = error.message;
       $("wooApplySummary").classList.add("error");
@@ -497,9 +500,46 @@
     }
   });
 
+  function showResults(results, verb) {
+    state.journal.push(...results);
+    const ok = results.filter(r => r.ok).length;
+    $("wooApplySummary").className = "message " + (ok === results.length ? "success" : "error");
+    $("wooApplySummary").textContent = `${ok} modification(s) ${verb}, ${results.length - ok} en échec ou ignorée(s). Relisez la boutique pour vérifier le résultat.`;
+    const tbody = el("tbody", {}, results.map(r => el("tr", { className: r.ok ? "" : "needs-review" }, [el("td", { textContent: r.label }), el("td", { textContent: r.ok ? "OK" : r.error })])));
+    $("wooResults").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, [el("th", { textContent: "Élément" }), el("th", { textContent: "Résultat" })])]), tbody]));
+    $("wooAfterApply").hidden = false;
+    $("wooUndo").hidden = !state.lastApply || !state.lastApply.some(r => r.ok && r.kind !== "delete");
+  }
+
+  $("wooJournal").addEventListener("click", () => {
+    if (!state.journal.length) return;
+    download(W.buildJournalCSV(state.journal, { site: state.woo ? state.woo.site : "" }), `${baseName()}_journal_waypilot.csv`);
+  });
+
+  $("wooUndo").addEventListener("click", async () => {
+    if (!state.lastApply || !state.woo) return;
+    const plan = W.buildRollback(state.lastApply);
+    if (!plan.count) { alert("Rien à annuler."); return; }
+    const warn = plan.notReversible.length ? `\n\n${plan.notReversible.length} suppression(s) ne peuvent pas être annulées ici : restaurez la sauvegarde si besoin.` : "";
+    if (!confirm(`Remettre les anciennes valeurs sur ${plan.count} élément(s) et supprimer les variations créées ?${warn}`)) return;
+    $("wooUndo").disabled = true;
+    try {
+      const results = await state.woo.applyChanges(plan);
+      state.lastApply = null;
+      showResults(results, "annulée(s)");
+    } catch (error) {
+      $("wooApplySummary").textContent = error.message;
+      $("wooApplySummary").className = "message error";
+    } finally {
+      $("wooUndo").disabled = false;
+    }
+  });
+
   // ---------- Fichier ----------
   function clearState() {
-    Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false });
+    Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false, lastApply: null });
+    $("wooAfterApply").hidden = !state.journal.length; // le journal de la séance reste téléchargeable après relecture
+    $("wooUndo").hidden = true;
     $("wooResults").replaceChildren();
     $("wooApplySummary").textContent = "";
     state.verifiedExisting.clear();
