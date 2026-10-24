@@ -157,3 +157,28 @@ test("performance : 20 000 lignes en moins de 3 secondes", () => {
   assert.equal(r.stats.rows, 25000);
   assert.ok(ms < 3000, `${ms} ms`);
 });
+
+test("1.7.1 : noms sans HTML, ID WooCommerce, libellé des tailles sans variation", () => {
+  const c = fixture("woocommerce-fr-theme-span.csv");
+  const r = E.analyze(c, {});
+  const variationProposal = r.proposals.find(p => p.row === 1);
+  assert.equal(variationProposal.product, "Ensemble blanc cassé - M");
+  assert.equal(variationProposal.productId, "171");
+  const missing = r.issues.filter(i => i.code === "VARIATION_VALUE_MISSING");
+  assert.deepEqual(missing.map(i => i.value), ["L", "XL"]);
+  assert.equal(missing[0].productId, "170");
+  assert.match(missing[0].message, /onglet Variations/);
+  assert.equal(r.manualCandidates[0].name, "Ensemble blanc cassé - L");
+  const report = E.buildReportCSV(r.issues);
+  assert.ok(report.split("\r\n")[0].includes('"ID"'));
+  assert.ok(report.includes('"170"'));
+});
+
+test("1.7.1 : le score tient compte des anomalies faibles", () => {
+  // Catalogue complet mais sans aucun SKU : score < 100, sans être catastrophique.
+  const c = E.parseCSV("ID,Type,SKU,Name,Regular price,Description,Categories,Images\n1,simple,,A,10,Desc,Cat,https://x.test/1.jpg\n2,simple,,B,12,Desc,Cat,https://x.test/2.jpg\n");
+  const r = E.analyze(c, {});
+  assert.equal(r.stats.score, 85);
+  const clean = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price,Description,Categories,Images\n1,simple,S1,A,10,Desc,Cat,https://x.test/1.jpg\n"), {});
+  assert.equal(clean.stats.score, 100);
+});

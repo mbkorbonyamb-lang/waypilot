@@ -260,6 +260,9 @@
 
   function cleanId(value) { return normalize(value).replace(/^id\s*:\s*/, "").trim(); }
 
+  // Nom lisible : sans balises HTML (certains thèmes exportent « T-shirt<span> - </span>XL »).
+  function displayName(value) { return stripHtml(value).replace(/\s+/g, " ").trim(); }
+
   // ---------- Analyse ----------
 
   const SIZE_TOKENS = { xs: "XS", s: "S", m: "M", l: "L", xl: "XL", xxl: "XXL", xxxl: "XXXL", "2xl": "2XL", "3xl": "3XL", "4xl": "4XL" };
@@ -284,7 +287,8 @@
       code, severity, message,
       row: rowIndex,
       line: rowIndex >= 0 ? lines[rowIndex] : null,
-      product: rowIndex >= 0 ? clean(get(rows[rowIndex], "name")) : "",
+      product: rowIndex >= 0 ? displayName(get(rows[rowIndex], "name")) : "",
+      productId: rowIndex >= 0 ? clean(get(rows[rowIndex], "id")).replace(/^id\s*:\s*/i, "") : "",
       ...extra
     });
 
@@ -318,7 +322,7 @@
     const seenNames = new Map(), seenSkus = new Map();
     const parentOf = new Array(rows.length).fill(-1);
     const proposals = [];
-    const propose = p => { p.id = proposals.length; p.status = "pending"; p.line = lines[p.row]; p.product = clean(get(rows[p.row], "name")); proposals.push(p); };
+    const propose = p => { p.id = proposals.length; p.status = "pending"; p.line = lines[p.row]; p.product = displayName(get(rows[p.row], "name")); p.productId = clean(get(rows[p.row], "id")).replace(/^id\s*:\s*/i, ""); proposals.push(p); };
 
     rows.forEach((row, i) => {
       const t = types[i];
@@ -468,7 +472,7 @@
         splitValues(pa.value).forEach(option => {
           if (u.values.has(normalize(option))) return;
           const detail = `${k}=${normalize(option)}`;
-          add(p, "VARIATION_VALUE_MISSING", SEVERITY.MEDIUM, `Variation « ${option} » (${pa.name}) annoncée par le parent mais absente du CSV — vérifier qu’elle existe dans WooCommerce`, { detail, attribute: pa.name, value: option });
+          add(p, "VARIATION_VALUE_MISSING", SEVERITY.MEDIUM, `${pa.name} « ${option} » proposée sur le produit, mais aucune variation « ${option} » dans l’export : sur la boutique, elle n’est sans doute pas commandable. Vérifiez l’onglet Variations du produit (variation créée, avec un prix et activée).`, { detail, attribute: pa.name, value: option });
           // Ajout assisté seulement quand un seul attribut est utilisé : la combinaison est alors sans ambiguïté.
           if (used.size === 1) {
             const parentId = cleanId(get(parentRow, "id")), parentSku = clean(get(parentRow, "sku"));
@@ -480,10 +484,10 @@
             manualCandidates.push({
               key: `${p}|${detail}`,
               issueKey: `${p}|VARIATION_VALUE_MISSING|${detail}`,
-              parentRow: p, parentRef, parentName: clean(get(parentRow, "name")),
+              parentRow: p, parentRef, parentName: displayName(get(parentRow, "name")),
               attributeNumber: pa.n, attributeName: pa.name, attributeValue: option,
               attributeGlobal: pa.globalCol >= 0 ? clean(parentRow[pa.globalCol]) : "",
-              name: `${clean(get(parentRow, "name"))} - ${option}`,
+              name: `${displayName(get(parentRow, "name"))} - ${option}`,
               price, priceSource: parentPrice ? "prix du parent" : (price ? "prix commun des autres variations" : "à saisir"),
               sku: "", stockQty: "", enabled: true, selected: true, validated: false
             });
@@ -540,14 +544,19 @@
       issue.proposalIds = (proposalsByRow.get(issue.row) || []).filter(p => p.resolves.includes(issue.code)).map(p => p.id);
     });
 
-    const scored = new Set(issues.filter(x => x.row >= 0 && x.severity !== SEVERITY.LOW).map(x => x.row));
+    // Score : chaque ligne perd des points selon ses anomalies (élevée 1, moyenne 0,5, faible 0,15), plafonné à 1 par ligne.
+    const WEIGHT = { [SEVERITY.HIGH]: 1, [SEVERITY.MEDIUM]: 0.5, [SEVERITY.LOW]: 0.15 };
+    const penalty = new Map();
+    issues.filter(x => x.row >= 0).forEach(x => penalty.set(x.row, Math.min(1, (penalty.get(x.row) || 0) + WEIGHT[x.severity])));
+    const lost = [...penalty.values()].reduce((a, b) => a + b, 0);
     const stats = {
       rows: rows.length,
       products: types.filter(t => !t.isVariation).length,
       variations: types.filter(t => t.isVariation).length,
       issues: issues.length,
       high: issues.filter(x => x.severity === SEVERITY.HIGH).length,
-      score: rows.length ? Math.round(100 * (rows.length - scored.size) / rows.length) : 0
+      score: rows.length ? Math.round(100 * (1 - lost / rows.length)) : 0,
+      rowsWithIssues: penalty.size
     };
     return { issues, proposals, manualCandidates, stats };
   }
@@ -576,9 +585,9 @@
   }
 
   function buildReportCSV(issues, state = {}) {
-    const cols = ["Ligne du fichier", "Produit", "Code", "Anomalie", "Gravité", "Suite à donner"];
+    const cols = ["Ligne du fichier", "ID", "Produit", "Code", "Anomalie", "Gravité", "Suite à donner"];
     const out = [cols.map(csvField).join(";")];
-    issues.forEach(x => out.push([x.line ?? "—", x.product, x.code, x.message, x.severity, followupFor(x, state)].map(v => csvField(safeCell(v))).join(";")));
+    issues.forEach(x => out.push([x.line ?? "—", x.productId ?? "", x.product, x.code, x.message, x.severity, followupFor(x, state)].map(v => csvField(safeCell(v))).join(";")));
     return "﻿" + out.join("\r\n");
   }
 
@@ -625,7 +634,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.7.0", SEVERITY, FOLLOWUP, normalize, parseCSV, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.7.1", SEVERITY, FOLLOWUP, normalize, parseCSV, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
