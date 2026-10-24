@@ -670,7 +670,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.8.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.8.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

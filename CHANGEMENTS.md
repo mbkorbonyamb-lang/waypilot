@@ -1,3 +1,8 @@
+# WayPilot 1.8.2 — retour visible après validation
+
+- Après « Valider la sélection », « Refuser la sélection » ou « Valider les corrections sûres », un message vert indique combien de corrections ont été prises en compte, et la page défile jusqu'au résumé. Avant, rien de visible ne changeait (retour du test JAARAY).
+- Bilan du test JAARAY en connexion directe (1.8.1) : 55 modifications appliquées, 0 échec ; relecture : 25 produits, 10 variations, aucune anomalie.
+
 # WayPilot 1.8.1 — variations en double (retour du test JAARAY en connexion directe)
 
 - Constat sur JAARAY : 30 variations dans la boutique pour 10 tailles réelles. Les 20 doublons ont des ID récents et viennent très probablement des imports CSV faits quand la colonne ID n'était pas reconnue (bug corrigé en 1.7.2).
