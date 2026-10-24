@@ -51,6 +51,8 @@ jobs:
           print("Space mis à jour.")
           PY
       - name: Publier le relais de l'audit express (Space Docker waypilot/relais)
+        # Les Spaces Docker exigent un abonnement Hugging Face PRO : étape activée seulement si la variable PUBLIER_RELAIS_HF vaut « oui ».
+        if: vars.PUBLIER_RELAIS_HF == 'oui'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
