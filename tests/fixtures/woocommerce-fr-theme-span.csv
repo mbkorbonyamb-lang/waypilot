@@ -1,0 +1,4 @@
+ID;Type;UGS;Nom;Publié;Description;En stock ?;Stock;Tarif régulier;Catégories;Images;Parent;Nom de l’attribut 1;Valeur(s) de l’attribut 1;Attribut 1 visible;Attribut 1 global
+170;variable;;Ensemble blanc cassé;1;Ensemble en lin;1;;;Ensembles;https://x.test/a.jpg;;Taille;M, L, XL;1;1
+171;variation;;Ensemble blanc cassé<span> - </span>M;1;;1;2;450;;;id:170;Taille;M;;1
+180;simple;;Jupe évasée blanche;1;Jupe;1;3;300;Jupes;https://x.test/b.jpg;;;;;

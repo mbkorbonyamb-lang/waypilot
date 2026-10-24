@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.7.0</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.7.1</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -90,7 +90,7 @@
       <div class="metric"><span>Avec correction proposée</span><strong id="actionCount">0</strong></div>
       <div class="metric"><span>À vérifier / informations manquantes</span><strong id="reviewCount">0</strong></div>
     </div>
-    <p class="help">Score qualité : part des lignes sans anomalie moyenne ou élevée.</p>
+    <p class="help">Score qualité : 100 % = aucune anomalie. Chaque ligne perd des points selon ses anomalies (élevée : 1 point, moyenne : 0,5, faible : 0,15 ; au plus 1 point par ligne).</p>
     <div id="summary" class="message" aria-live="polite"></div>
     <div class="review-toolbar">
       <label for="issueFilter"><strong>Filtrer les anomalies :</strong></label>
@@ -160,6 +160,9 @@
     return node;
   }
 
+  // Nom du produit + ID WooCommerce, pour le retrouver vite dans l’administration.
+  const productCell = item => el("td", {}, item.productId ? [item.product, el("span", { className: "code", textContent: `ID ${item.productId}` })] : [item.product]);
+
   // ---------- Analyse ----------
   function runAnalysis() {
     const hasDecisions = state.result && (state.result.proposals.some(p => p.status !== "pending") || [...state.manual.values()].some(v => v.validated));
@@ -206,7 +209,7 @@
       tr.append(
         el("td", {}, check),
         el("td", { textContent: issue.line ?? "—" }),
-        el("td", { textContent: issue.product }),
+        productCell(issue),
         el("td", {}, [issue.message, el("span", { className: "code", textContent: issue.code })]),
         el("td", { className: "severity", textContent: issue.severity }),
         el("td", {}, open ? [el("span", { className: "review-tag", textContent: "À VÉRIFIER" }), " ", f] : [f])
@@ -312,7 +315,7 @@
       const labelCell = el("td", {}, [p.label + (p.safe ? "" : " (à examiner)")]);
       if (p.note) labelCell.append(el("div", { className: "note", textContent: p.note }));
       tbody.append(el("tr", {}, [
-        el("td", {}, [check]), el("td", { textContent: p.line }), el("td", { textContent: p.product }),
+        el("td", {}, [check]), el("td", { textContent: p.line }), productCell(p),
         labelCell, el("td", { textContent: p.before }), el("td", {}, [value]), el("td", { className: "decision" }, [select])
       ]));
     });

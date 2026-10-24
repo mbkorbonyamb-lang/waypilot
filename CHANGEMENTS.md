@@ -1,3 +1,11 @@
+# WayPilot 1.7.1 — retours du premier test réel (catalogue JAARAY)
+
+- Le score qualité compte maintenant les anomalies faibles. Chaque ligne perd 1 point par anomalie élevée, 0,5 par anomalie moyenne et 0,15 par anomalie faible, avec au plus 1 point par ligne. Avant, un catalogue sans aucun SKU obtenait 94 %.
+- L'ID WooCommerce s'affiche sous le nom du produit (anomalies et corrections) et devient une colonne du rapport CSV.
+- Les noms sont affichés sans HTML : « T-shirt<span> - </span>XL » devient « T-shirt - XL ». Le CSV corrigé reste identique à l'original.
+- Libellé plus clair pour une taille proposée sur le produit mais sans variation : il explique la conséquence (taille non commandable) et où vérifier (onglet Variations).
+- 2 tests ajoutés (16 au total).
+
 # WayPilot 1.7.0 — changements par rapport à 1.6.3
 
 Copie de travail. Rien n'a été publié sur le Space Hugging Face.
