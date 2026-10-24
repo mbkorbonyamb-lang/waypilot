@@ -196,3 +196,20 @@ test("journal et retour arrière : anciennes valeurs, variations créées suppri
   assert.deepEqual(back.variations[170].delete.map(d => d.payload), [900, 901], "variations créées supprimées");
   assert.equal(back.notReversible.length, 1, "la suppression du doublon n’est pas réversible");
 });
+
+test("toCatalog : GTIN natif ou d’extension, texte alternatif des images", () => {
+  const data = api();
+  data.products[1].global_unique_id = "4006381333932";
+  data.products[1].images[0].alt = "Kimono vert";
+  data.products[0].meta_data = [{ key: "_wpm_gtin_code", value: "4006381333931" }];
+  const c = W.toCatalog(E, data);
+  assert.ok(c.col.gtin >= 0);
+  assert.equal(c.rows[0][c.col.gtin], "4006381333931");
+  assert.equal(c.rows[2][c.col.gtin], "4006381333932");
+  const r = E.analyze(c, { decimal: "." });
+  assert.ok(r.issues.some(i => i.code === "GTIN_INVALID" && i.productId === "200"));
+  const alt = r.issues.find(i => i.code === "IMAGE_ALT_MISSING" && i.productId === "200");
+  assert.match(alt.message, /^1 image\(s\) sur 2/, "images répétées comptées une fois");
+  // Boutique sans champ GTIN (WooCommerce ancien) : pas de colonne, pas de contrôle.
+  assert.equal(W.toCatalog(E, api()).col.gtin, -1);
+});

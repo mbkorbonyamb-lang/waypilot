@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.10.2</div></header>
+<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.11.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -439,6 +439,34 @@
     download(E.buildCorrectedCSV(state.catalog, state.result.proposals, manual), `${baseName()}_corrige_waypilot.csv`);
   });
 
+  // ---------- Taille des images ----------
+  // Google refuse les images sous 100 px (250 px pour les vêtements) et exigera 500 px en 2027.
+  // Une balise <img> suffit pour lire la taille réelle : aucune autorisation CORS n’est nécessaire.
+  const MAX_IMAGES = 400;
+  async function measureImages(catalog, report) {
+    const col = catalog.col.images;
+    if (col < 0) return;
+    const all = [...new Set(catalog.rows.flatMap(r => String(r[col] || "").split(/\s*,\s*/).map(u => u.trim()).filter(u => /^https?:\/\//i.test(u))))];
+    const urls = all.slice(0, MAX_IMAGES);
+    if (!urls.length) return;
+    const sizes = {};
+    let done = 0;
+    const one = src => new Promise(resolve => {
+      const img = new Image();
+      let settled = false;
+      const finish = value => { if (settled) return; settled = true; clearTimeout(timer); if (value) sizes[src] = value; resolve(); };
+      const timer = setTimeout(() => finish(null), 10000); // trop lente : ni taille ni erreur, pas d’alerte
+      img.onload = () => finish({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => finish({ broken: true });
+      img.src = src;
+    }).then(() => report(`Vérification de la taille des images : ${++done} / ${urls.length}`));
+    const queue = urls.slice();
+    await Promise.all(Array.from({ length: 8 }, async () => { while (queue.length) await one(queue.shift()); }));
+    catalog.imageSizes = sizes;
+    catalog.imagesSkipped = all.length - urls.length;
+  }
+  const imagesNote = catalog => catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "";
+
   // ---------- Connexion directe WooCommerce ----------
   async function loadFromStore() {
     const info = $("wooInfo");
@@ -449,11 +477,12 @@
       info.textContent = "Lecture du catalogue…";
       const data = await client.fetchCatalog(text => { info.textContent = text; });
       const catalog = W.toCatalog(E, data);
+      await measureImages(catalog, text => { info.textContent = text; });
       clearState();
       $("file").value = "";
       if (state.journalSite !== client.site) { state.journal = []; state.journalSite = client.site; $("wooAfterApply").hidden = true; }
       Object.assign(state, { catalog, woo: client, readOnly: $("wooMode").value === "read" });
-      info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations lus.`;
+      info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations lus.${imagesNote(catalog)}`;
       info.classList.add("success");
       $("analyze").disabled = false;
       runAnalysis();
@@ -556,9 +585,11 @@
     if (!file) return;
     if (file.size > 15 * 1024 * 1024) { $("fileInfo").textContent = "Fichier trop volumineux (limite : 15 Mo)."; $("fileInfo").classList.add("error"); $("file").value = ""; return; }
     try {
-      state.catalog = E.parseCSV(await file.text());
+      const catalog = E.parseCSV(await file.text());
+      await measureImages(catalog, text => { $("fileInfo").textContent = text; });
+      state.catalog = catalog;
       state.file = file;
-      $("fileInfo").textContent = `${file.name} — ${state.catalog.rows.length} lignes prêtes à analyser.`;
+      $("fileInfo").textContent = `${file.name} — ${state.catalog.rows.length} lignes prêtes à analyser.${imagesNote(catalog)}`;
       $("fileInfo").classList.add("success");
       $("analyze").disabled = false;
     } catch (error) {

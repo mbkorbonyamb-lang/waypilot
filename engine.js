@@ -115,7 +115,8 @@
     manageStock: ["manage stock?", "manage stock", "gerer le stock ?"],
     status: ["status", "statut"],
     published: ["publie", "published"],
-    images: ["images", "image", "images du produit", "product images"]
+    images: ["images", "image", "images du produit", "product images"],
+    gtin: ["gtin, upc, ean, or isbn", "gtin, upc, ean ou isbn", "gtin", "ean", "upc", "isbn", "code-barres", "code barre", "global unique id", "global_unique_id"]
   };
 
   // Colonnes d'attributs WooCommerce, en français et en anglais, numérotées.
@@ -263,6 +264,30 @@
   // Nom lisible : sans balises HTML (certains thèmes exportent « T-shirt<span> - </span>XL »).
   function displayName(value) { return stripHtml(value).replace(/\s+/g, " ").trim(); }
 
+  // ---------- Codes GTIN (EAN, UPC, ISBN) ----------
+
+  /**
+   * Raison pour laquelle Google Merchant Center refuserait ce GTIN, ou null s'il est valide (ou vide).
+   * Règles : 8, 12, 13 ou 14 chiffres, clé de contrôle GS1 juste, pas de plage réservée (2, 02, 04) ni de coupon (05, 98, 99).
+   */
+  function gtinProblem(raw) {
+    const s = String(raw ?? "").replace(/[\s-]/g, "");
+    if (!s) return null;
+    if (/^\d{9}[\dXx]$/.test(s)) return "ISBN à 10 chiffres, Google demande l’ISBN à 13 chiffres";
+    if (!/^\d+$/.test(s)) return "il contient autre chose que des chiffres";
+    if (![8, 12, 13, 14].includes(s.length)) return `${s.length} chiffres au lieu de 8, 12, 13 ou 14`;
+    const digits = s.split("").map(Number);
+    const check = digits.pop();
+    const sum = digits.reverse().reduce((t, d, i) => t + d * (i % 2 === 0 ? 3 : 1), 0);
+    if ((10 - sum % 10) % 10 !== check) return "la clé de contrôle (dernier chiffre) est fausse, il y a sans doute une faute de frappe";
+    if (s.length > 8) {
+      const g13 = s.length === 14 ? s.slice(1) : s.padStart(13, "0");
+      if (/^(2|02|04)/.test(g13)) return "code réservé à un usage interne (préfixe 2, 02 ou 04), pas un code fabricant";
+      if (/^(05|98|99)/.test(g13)) return "code de bon de réduction, pas un code produit";
+    }
+    return null;
+  }
+
   // ---------- Analyse ----------
 
   const SIZE_TOKENS = { xs: "XS", s: "S", m: "M", l: "L", xl: "XL", xxl: "XXL", xxxl: "XXXL", "2xl": "2XL", "3xl": "3XL", "4xl": "4XL" };
@@ -319,7 +344,10 @@
       name: clean(row[a.nameCol]), value: clean(row[a.valueCol])
     })).filter(a => a.name);
 
-    const seenNames = new Map(), seenSkus = new Map();
+    const seenNames = new Map(), seenSkus = new Map(), seenGtins = new Map();
+    // GTIN absent signalé seulement si le catalogue en utilise ailleurs : une marque propre n’en a souvent aucun.
+    const catalogUsesGtin = col.gtin >= 0 && rows.some(r => clean(get(r, "gtin")));
+    const imageSizes = catalog.imageSizes || null;
     const parentOf = new Array(rows.length).fill(-1);
     const proposals = [];
     const propose = p => { p.id = proposals.length; p.status = "pending"; p.line = lines[p.row]; p.product = displayName(get(rows[p.row], "name")); p.productId = clean(get(rows[p.row], "id")).replace(/^id\s*:\s*/i, ""); proposals.push(p); };
@@ -383,6 +411,40 @@
         if (unique.length < list.length) {
           add(i, "IMAGE_DUPLICATE", SEVERITY.LOW, "Image répétée plusieurs fois dans la liste des images du produit");
           propose({ row: i, kind: "images", col: col.images, label: "Retirer les URL d’images répétées", before: String(images), after: unique.join(", "), safe: true, resolves: ["IMAGE_DUPLICATE"] });
+        }
+        // Dimensions mesurées dans le navigateur (catalog.imageSizes) : seuils de Google Merchant Center.
+        if (imageSizes) {
+          const measured = unique.map(url => imageSizes[url]).filter(Boolean);
+          const broken = measured.filter(m => m.broken).length;
+          if (broken) add(i, "IMAGE_BROKEN", SEVERITY.MEDIUM, `${broken} image(s) ne s’affichent pas : adresse introuvable ou bloquée. À vérifier sur la fiche.`);
+          const sized = measured.filter(m => !m.broken && m.width && m.height);
+          if (sized.length) {
+            const smallest = sized.reduce((a, b) => (Math.min(b.width, b.height) < Math.min(a.width, a.height) ? b : a));
+            const side = Math.min(smallest.width, smallest.height), dims = `${smallest.width} × ${smallest.height} px`;
+            if (side < 250) add(i, "IMAGE_TOO_SMALL", SEVERITY.MEDIUM, `Image trop petite (${dims}) : Google Shopping la refuse sous 250 px pour les vêtements et sous 100 px pour les autres produits`);
+            else if (side < 500) add(i, "IMAGE_BELOW_500", SEVERITY.LOW, `Image de ${dims} : Google exigera au moins 500 × 500 px à partir du 31 janvier 2027`);
+          }
+        }
+      }
+      // Texte alternatif : connu seulement par la connexion directe (absent des exports CSV).
+      const alts = catalog.imageAlt && catalog.imageAlt[i];
+      if (alts && alts.length && !t.isVariation) {
+        const distinct = alts.filter((a, k) => alts.findIndex(b => b.src === a.src) === k);
+        const without = distinct.filter(a => !clean(a.alt)).length;
+        if (without) add(i, "IMAGE_ALT_MISSING", SEVERITY.LOW, `${without} image(s) sur ${distinct.length} sans texte alternatif : utile au référencement Google et aux lecteurs d’écran`);
+      }
+
+      // GTIN (code-barres EAN, UPC, ISBN) : jamais généré, seulement contrôlé.
+      if (col.gtin >= 0 && !t.isVariable && !t.isGrouped) {
+        const gtin = clean(get(row, "gtin"));
+        if (gtin) {
+          const problem = gtinProblem(gtin);
+          const k = gtin.replace(/[\s-]/g, "");
+          if (problem) add(i, "GTIN_INVALID", SEVERITY.MEDIUM, `Code GTIN « ${gtin} » invalide : ${problem}. Google Shopping peut refuser ou limiter le produit.`);
+          else if (seenGtins.has(k)) add(i, "GTIN_DUPLICATE", SEVERITY.MEDIUM, `Code GTIN « ${gtin} » déjà utilisé (ligne ${lines[seenGtins.get(k)]}) : chaque article doit avoir le sien`);
+          else seenGtins.set(k, i);
+        } else if (catalogUsesGtin) {
+          add(i, "GTIN_MISSING", SEVERITY.LOW, "Code GTIN absent alors que d’autres produits du catalogue en ont un. À renseigner s’il existe (code-barres du fabricant), sans jamais l’inventer.");
         }
       }
 
@@ -589,7 +651,7 @@
     return { issues, proposals, manualCandidates, stats };
   }
 
-  const MISSING_INFO_CODES = new Set(["DESCRIPTION_MISSING", "DESCRIPTION_COLUMN_MISSING", "CATEGORY_MISSING", "CATEGORY_COLUMN_MISSING", "IMAGE_MISSING", "NAME_COLUMN_MISSING", "PRICE_COLUMN_MISSING"]);
+  const MISSING_INFO_CODES = new Set(["GTIN_MISSING", "IMAGE_ALT_MISSING", "DESCRIPTION_MISSING", "DESCRIPTION_COLUMN_MISSING", "CATEGORY_MISSING", "CATEGORY_COLUMN_MISSING", "IMAGE_MISSING", "NAME_COLUMN_MISSING", "PRICE_COLUMN_MISSING"]);
 
   /** Suite à donner pour une anomalie, selon l’état des décisions. */
   function followupFor(issue, state = {}) {
@@ -669,6 +731,7 @@
   const REPORT_GROUPS = [
     { key: "sales", title: "Peut faire perdre des ventes", intro: "Le client ne peut pas commander, ou tombe sur un produit incomplet." },
     { key: "trust", title: "Information fausse ou incohérente", intro: "Le client voit une information contradictoire ou manquante, ce qui fait douter." },
+    { key: "google", title: "Visibilité sur Google", intro: "Google Shopping et les fiches produits gratuites refusent ou limitent les produits concernés." },
     { key: "ops", title: "Gestion et présentation", intro: "Pas visible tout de suite par le client, mais source d’erreurs de stock, d’import ou de présentation." }
   ];
   const REPORT_CODES = {
@@ -695,7 +758,14 @@
     SKU_MISSING: ["ops", "Référence (UGS) absente"],
     SKU_DUPLICATE: ["ops", "Référence (UGS) utilisée deux fois"],
     IMAGE_DUPLICATE: ["ops", "Même image répétée dans la galerie"],
-    CATEGORY_MISSING: ["ops", "Produit sans catégorie"]
+    CATEGORY_MISSING: ["ops", "Produit sans catégorie"],
+    IMAGE_BROKEN: ["trust", "Image qui ne s’affiche pas"],
+    GTIN_INVALID: ["google", "Code-barres (GTIN) invalide"],
+    GTIN_DUPLICATE: ["google", "Même code-barres (GTIN) sur deux articles"],
+    GTIN_MISSING: ["google", "Code-barres (GTIN) absent"],
+    IMAGE_TOO_SMALL: ["google", "Image trop petite pour Google Shopping"],
+    IMAGE_BELOW_500: ["google", "Image sous 500 px, exigés par Google à partir de 2027"],
+    IMAGE_ALT_MISSING: ["google", "Images sans texte alternatif"]
   };
 
   function escapeHtml(value) {
@@ -740,7 +810,7 @@
 body{font-family:Inter,Arial,sans-serif;color:#15243b;max-width:900px;margin:32px auto;padding:0 20px;line-height:1.5}
 header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1769ff;padding-bottom:12px}
 .brand{font-weight:800;font-size:22px}.brand span{color:#1769ff}.meta{color:#627087;font-size:13px;text-align:right}
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0}
 .box{border:1px solid #e0e7f0;border-radius:10px;padding:14px}.box span{display:block;color:#627087;font-size:12px}.box strong{font-size:26px}
 h1{font-size:26px;margin:24px 0 4px}h2{font-size:18px;margin:28px 0 4px}.n{background:#eaf1ff;color:#2458b8;border-radius:12px;padding:2px 9px;font-size:13px}
 .intro{color:#627087;margin:0 0 8px;font-size:14px}.ok{color:#087443}
@@ -754,9 +824,7 @@ footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0
 <h1>Audit du catalogue${info.store ? ` — ${escapeHtml(info.store)}` : ""}</h1>
 <div class="summary">
 <div class="box"><span>Score qualité</span><strong>${stats.score} %</strong></div>
-<div class="box"><span>Peut faire perdre des ventes</span><strong>${count("sales")}</strong></div>
-<div class="box"><span>Information fausse ou incohérente</span><strong>${count("trust")}</strong></div>
-<div class="box"><span>Gestion et présentation</span><strong>${count("ops")}</strong></div>
+${REPORT_GROUPS.map(g => `<div class="box"><span>${g.title}</span><strong>${count(g.key)}</strong></div>`).join("\n")}
 </div>
 <p>${stats.products} produits et ${stats.variations} variations contrôlés. ${issues.length ? `${issues.length} anomalies trouvées sur ${stats.rowsWithIssues} lignes.` : "Aucune anomalie trouvée."}</p>
 ${structural.length ? `<p class="intro">Remarques sur le fichier : ${structural.map(i => escapeHtml(i.message)).join(" ; ")}.</p>` : ""}
@@ -772,7 +840,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.10.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.11.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

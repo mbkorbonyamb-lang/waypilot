@@ -145,6 +145,16 @@
   const IN_STOCK = { instock: "1", outofstock: "0", onbackorder: "backorder" };
   const joinNames = list => (list || []).map(x => x.name).filter(Boolean).join(", ");
 
+  // GTIN : champ natif global_unique_id (WooCommerce 9.2 et plus), sinon champ d’une extension EAN/GTIN.
+  const GTIN_META = /(^|_)(gtin|ean|upc|isbn)(_|$)|gtin/i;
+  const gtinOf = x => {
+    if (clean(x.global_unique_id)) return clean(x.global_unique_id);
+    const m = (x.meta_data || []).find(d => GTIN_META.test(d.key || "") && typeof d.value === "string" && /\d/.test(d.value));
+    return m ? clean(m.value) : "";
+  };
+  const hasGtinField = x => "global_unique_id" in x || !!gtinOf(x);
+  const altOf = list => list.filter(i => i && i.src).map(i => ({ src: i.src, alt: clean(i.alt) }));
+
   /**
    * Construit un catalogue au format CSV WooCommerce (en-têtes anglais) à partir des réponses de l’API.
    * catalog.meta[i] garde ce qu’il faut pour écrire les corrections : id, parent, images, attributs.
@@ -153,6 +163,11 @@
     const parents = products.filter(p => p.type !== "variation");
     const maxAttrs = Math.max(1, ...parents.map(p => (p.attributes || []).length));
     const headers = ["ID", "Type", "SKU", "Name", "Published", "Short description", "Description", "Sale price", "Regular price", "Categories", "Images", "Parent", "In stock?", "Manage stock?", "Stock"];
+    // Colonne GTIN seulement si la boutique expose ce champ : sinon, aucun contrôle GTIN (pas de fausse alerte).
+    const withGtin = products.some(hasGtinField) || Object.values(variations).some(l => l.some(hasGtinField));
+    if (withGtin) headers.push("GTIN, UPC, EAN, or ISBN");
+    const gtinCells = x => (withGtin ? [gtinOf(x)] : []);
+    const imageAlt = [];
     for (let n = 1; n <= maxAttrs; n++) headers.push(`Attribute ${n} name`, `Attribute ${n} value(s)`, `Attribute ${n} visible`, `Attribute ${n} global`);
     const rows = [], meta = [];
     const stockCells = x => {
@@ -163,12 +178,13 @@
     parents.forEach(p => {
       const attrs = p.attributes || [];
       const row = [String(p.id), p.type, clean(p.sku), clean(p.name), PUBLISHED[p.status] ?? "0", p.short_description || "", p.description || "",
-        clean(p.sale_price), clean(p.regular_price), joinNames(p.categories), (p.images || []).map(i => i.src).join(", "), "", ...stockCells(p)];
+        clean(p.sale_price), clean(p.regular_price), joinNames(p.categories), (p.images || []).map(i => i.src).join(", "), "", ...stockCells(p), ...gtinCells(p)];
       for (let n = 0; n < maxAttrs; n++) {
         const a = attrs[n];
         row.push(a ? a.name : "", a ? (a.options || []).join(", ") : "", a ? (a.visible ? "1" : "0") : "", a ? (a.id ? "1" : "0") : "");
       }
       rows.push(row);
+      imageAlt.push(altOf(p.images || []));
       meta.push({ kind: "product", id: p.id, sku: clean(p.sku), regularPrice: clean(p.regular_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src })), attributes: attrs });
 
       // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
@@ -180,18 +196,20 @@
         };
         const options = attrs.map(optionFor).filter(Boolean);
         const vrow = [String(v.id), "variation", clean(v.sku), `${clean(p.name)}${options.length ? " - " + options.join(", ") : ""}`, PUBLISHED[v.status] ?? "0",
-          "", v.description || "", clean(v.sale_price), clean(v.regular_price), "", v.image && v.image.src ? v.image.src : "", `id:${p.id}`, ...stockCells(v)];
+          "", v.description || "", clean(v.sale_price), clean(v.regular_price), "", v.image && v.image.src ? v.image.src : "", `id:${p.id}`, ...stockCells(v), ...gtinCells(v)];
         for (let n = 0; n < maxAttrs; n++) {
           const a = attrs[n];
           vrow.push(a ? a.name : "", a ? optionFor(a) : "", "", a ? (a.id ? "1" : "0") : "");
         }
         rows.push(vrow);
+        imageAlt.push(altOf(v.image ? [v.image] : []));
         meta.push({ kind: "variation", id: v.id, parentId: p.id, sku: clean(v.sku), regularPrice: clean(v.regular_price), attributes: vAttrs, parentAttributes: attrs });
       });
     });
 
     const catalog = engine.catalogFromRows(headers, rows, rows.map((_, i) => i + 2), ",");
     catalog.meta = meta;
+    catalog.imageAlt = imageAlt;
     catalog.source = "woocommerce";
     return catalog;
   }
