@@ -116,12 +116,12 @@
           const chunk = items.slice(i, i + BATCH_SIZE);
           let data;
           try { ({ data } = await request("POST", path, { body: { [kind]: chunk.map(c => c.payload) } })); }
-          catch (e) { chunk.forEach(c => results.push({ label: c.label, ok: false, error: e.message })); continue; }
+          catch (e) { chunk.forEach(c => results.push({ label: c.label, ok: false, error: e.message, item: c, kind })); continue; }
           const answers = (data && data[kind]) || [];
           chunk.forEach((c, j) => {
             const a = answers[j];
             const error = !a ? "Pas de réponse pour cet élément." : a.error ? (a.error.message || a.error.code) : "";
-            results.push({ label: c.label, ok: !error, error, id: a && a.id });
+            results.push({ label: c.label, ok: !error, error, id: a && a.id, item: c, kind });
           });
           onProgress(results.length);
         }
@@ -169,7 +169,7 @@
         row.push(a ? a.name : "", a ? (a.options || []).join(", ") : "", a ? (a.visible ? "1" : "0") : "", a ? (a.id ? "1" : "0") : "");
       }
       rows.push(row);
-      meta.push({ kind: "product", id: p.id, images: (p.images || []).map(i => ({ id: i.id, src: i.src })), attributes: attrs });
+      meta.push({ kind: "product", id: p.id, sku: clean(p.sku), regularPrice: clean(p.regular_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src })), attributes: attrs });
 
       // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
       (variations[p.id] || []).slice().sort((a, b) => a.id - b.id).forEach(v => {
@@ -186,7 +186,7 @@
           vrow.push(a ? a.name : "", a ? optionFor(a) : "", "", a ? (a.id ? "1" : "0") : "");
         }
         rows.push(vrow);
-        meta.push({ kind: "variation", id: v.id, parentId: p.id, attributes: vAttrs, parentAttributes: attrs });
+        meta.push({ kind: "variation", id: v.id, parentId: p.id, sku: clean(v.sku), regularPrice: clean(v.regular_price), attributes: vAttrs, parentAttributes: attrs });
       });
     });
 
@@ -212,7 +212,7 @@
     const labelOf = p => `${p.product} (ID ${meta[p.row].id})`;
     const entry = (m, label) => {
       const map = m.kind === "product" ? productUpd : variationUpd;
-      if (!map.has(m.id)) map.set(m.id, { label, payload: { id: m.id }, parentId: m.parentId, parts: [] });
+      if (!map.has(m.id)) map.set(m.id, { label, payload: { id: m.id }, undo: { id: m.id }, changes: [], parentId: m.parentId, parts: [] });
       return map.get(m.id);
     };
 
@@ -220,19 +220,28 @@
       const m = meta[p.row];
       if (!m) return;
       if (p.kind === "deleteVariation") {
-        if (m.kind === "variation") slot(m.parentId).delete.push({ label: `${labelOf(p)} : suppression du doublon`, payload: m.id });
+        if (m.kind === "variation") slot(m.parentId).delete.push({
+          label: `${labelOf(p)} : suppression du doublon`, payload: m.id, parentId: m.parentId, undo: null,
+          changes: [{ field: "variation", before: p.before, after: "supprimée" }]
+        });
         return;
       }
       if (deleted.has(p.row)) return; // inutile de corriger une variation supprimée
       const e = entry(m, labelOf(p));
-      if (p.kind === "sku") { e.payload.sku = clean(p.after); e.parts.push(`UGS ${clean(p.after)}`); }
-      else if (p.kind === "priceRegular") { e.payload.regular_price = clean(p.after); e.parts.push(`prix ${clean(p.after)}`); }
+      if (p.kind === "sku") {
+        e.payload.sku = clean(p.after); e.undo.sku = m.sku; e.parts.push(`UGS ${clean(p.after)}`);
+        e.changes.push({ field: "UGS", before: m.sku, after: clean(p.after) });
+      } else if (p.kind === "priceRegular") {
+        e.payload.regular_price = clean(p.after); e.undo.regular_price = m.regularPrice; e.parts.push(`prix ${clean(p.after)}`);
+        e.changes.push({ field: "prix régulier", before: m.regularPrice, after: clean(p.after) });
+      }
       else if (p.kind === "images" && m.kind === "product") {
         const seen = new Set(), keep = [];
         const wanted = new Set(String(p.after).split(/\s*,\s*/).map(clean).filter(Boolean));
         m.images.forEach(img => { if (wanted.has(img.src) && !seen.has(img.src)) { seen.add(img.src); keep.push({ id: img.id }); } });
         if (!keep.length) { skipped.push({ label: labelOf(p), reason: "images : aucune image reconnue, rien n’est envoyé" }); return; }
-        e.payload.images = keep; e.parts.push(`${keep.length} image(s) sans doublon`);
+        e.payload.images = keep; e.undo.images = m.images.map(img => ({ id: img.id })); e.parts.push(`${keep.length} image(s) sans doublon`);
+        e.changes.push({ field: "images", before: m.images.map(img => img.src).join(", "), after: String(p.after) });
       } else if (p.kind === "attributeValue" && m.kind === "variation") {
         const a = catalog.attrCols.find(x => x.valueCol === p.col);
         const pa = a && m.parentAttributes[a.n - 1];
@@ -242,6 +251,8 @@
         const next = current.filter(x => !same(x));
         next.push({ ...(pa.id ? { id: pa.id } : { name: pa.name }), option: clean(p.after) });
         e.payload.attributes = next; e.parts.push(`${pa.name} = ${clean(p.after)}`);
+        if (!e.undo.attributes) e.undo.attributes = m.attributes.map(x => ({ ...(x.id ? { id: x.id } : { name: x.name }), option: x.option }));
+        e.changes.push({ field: pa.name, before: p.before, after: clean(p.after) });
       } else {
         skipped.push({ label: labelOf(p), reason: `correction « ${p.label} » non prise en charge par la connexion directe` });
       }
@@ -260,7 +271,8 @@
       };
       if (clean(v.sku)) payload.sku = clean(v.sku);
       if (clean(v.stockQty) !== "") { payload.manage_stock = true; payload.stock_quantity = Number(v.stockQty); }
-      slot(m.id).create.push({ label, payload });
+      slot(m.id).create.push({ label, payload, parentId: m.id, undo: "deleteCreated",
+        changes: [{ field: "variation", before: "(absente)", after: `${pa.name} ${v.attributeValue}, prix ${clean(v.price)}` }] });
       // Sans « Utilisé pour les variations », la variation créée ne serait pas commandable.
       if (!pa.variation) {
         const e = entry(m, `${v.parentName} (ID ${m.id})`);
@@ -268,18 +280,60 @@
           e.payload.attributes = m.attributes.map(a => ({ ...(a.id ? { id: a.id } : { name: a.name }), position: a.position, visible: a.visible, variation: a.variation, options: a.options }));
         }
         const target = e.payload.attributes.find(a => (pa.id && a.id === pa.id) || (!pa.id && a.name === pa.name));
-        if (target && !target.variation) { target.variation = true; e.parts.push(`« ${pa.name} » utilisé pour les variations`); }
+        if (target && !target.variation) {
+          target.variation = true; e.parts.push(`« ${pa.name} » utilisé pour les variations`);
+          if (!e.undo.attributes) e.undo.attributes = m.attributes.map(a => ({ ...(a.id ? { id: a.id } : { name: a.name }), position: a.position, visible: a.visible, variation: a.variation, options: a.options }));
+          e.changes.push({ field: `${pa.name} : utilisé pour les variations`, before: "non", after: "oui" });
+        }
       }
     });
 
-    const finish = e => ({ label: `${e.label} : ${e.parts.join(", ")}`, payload: e.payload });
+    const finish = e => ({ label: `${e.label} : ${e.parts.join(", ")}`, payload: e.payload, undo: e.undo, changes: e.changes, parentId: e.parentId });
     const products = [...productUpd.values()].map(finish);
     variationUpd.forEach(e => slot(e.parentId).update.push(finish(e)));
     const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.create.length + v.delete.length, 0);
     return { products, variations, skipped, count };
   }
 
-  const api = { normalizeStoreUrl, createClient, toCatalog, buildChanges };
+  // ---------- Journal et retour arrière ----------
+
+  const csvCell = v => {
+    let t = String(v ?? "");
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // pas de formule à l’ouverture dans un tableur
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+
+  /** Journal des modifications envoyées : une ligne par champ, avec avant / après et résultat. */
+  function buildJournalCSV(results, { site = "", date = new Date().toISOString() } = {}) {
+    const head = ["Date", "Boutique", "Élément", "Champ", "Avant", "Après", "Résultat"];
+    const lines = [head.map(csvCell).join(";")];
+    results.forEach(r => {
+      const changes = r.item && r.item.changes && r.item.changes.length ? r.item.changes : [{ field: "", before: "", after: "" }];
+      changes.forEach(c => lines.push([date, site, r.label, c.field, c.before, c.after, r.ok ? "Appliquée" : `Échec : ${r.error}`].map(csvCell).join(";")));
+    });
+    return "\uFEFF" + lines.join("\r\n");
+  }
+
+  /**
+   * Plan inverse des modifications réussies : anciennes valeurs pour les mises à jour,
+   * suppression des variations créées. Les suppressions ne sont pas réversibles (sauvegarde).
+   */
+  function buildRollback(results) {
+    const products = [], variations = {}, notReversible = [];
+    const slot = pid => (variations[pid] = variations[pid] || { update: [], create: [], delete: [] });
+    results.filter(r => r.ok && r.item).forEach(r => {
+      const { item, kind } = r;
+      const label = `Annulation : ${r.label}`;
+      if (kind === "delete") notReversible.push(r.label);
+      else if (kind === "create") { if (r.id) slot(item.parentId).delete.push({ label, payload: r.id, parentId: item.parentId }); }
+      else if (item.parentId) slot(item.parentId).update.push({ label, payload: item.undo, parentId: item.parentId });
+      else products.push({ label, payload: item.undo });
+    });
+    const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.delete.length, 0);
+    return { products, variations, skipped: [], count, notReversible };
+  }
+
+  const api = { normalizeStoreUrl, createClient, toCatalog, buildChanges, buildJournalCSV, buildRollback };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotWoo = api;
 })(typeof window !== "undefined" ? window : globalThis);
