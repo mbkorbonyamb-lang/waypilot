@@ -141,12 +141,12 @@
 </main>
 
 <footer>
-  <div>WayPilot est une marque de Wayzure. Contact : <a href="tel:+224627044570">+224 627 04 45 70</a> (téléphone, WhatsApp)</div>
+  <div>WayPilot est une marque de Wayzure. Contact WhatsApp : <a href="https://wa.me/33752222106">+33 7 52 22 21 06</a> · <a href="mailto:contact@wayzure.com">contact@wayzure.com</a></div>
   <div><a href="mentions-legales.html">Mentions légales</a> · <a href="app.html">Ouvrir l’outil</a></div>
 </footer>
 <script>
   // Contact commercial : WhatsApp (numéro international sans « + » ni espaces). Vide = boutons masqués.
-  const CONTACT_WHATSAPP = "224627044570";
+  const CONTACT_WHATSAPP = "33752222106";
   if (CONTACT_WHATSAPP) document.querySelectorAll(".contact-link").forEach(a => {
     a.href = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite un audit de mon catalogue WooCommerce avec WayPilot.")}`;
     a.target = "_blank"; a.rel = "noopener";
