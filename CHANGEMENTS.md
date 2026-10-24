@@ -1,3 +1,10 @@
+# WayPilot 1.10.1 — page d'accueil commerciale
+
+- `index.html` devient une page d'accueil : ce que WayPilot trouve, comment ça marche, un cas réel (anonymisé), les offres (audit gratuit en libre-service, audit accompagné, suivi mensuel), la sécurité.
+- L'outil passe sur `app.html`. Le logo de l'outil ramène à l'accueil.
+- Les boutons de contact restent masqués tant qu'aucune adresse n'est renseignée (`CONTACT_EMAIL` en bas de `index.html`).
+- Le workflow publie aussi `app.html` sur le Space.
+
 # WayPilot 1.10.0 — journal des modifications et annulation
 
 - Après un envoi vers la boutique, « Télécharger le journal des modifications » donne un CSV avec une ligne par champ modifié : date, élément, champ, valeur avant, valeur après, résultat. C'est la preuve du travail fait, à remettre au client.
