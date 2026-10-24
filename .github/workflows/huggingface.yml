@@ -19,7 +19,7 @@ jobs:
       - run: node --test tests/relais-cloudflare.test.mjs
 
   publier:
-    # Publie index.html (accueil), app.html (outil), mentions-legales.html, engine.js et woo.js sur le Space, uniquement depuis main et si les tests passent.
+    # Publie index.html (accueil), app.html (outil), mentions-legales.html, cgv.html, engine.js et woo.js sur le Space, uniquement depuis main et si les tests passent.
     needs: tests
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
           HfApi(token=os.environ["HF_TOKEN"]).create_commit(
               repo_id=os.environ["HF_SPACE"],
               repo_type="space",
-              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "mentions-legales.html", "engine.js", "woo.js")],
+              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "mentions-legales.html", "cgv.html", "engine.js", "woo.js")],
               commit_message=f"Publication depuis GitHub ({os.environ['GITHUB_SHA'][:7]})",
           )
           print("Space mis à jour.")
