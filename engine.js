@@ -663,6 +663,108 @@
     return "﻿" + lines.join("\r\n");
   }
 
+  // ---------- Rapport d’audit à remettre au client ----------
+
+  // Classement par conséquence pour le marchand, et libellé lisible par un non-technicien.
+  const REPORT_GROUPS = [
+    { key: "sales", title: "Peut faire perdre des ventes", intro: "Le client ne peut pas commander, ou tombe sur un produit incomplet." },
+    { key: "trust", title: "Information fausse ou incohérente", intro: "Le client voit une information contradictoire ou manquante, ce qui fait douter." },
+    { key: "ops", title: "Gestion et présentation", intro: "Pas visible tout de suite par le client, mais source d’erreurs de stock, d’import ou de présentation." }
+  ];
+  const REPORT_CODES = {
+    PRICE_MISSING: ["sales", "Prix absent : le produit ne peut pas être acheté"],
+    PRICE_INVALID: ["sales", "Prix illisible"],
+    PRICE_NON_POSITIVE: ["sales", "Prix nul ou négatif"],
+    SALE_INVALID: ["sales", "Prix promotionnel invalide"],
+    VARIATION_VALUE_MISSING: ["sales", "Taille ou option affichée mais impossible à commander"],
+    VARIATION_DUPLICATE: ["sales", "Variation en double : le client peut tomber sur la mauvaise"],
+    VARIATION_NO_ATTRIBUTE: ["sales", "Variation sans taille ni option"],
+    VARIATION_PARENT_MISSING: ["sales", "Variation rattachée à aucun produit"],
+    VARIATION_VALUE_UNDECLARED: ["sales", "Variation avec une valeur que le produit ne propose pas"],
+    VARIATION_ATTRIBUTE_UNDECLARED: ["sales", "Variation avec une caractéristique que le produit ne déclare pas"],
+    NAME_MISSING: ["sales", "Produit sans nom"],
+    STOCK_NEGATIVE: ["sales", "Stock négatif"],
+    STOCK_INVALID: ["sales", "Stock illisible"],
+    PRICE_DESC_MISMATCH: ["trust", "Prix de la description différent du prix affiché"],
+    PRICE_DESC_MULTIPLE: ["trust", "Plusieurs prix différents dans la description"],
+    SALE_NOT_LOWER: ["trust", "Prix promotionnel supérieur ou égal au prix normal"],
+    STOCK_STATUS_MISMATCH: ["trust", "Statut de stock contraire à la quantité"],
+    NAME_DUPLICATE: ["trust", "Deux produits portent le même nom"],
+    IMAGE_MISSING: ["trust", "Produit sans image"],
+    DESCRIPTION_MISSING: ["trust", "Produit sans description"],
+    SKU_MISSING: ["ops", "Référence (UGS) absente"],
+    SKU_DUPLICATE: ["ops", "Référence (UGS) utilisée deux fois"],
+    IMAGE_DUPLICATE: ["ops", "Même image répétée dans la galerie"],
+    CATEGORY_MISSING: ["ops", "Produit sans catégorie"]
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  }
+
+  /**
+   * Rapport HTML autonome et imprimable (Imprimer › PDF) : score, anomalies regroupées par conséquence.
+   * info : { store, source, date }. Toutes les données de la boutique sont échappées.
+   */
+  function buildAuditReportHTML(result, info = {}) {
+    const { issues, stats } = result;
+    const groups = new Map(REPORT_GROUPS.map(g => [g.key, new Map()]));
+    issues.filter(i => i.row >= 0).forEach(i => {
+      const [group, label] = REPORT_CODES[i.code] || ["ops", i.message];
+      const byCode = groups.get(group);
+      if (!byCode.has(i.code)) byCode.set(i.code, { label, items: [] });
+      byCode.get(i.code).items.push(i);
+    });
+    const structural = issues.filter(i => i.row < 0);
+    const count = key => [...groups.get(key).values()].reduce((n, c) => n + c.items.length, 0);
+    const productLabel = i => `${escapeHtml(i.product || "(sans nom)")}${i.productId ? ` <span class="id">ID ${escapeHtml(i.productId)}</span>` : ""}`;
+    const section = g => {
+      const byCode = groups.get(g.key);
+      if (!byCode.size) return `<section><h2>${g.title} <span class="n">0</span></h2><p class="ok">Rien à signaler.</p></section>`;
+      const rows = [...byCode.values()].sort((a, b) => b.items.length - a.items.length).map(c => {
+        // Un produit par ligne, avec les valeurs concernées (ex. tailles L, XL).
+        const products = new Map();
+        c.items.forEach(i => {
+          const k = `${i.productId}|${i.product}`;
+          if (!products.has(k)) products.set(k, { issue: i, values: [] });
+          if (i.value) products.get(k).values.push(i.value);
+        });
+        const cell = [...products.values()].map(p => productLabel(p.issue) + (p.values.length ? ` : ${escapeHtml(p.values.join(", "))}` : "")).join("<br>");
+        return `<tr><td><strong>${escapeHtml(c.label)}</strong></td><td class="num">${c.items.length}</td><td>${cell}</td></tr>`;
+      }).join("");
+      return `<section><h2>${g.title} <span class="n">${count(g.key)}</span></h2><p class="intro">${g.intro}</p><table><thead><tr><th>Problème</th><th>Nombre</th><th>Produits concernés</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    };
+    const date = info.date || new Date().toISOString().slice(0, 10);
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Audit de catalogue — ${escapeHtml(info.store || "boutique")}</title>
+<style>
+body{font-family:Inter,Arial,sans-serif;color:#15243b;max-width:900px;margin:32px auto;padding:0 20px;line-height:1.5}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1769ff;padding-bottom:12px}
+.brand{font-weight:800;font-size:22px}.brand span{color:#1769ff}.meta{color:#627087;font-size:13px;text-align:right}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.box{border:1px solid #e0e7f0;border-radius:10px;padding:14px}.box span{display:block;color:#627087;font-size:12px}.box strong{font-size:26px}
+h1{font-size:26px;margin:24px 0 4px}h2{font-size:18px;margin:28px 0 4px}.n{background:#eaf1ff;color:#2458b8;border-radius:12px;padding:2px 9px;font-size:13px}
+.intro{color:#627087;margin:0 0 8px;font-size:14px}.ok{color:#087443}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e0e7f0;padding:8px;text-align:left;vertical-align:top}th{background:#f5f8fc}
+.num{text-align:right;width:70px}.id{color:#627087;font-size:11px}
+footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0;padding-top:10px}
+@media print{body{margin:0}section{break-inside:avoid-page}}
+@media(max-width:600px){.summary{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header><div class="brand">Way<span>Pilot</span></div><div class="meta">Audit du ${escapeHtml(date)}<br>${escapeHtml(info.source || "")}</div></header>
+<h1>Audit du catalogue${info.store ? ` — ${escapeHtml(info.store)}` : ""}</h1>
+<div class="summary">
+<div class="box"><span>Score qualité</span><strong>${stats.score} %</strong></div>
+<div class="box"><span>Peut faire perdre des ventes</span><strong>${count("sales")}</strong></div>
+<div class="box"><span>Information fausse ou incohérente</span><strong>${count("trust")}</strong></div>
+<div class="box"><span>Gestion et présentation</span><strong>${count("ops")}</strong></div>
+</div>
+<p>${stats.products} produits et ${stats.variations} variations contrôlés. ${issues.length ? `${issues.length} anomalies trouvées sur ${stats.rowsWithIssues} lignes.` : "Aucune anomalie trouvée."}</p>
+${structural.length ? `<p class="intro">Remarques sur le fichier : ${structural.map(i => escapeHtml(i.message)).join(" ; ")}.</p>` : ""}
+${REPORT_GROUPS.map(section).join("\n")}
+<footer>Score : 100 % = aucune anomalie. Chaque ligne perd des points selon la gravité de ses anomalies. Ce rapport repose sur les contrôles automatiques de WayPilot : il ne garantit pas que toutes les données du catalogue sont exactes. Aucune modification n’a été faite par ce rapport.</footer>
+</body></html>`;
+  }
+
   /** Colonnes nécessaires pour ajouter une variation au CSV. */
   function missingColumnsForVariations(catalog) {
     const missing = ["type", "name", "parent", "price"].filter(k => catalog.col[k] < 0);
@@ -670,7 +772,7 @@
     return missing;
   }
 
-  const api = { VERSION: "1.9.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, missingColumnsForVariations, safeCell };
+  const api = { VERSION: "1.9.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

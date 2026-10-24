@@ -126,10 +126,12 @@
     <div id="proposals" class="table-wrap"></div>
     <div id="approvalSummary" class="message" aria-live="polite"></div>
     <div class="actions">
-      <button id="downloadReport">Télécharger le rapport CSV</button>
+      <button id="downloadAudit">Télécharger le rapport d’audit client</button>
+      <button id="downloadReport" class="secondary">Télécharger le rapport CSV</button>
       <button id="downloadCorrected">Télécharger le catalogue corrigé pour WooCommerce</button>
       <button id="downloadOriginal" class="secondary">Télécharger le CSV original</button>
     </div>
+    <p class="notice">Le rapport d’audit client est une page à ouvrir dans le navigateur, puis à imprimer ou enregistrer en PDF (Ctrl+P).</p>
     <p class="notice" id="csvNotice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
     <div id="wooApply" class="review-card" hidden>
       <h3 style="margin-top:0">Appliquer sur la boutique</h3>
@@ -400,11 +402,23 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
-  const baseName = () => (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
+  const baseName = () => state.woo ? new URL(state.woo.site).hostname.replace(/^www\./, "")
+    : (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
 
   $("downloadReport").addEventListener("click", () => {
     if (!state.result) return;
     download(E.buildReportCSV(state.result.issues, { verifiedExisting: state.verifiedExisting, validatedVariations: validatedVariationKeys() }), `${baseName()}_rapport_waypilot.csv`);
+  });
+  $("downloadAudit").addEventListener("click", () => {
+    if (!state.result) return;
+    const html = E.buildAuditReportHTML(state.result, {
+      store: $("storeName").value.trim(),
+      source: state.woo ? state.woo.site : (state.file ? state.file.name : "")
+    });
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
   });
   $("downloadOriginal").addEventListener("click", () => {
     if (!state.file) { alert("Importez d’abord un catalogue CSV."); return; }
