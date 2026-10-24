@@ -50,7 +50,7 @@ test("analyse d’un catalogue API puis plan de corrections", () => {
   assert.deepEqual(plan.skipped, []);
   const kimono = plan.products.find(p => p.payload.id === 200).payload;
   assert.equal(kimono.regular_price, "446");
-  assert.deepEqual(kimono.images, [{ id: 21 }, { id: 22 }]);
+  assert.deepEqual(kimono.images, [{ id: 21, alt: "Kimono fluide vert" }, { id: 22, alt: "Kimono fluide vert – vue 2" }], "doublon retiré et textes alternatifs ajoutés");
   assert.match(kimono.sku, /^JAA-/);
 
   const parent = plan.products.find(p => p.payload.id === 170).payload;
@@ -190,7 +190,7 @@ test("journal et retour arrière : anciennes valeurs, variations créées suppri
 
   const back = W.buildRollback(results);
   const kimono = back.products.find(p => p.payload.id === 200).payload;
-  assert.deepEqual(kimono, { id: 200, sku: "", regular_price: "445", images: [{ id: 21 }, { id: 22 }, { id: 23 }] });
+  assert.deepEqual(kimono, { id: 200, sku: "", regular_price: "445", images: [{ id: 21, alt: "" }, { id: 22, alt: "" }, { id: 23, alt: "" }] }, "galerie et textes d’origine");
   const parent = back.products.find(p => p.payload.id === 170).payload;
   assert.equal(parent.attributes[0].variation, false);
   assert.deepEqual(back.variations[170].delete.map(d => d.payload), [900, 901], "variations créées supprimées");
@@ -284,4 +284,45 @@ test("audit express via le relais : seule l’adresse de la boutique est transmi
   const fetchImpl = async url => { urls.push(url); return { ok: true, status: 200, text: async () => "[]", headers: { get: () => "1" } }; };
   await W.createPublicClient({ url: "https://www.jaaray.site/", relay: "https://relais.test/", fetchImpl }).fetchCatalog();
   assert.equal(urls[0], "https://relais.test/products?site=www.jaaray.site&per_page=100&page=1");
+});
+
+test("buildChanges : texte alternatif des images à partir du nom du produit", () => {
+  const data = api();
+  data.products[1].images[1].alt = "Kimono vert, dos";
+  const c = W.toCatalog(E, data);
+  const r = E.analyze(c, { decimal: "." });
+  const alt = r.proposals.find(p => p.kind === "imageAlt" && p.productId === "200");
+  assert.ok(alt, "proposition créée avec une clé API");
+  assert.equal(alt.after, "Kimono fluide vert");
+  assert.ok(r.issues.find(i => i.code === "IMAGE_ALT_MISSING" && i.productId === "200").proposalIds.includes(alt.id));
+
+  // Seule : toute la galerie est renvoyée, seuls les textes vides sont remplis.
+  alt.status = "approved";
+  let ch = W.buildChanges(c, r.proposals);
+  let k = ch.products.find(x => x.payload.id === 200);
+  assert.deepEqual(k.payload.images, [
+    { id: 21, alt: "Kimono fluide vert" }, { id: 22, alt: "Kimono vert, dos" }, { id: 23, alt: "Kimono fluide vert" }
+  ]);
+  assert.match(k.label, /texte alternatif sur 1 image/);
+  assert.deepEqual(k.undo.images, [{ id: 21, alt: "" }, { id: 22, alt: "Kimono vert, dos" }, { id: 23, alt: "" }]);
+
+  // Avec le dédoublonnage : la liste réduite garde les textes.
+  r.proposals.find(p => p.kind === "images" && p.productId === "200").status = "approved";
+  ch = W.buildChanges(c, r.proposals);
+  k = ch.products.find(x => x.payload.id === 200);
+  assert.deepEqual(k.payload.images, [{ id: 21, alt: "Kimono fluide vert" }, { id: 22, alt: "Kimono vert, dos" }]);
+
+  // Audit express : aucune proposition (rien ne peut être écrit).
+  const pub = { ...c, source: "public" };
+  assert.ok(!E.analyze(pub, { decimal: "." }).proposals.some(p => p.kind === "imageAlt"));
+});
+
+test("buildChanges : vue 2, vue 3 quand aucune image n’a de texte", () => {
+  const data = api();
+  data.products[1].images = [{ id: 21, src: "https://x.test/k1.jpg" }, { id: 22, src: "https://x.test/k2.jpg" }, { id: 24, src: "https://x.test/k3.jpg" }];
+  const c = W.toCatalog(E, data);
+  const r = E.analyze(c, { decimal: "." });
+  r.proposals.filter(p => p.kind === "imageAlt").forEach(p => { p.status = "approved"; });
+  const k = W.buildChanges(c, r.proposals).products.find(x => x.payload.id === 200);
+  assert.deepEqual(k.payload.images.map(i => i.alt), ["Kimono fluide vert", "Kimono fluide vert – vue 2", "Kimono fluide vert – vue 3"]);
 });

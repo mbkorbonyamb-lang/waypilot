@@ -1,3 +1,10 @@
+# WayPilot 1.13.0 — texte alternatif des images corrigé automatiquement
+
+- Connexion avec clé API : pour chaque produit dont des images n’ont pas de texte alternatif, WayPilot propose un texte construit à partir du nom du produit (« Caftan beldi rose », puis « Caftan beldi rose – vue 2 », etc.). Le texte proposé se modifie avant validation. Les textes déjà remplis ne changent pas.
+- Toute la galerie est renvoyée, dans le même ordre, parce que WooCommerce remplace la liste d’images. Compatible avec le retrait des images en double. Le retour arrière remet les textes d’origine.
+- Le texte est enregistré sur l’image de la médiathèque : il vaut pour tous les produits qui utilisent cette image.
+- Audit express : pas de proposition, puisqu’il ne peut rien écrire. 2 tests ajoutés.
+
 # WayPilot 1.12.2 — relais sur Cloudflare (gratuit)
 
 - Hugging Face refuse désormais les Spaces Docker sans abonnement PRO (erreur 402). Le relais de l’audit express passe sur un Worker Cloudflare (`relais-cloudflare/`), même contrat que `relais/`.

@@ -233,7 +233,7 @@
       }
       rows.push(row);
       imageAlt.push(altOf(p.images || []));
-      meta.push({ kind: "product", id: p.id, sku: clean(p.sku), regularPrice: clean(p.regular_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src })), attributes: attrs });
+      meta.push({ kind: "product", id: p.id, sku: clean(p.sku), regularPrice: clean(p.regular_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src, alt: clean(i.alt) })), attributes: attrs });
 
       // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
       (variations[p.id] || []).slice().sort((a, b) => a.id - b.id).forEach(v => {
@@ -367,6 +367,24 @@
         if (!keep.length) { skipped.push({ label: labelOf(p), reason: "images : aucune image reconnue, rien n’est envoyé" }); return; }
         e.payload.images = keep; e.undo.images = m.images.map(img => ({ id: img.id })); e.parts.push(`${keep.length} image(s) sans doublon`);
         e.changes.push({ field: "images", before: m.images.map(img => img.src).join(", "), after: String(p.after) });
+      } else if (p.kind === "imageAlt" && m.kind === "product") {
+        // WooCommerce remplace la galerie par la liste envoyée : on renvoie toutes les images (ou celles gardées
+        // par le dédoublonnage), chacune avec son texte. Seuls les textes vides sont remplis.
+        const base = clean(p.after);
+        if (!base) { skipped.push({ label: labelOf(p), reason: "texte alternatif vide, rien n’est envoyé" }); return; }
+        const order = [...new Set(m.images.map(img => img.src))];
+        const textFor = img => img.alt || (order.indexOf(img.src) === 0 ? base : `${base} – vue ${order.indexOf(img.src) + 1}`);
+        const byId = new Map(m.images.map(img => [img.id, img]));
+        const list = e.payload.images || m.images.map(img => ({ id: img.id }));
+        const filled = new Set();
+        e.payload.images = list.map(x => {
+          const img = byId.get(x.id) || {};
+          if (!img.alt) filled.add(img.src);
+          return { ...x, alt: textFor(img) };
+        });
+        e.undo.images = m.images.map(img => ({ id: img.id, alt: img.alt || "" }));
+        e.parts.push(`texte alternatif sur ${filled.size} image(s)`);
+        e.changes.push({ field: "texte alternatif", before: p.before, after: base });
       } else if (p.kind === "attributeValue" && m.kind === "variation") {
         const a = catalog.attrCols.find(x => x.valueCol === p.col);
         const pa = a && m.parentAttributes[a.n - 1];
