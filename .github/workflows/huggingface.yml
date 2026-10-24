@@ -78,7 +78,7 @@ jobs:
           PY
 
   relais-cloudflare:
-    # Déploie relais-cloudflare/worker.js sur Cloudflare Workers (gratuit), si les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID existent.
+    # Déploie relais-cloudflare/worker.js sur Cloudflare Workers et le site sur Cloudflare Pages (gratuit), si les secrets CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID existent.
     needs: tests
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -99,3 +99,22 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: relais-cloudflare
           command: deploy
+      - name: Préparer le site
+        if: steps.secrets.outputs.ok == 'oui'
+        run: |
+          mkdir -p site
+          cp index.html app.html mentions-legales.html cgv.html engine.js woo.js site/
+      - name: Créer le projet Pages au premier passage
+        if: steps.secrets.outputs.ok == 'oui'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # Échoue sans effet si le projet existe déjà.
+        run: npx --yes wrangler@3.90.0 pages project create waypilot --production-branch=main || true
+      - name: Publier le site sur Cloudflare Pages (projet waypilot)
+        if: steps.secrets.outputs.ok == 'oui'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=waypilot --branch=main --commit-dirty=true
