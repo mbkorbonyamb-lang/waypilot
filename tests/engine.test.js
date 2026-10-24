@@ -215,3 +215,37 @@ test("rapport d’audit : anomalies regroupées par conséquence et données éc
   assert.match(html, /Même image répétée/);
   assert.match(html, /Audit du 2026-10-24/);
 });
+
+test("GTIN : longueur, clé de contrôle, plages réservées et coupons", () => {
+  assert.equal(E.gtinProblem(""), null);
+  assert.equal(E.gtinProblem("4006381333931"), null, "EAN-13 valide");
+  assert.equal(E.gtinProblem("036000291452"), null, "UPC-A valide");
+  assert.equal(E.gtinProblem("4006 3813 3393 1"), null, "espaces ignorés");
+  assert.match(E.gtinProblem("4006381333932"), /clé de contrôle/);
+  assert.match(E.gtinProblem("12345"), /5 chiffres/);
+  assert.match(E.gtinProblem("2000000000008"), /usage interne/);
+  assert.match(E.gtinProblem("0-306-40615-2"), /ISBN à 10 chiffres/);
+  assert.match(E.gtinProblem("ABC1234567890"), /autre chose que des chiffres/);
+});
+
+test("GTIN : invalide et doublon signalés, absent seulement si le catalogue en utilise", () => {
+  const head = "ID,Type,SKU,Name,Regular price,Categories,Description,\"GTIN, UPC, EAN, or ISBN\"\n";
+  const r = E.analyze(E.parseCSV(head + "1,simple,A,Robe,10,Robes,Texte,4006381333931\n2,simple,B,Jupe,10,Robes,Texte,4006381333931\n3,simple,C,Top,10,Robes,Texte,4006381333932\n4,simple,D,Short,10,Robes,Texte,\n"), {});
+  assert.deepEqual(r.issues.filter(i => i.code.startsWith("GTIN")).map(i => `${i.productId}:${i.code}`), ["2:GTIN_DUPLICATE", "3:GTIN_INVALID", "4:GTIN_MISSING"]);
+  assert.ok(!r.proposals.some(p => p.col === 7), "aucun GTIN proposé : il ne s’invente pas");
+  const none = E.analyze(E.parseCSV(head + "1,simple,A,Robe,10,Robes,Texte,\n2,simple,B,Jupe,10,Robes,Texte,\n"), {});
+  assert.ok(!none.issues.some(i => i.code.startsWith("GTIN")), "marque propre sans GTIN : aucune alerte");
+});
+
+test("images : taille mesurée (seuils Google), image cassée, sans mesure aucune alerte", () => {
+  const csv = "ID,Type,SKU,Name,Regular price,Categories,Description,Images\n1,simple,A,Robe,10,Robes,Texte,https://x.test/a.jpg\n2,simple,B,Jupe,10,Robes,Texte,https://x.test/b.jpg\n3,simple,C,Top,10,Robes,Texte,https://x.test/c.jpg\n4,simple,D,Short,10,Robes,Texte,https://x.test/d.jpg\n";
+  const plain = E.analyze(E.parseCSV(csv), {});
+  assert.ok(!plain.issues.some(i => i.code.startsWith("IMAGE")));
+  const c = E.parseCSV(csv);
+  c.imageSizes = { "https://x.test/a.jpg": { width: 200, height: 300 }, "https://x.test/b.jpg": { width: 800, height: 400 }, "https://x.test/c.jpg": { broken: true }, "https://x.test/d.jpg": { width: 1000, height: 1000 } };
+  const r = E.analyze(c, {});
+  assert.deepEqual(r.issues.filter(i => i.code.startsWith("IMAGE")).map(i => `${i.productId}:${i.code}`), ["1:IMAGE_TOO_SMALL", "2:IMAGE_BELOW_500", "3:IMAGE_BROKEN"]);
+  assert.match(r.issues.find(i => i.code === "IMAGE_TOO_SMALL").message, /200 × 300 px/);
+  const html = E.buildAuditReportHTML(r, { date: "2026-10-24" });
+  assert.match(html, /Visibilité sur Google <span class="n">2<\/span>/);
+});

@@ -25,7 +25,7 @@
     section.band { background:var(--bg); padding:52px 0; }
     section.plain { padding:52px 0; }
     h2 { font-size:26px; margin:0 0 8px; } .sub { color:var(--muted); margin:0 0 26px; max-width:680px; }
-    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; } .grid.four { grid-template-columns:repeat(2,1fr); }
     .card { background:white; border:1px solid var(--border); border-radius:14px; padding:20px; }
     .card h3 { margin:0 0 6px; font-size:17px; } .card p { margin:0; color:var(--muted); font-size:15px; }
     .step { font-weight:800; color:var(--blue); font-size:13px; }
@@ -39,7 +39,7 @@
     .faq dt { font-weight:700; margin-top:16px; } .faq dd { margin:4px 0 0; color:var(--muted); }
     footer { padding:28px 6%; color:var(--muted); font-size:13px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
     [hidden] { display:none !important; }
-    @media(max-width:760px) { .grid, .case { grid-template-columns:1fr; } nav { display:none; } .hero { padding:40px 20px 32px; } }
+    @media(max-width:760px) { .grid, .grid.four, .case { grid-template-columns:1fr; } nav { display:none; } .hero { padding:40px 20px 32px; } }
   </style>
 </head>
 <body>
@@ -64,10 +64,11 @@
     <div class="wrap">
       <h2>Ce que WayPilot trouve</h2>
       <p class="sub">Des contrôles pensés pour les erreurs qui coûtent des ventes, pas pour faire du chiffre.</p>
-      <div class="grid">
+      <div class="grid four">
         <div class="card"><h3>Ventes bloquées</h3><p>Tailles ou options proposées sans variation commandable, variations en double, prix absent ou à zéro.</p></div>
         <div class="card"><h3>Informations contradictoires</h3><p>Prix de la description différent du prix affiché, promotion plus chère que le prix normal, stock incohérent.</p></div>
         <div class="card"><h3>Catalogue mal tenu</h3><p>Références (UGS) absentes ou en double, images répétées, produits sans catégorie, sans image ou sans description.</p></div>
+        <div class="card"><h3>Visibilité sur Google</h3><p>Codes-barres (GTIN, EAN) invalides ou en double, images trop petites pour Google Shopping, images sans texte alternatif.</p></div>
       </div>
     </div>
   </section>

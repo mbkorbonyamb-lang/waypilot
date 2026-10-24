@@ -1,3 +1,11 @@
+# WayPilot 1.11.0 — contrôles pour Google Shopping
+
+- **Codes-barres (GTIN, EAN, UPC, ISBN).** Lus depuis la colonne « GTIN, UPC, EAN, or ISBN » de l’export CSV, ou par la connexion directe (champ natif de WooCommerce 9.2 et plus, ou champ d’une extension EAN/GTIN). Signalés : longueur fausse, clé de contrôle fausse (faute de frappe), plage réservée (2, 02, 04) ou de coupon (05, 98, 99), ISBN à 10 chiffres, code en double. Un GTIN absent n’est signalé que si d’autres produits du catalogue en ont un : une marque propre n’en a souvent aucun. WayPilot ne propose jamais de GTIN, il ne s’invente pas.
+- **Taille des images.** Après la lecture du catalogue, l’outil mesure chaque image dans le navigateur (400 au plus). Signalés : image sous 250 px de côté (Google la refuse pour les vêtements, et sous 100 px pour tout produit), image sous 500 px (minimum exigé par Google à partir du 31 janvier 2027), image qui ne s’affiche pas. Une image trop lente ne déclenche pas d’alerte.
+- **Texte alternatif des images** (connexion directe seulement, l’export CSV ne le contient pas).
+- Le rapport d’audit client a une nouvelle rubrique « Visibilité sur Google ». La page d’accueil la présente.
+- 4 tests ajoutés (31 au total).
+
 # WayPilot 1.10.2 — contact et mentions légales
 
 - Les boutons de contact de l'accueil ouvrent WhatsApp avec un message pré-rempli. Le numéro figure en pied de page.
