@@ -1,3 +1,9 @@
+# WayPilot 1.9.0 — mode audit en lecture seule
+
+- Nouveau choix « Mode » dans la connexion directe : « Audit en lecture seule » (par défaut) ou « Audit et corrections ».
+- En lecture seule, le bouton d'envoi vers la boutique n'existe plus et un message l'explique. Une clé WooCommerce en droit « Lecture » suffit. C'est la base de l'audit gratuit proposé aux prospects : on ne peut rien modifier chez eux.
+- Le rapport et le CSV corrigé restent disponibles dans les deux modes.
+
 # WayPilot 1.8.2 — retour visible après validation
 
 - Après « Valider la sélection », « Refuser la sélection » ou « Valider les corrections sûres », un message vert indique combien de corrections ont été prises en compte, et la page défile jusqu'au résumé. Avant, rien de visible ne changeait (retour du test JAARAY).
