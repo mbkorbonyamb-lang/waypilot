@@ -1,3 +1,10 @@
+# WayPilot 1.12.2 — relais sur Cloudflare (gratuit)
+
+- Hugging Face refuse désormais les Spaces Docker sans abonnement PRO (erreur 402). Le relais de l’audit express passe sur un Worker Cloudflare (`relais-cloudflare/`), même contrat que `relais/`.
+- Le workflow déploie le Worker si les secrets `CLOUDFLARE_API_TOKEN` et `CLOUDFLARE_ACCOUNT_ID` existent, sinon il ne fait rien. La variable de dépôt `RELAIS_URL` fixe l’adresse du relais utilisée par `app.html`.
+- L’étape du Space `waypilot/relais` ne tourne que si `PUBLIER_RELAIS_HF` vaut `oui`.
+- Mentions légales : hébergeur du relais = Cloudflare, Inc. 3 tests ajoutés.
+
 # WayPilot 1.12.1 — relais pour l’audit express
 
 - Constat après mise en ligne : WooCommerce n’autorise son API publique (Store API) que depuis le site de la boutique (`Authentication::send_cors_headers`). Depuis WayPilot, le navigateur était bloqué sur toutes les boutiques.
