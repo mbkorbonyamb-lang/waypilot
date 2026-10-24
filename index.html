@@ -87,8 +87,8 @@
   <section class="band" id="cas">
     <div class="wrap case">
       <div>
-        <h2>Un cas réel</h2>
-        <p>Boutique de mode, 25 produits, octobre 2026. Le premier audit a trouvé deux ensembles dont les tailles L et XL ne pouvaient pas être commandées, un prix erroné et 20 variations en double, créées par des imports CSV.</p>
+        <h2>Un cas réel : JAARAY</h2>
+        <p>JAARAY, boutique de mode, 25 produits, octobre 2026. Le premier audit a trouvé deux ensembles dont les tailles L et XL ne pouvaient pas être commandées, un prix erroné et 20 variations en double, créées par des imports CSV.</p>
         <p>Les corrections ont été appliquées par la connexion directe, après validation, puis la boutique a été relue : plus aucune anomalie détectée.</p>
       </div>
       <div class="figures">
@@ -109,7 +109,7 @@
         <div class="card offer"><h3>Audit et correction accompagnés</h3><p>Nous faisons l’audit, vous présentons les corrections, puis les appliquons après votre accord et une sauvegarde.</p><div class="price">Sur devis</div></div>
         <div class="card offer"><h3>Suivi mensuel</h3><p>Chaque mois : nouvel audit, corrections validées, journal des modifications et rapport. Forfait dégressif pour les agences.</p><div class="price">Sur devis, sans engagement long</div></div>
       </div>
-      <div class="cta"><a class="button secondary contact-link" href="#" hidden>Nous contacter</a></div>
+      <div class="cta"><a class="button secondary contact-link" href="#" hidden>Nous contacter sur WhatsApp</a></div>
     </div>
   </section>
 
@@ -131,14 +131,15 @@
 </main>
 
 <footer>
-  <div>WayPilot est une marque de Wayzure.</div>
+  <div>WayPilot est une marque de Wayzure. Contact : <a href="tel:+224627044570">+224 627 04 45 70</a> (téléphone, WhatsApp)</div>
   <div><a href="app.html">Ouvrir l’outil</a></div>
 </footer>
 <script>
-  // Adresse de contact : à renseigner pour afficher les boutons « Demander un audit accompagné » et « Nous contacter ».
-  const CONTACT_EMAIL = "";
-  if (CONTACT_EMAIL) document.querySelectorAll(".contact-link").forEach(a => {
-    a.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Audit de catalogue WooCommerce")}`;
+  // Contact commercial : WhatsApp (numéro international sans « + » ni espaces). Vide = boutons masqués.
+  const CONTACT_WHATSAPP = "224627044570";
+  if (CONTACT_WHATSAPP) document.querySelectorAll(".contact-link").forEach(a => {
+    a.href = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite un audit de mon catalogue WooCommerce avec WayPilot.")}`;
+    a.target = "_blank"; a.rel = "noopener";
     a.hidden = false;
   });
 </script>
