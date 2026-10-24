@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.1</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.2</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -353,6 +353,7 @@
     const { proposals, issues } = state.result;
     const count = s => proposals.filter(p => p.status === s).length;
     const open = issues.filter(i => isOpen(followup(i))).length;
+    $("approvalSummary").className = "message";
     $("approvalSummary").textContent = `Corrections validées : ${count("approved")} · en attente : ${count("pending")} · refusées : ${count("rejected")}. Anomalies encore à vérifier : ${open}. Le fichier corrigé n’applique que les corrections validées.`;
   }
 
@@ -360,7 +361,20 @@
     const ids = new Set([...document.querySelectorAll(".proposal-check:checked")].map(x => Number(x.dataset.proposalId)));
     return state.result.proposals.filter(p => ids.has(p.id));
   };
-  const setStatus = status => { const chosen = selectedProposals(); if (!chosen.length) { alert("Sélectionnez au moins une correction."); return; } chosen.forEach(p => { p.status = status; }); render(); };
+  // Retour visible après une décision groupée : le tableau change peu, le résumé est mis en avant.
+  function confirmDecision(text) {
+    const box = $("approvalSummary");
+    box.className = "message success";
+    box.textContent = `✓ ${text} ${box.textContent}`;
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  const setStatus = status => {
+    const chosen = selectedProposals();
+    if (!chosen.length) { alert("Sélectionnez au moins une correction."); return; }
+    chosen.forEach(p => { p.status = status; });
+    render();
+    confirmDecision(`${chosen.length} correction(s) ${status === "approved" ? "validée(s)" : "refusée(s)"}.`);
+  };
   $("selectAll").addEventListener("click", () => document.querySelectorAll(".proposal-check").forEach(x => { x.checked = true; }));
   $("clearSelection").addEventListener("click", () => document.querySelectorAll(".proposal-check").forEach(x => { x.checked = false; }));
   $("approveSelected").addEventListener("click", () => setStatus("approved"));
@@ -371,6 +385,7 @@
     if (!confirm(`Valider ${safe.length} correction(s) classée(s) comme sûre(s) ? Elles s’appliqueront uniquement au CSV téléchargé.`)) return;
     safe.forEach(p => { p.status = "approved"; });
     render();
+    confirmDecision(`${safe.length} correction(s) sûre(s) validée(s).`);
   });
 
   // ---------- Téléchargements ----------
