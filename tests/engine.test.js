@@ -202,3 +202,16 @@ test("1.7.2 : en-tête du CSV corrigé lisible par l'import WooCommerce", () => 
   assert.ok(outEn.includes(',"S, M, L, XL",'));
   assert.deepEqual(E.parseCSV(outEn).rows, en.rows);
 });
+
+test("rapport d’audit : anomalies regroupées par conséquence et données échappées", () => {
+  const catalog = E.parseCSV('ID,Type,SKU,Name,Regular price,Images,Categories,Description\n1,simple,,"<script>alert(1)</script>",10,"a.jpg, a.jpg",Robes,Texte\n2,simple,,Jupe,,b.jpg,Robes,Texte\n');
+  const r = E.analyze(catalog, {});
+  const html = E.buildAuditReportHTML(r, { store: "Boutique <b>", source: "test.csv", date: "2026-10-24" });
+  assert.ok(!html.includes("<script>alert"), "nom de produit échappé");
+  assert.ok(!/<b>/.test(html.replace(/<\/?(body|br)>/g, "")), "aucune balise venant des données");
+  assert.ok(html.includes("Boutique &lt;b&gt;"));
+  assert.match(html, /Peut faire perdre des ventes <span class="n">1<\/span>/); // prix absent sur Jupe
+  assert.match(html, /Prix absent/);
+  assert.match(html, /Même image répétée/);
+  assert.match(html, /Audit du 2026-10-24/);
+});

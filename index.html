@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.8.2</div></header>
+<header><div class="brand">Way<span>Pilot</span></div><div class="version" id="version">BÊTA · V1.9.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -80,11 +80,12 @@
     <p class="notice">WayPilot ne devine pas les prix, les tailles ou les stocks inconnus. Les corrections proposées doivent être vérifiées avant l’importation.</p>
 
     <h3>Ou connecter directement votre boutique WooCommerce</h3>
-    <p class="help">Plus besoin d’exporter puis de réimporter un CSV : WayPilot lit le catalogue et, après votre validation, écrit les corrections dans la boutique. Créez une clé dans WooCommerce › Réglages › Avancé › API REST › Ajouter une clé, avec les droits « Lecture/Écriture ». Les clés restent dans cet onglet : elles ne sont ni enregistrées ni envoyées ailleurs qu’à votre boutique. Révoquez la clé après usage si vous le souhaitez.</p>
+    <p class="help">Plus besoin d’exporter puis de réimporter un CSV : WayPilot lit le catalogue et, après votre validation, écrit les corrections dans la boutique. Créez une clé dans WooCommerce › Réglages › Avancé › API REST › Ajouter une clé : droits « Lecture » pour un audit, « Lecture/Écriture » pour appliquer des corrections. Les clés restent dans cet onglet : elles ne sont ni enregistrées ni envoyées ailleurs qu’à votre boutique. Révoquez la clé après usage si vous le souhaitez.</p>
     <div class="settings">
       <div><label class="label" for="wooUrl">Adresse de la boutique</label><input id="wooUrl" class="field" type="url" placeholder="https://maboutique.com" style="margin-top:7px" autocomplete="url"></div>
       <div><label class="label" for="wooKey">Clé client (ck_…)</label><input id="wooKey" class="field" type="password" placeholder="ck_…" style="margin-top:7px" autocomplete="off"></div>
       <div><label class="label" for="wooSecret">Secret client (cs_…)</label><input id="wooSecret" class="field" type="password" placeholder="cs_…" style="margin-top:7px" autocomplete="off"></div>
+      <div><label class="label" for="wooMode">Mode</label><select id="wooMode" class="field" style="margin-top:7px"><option value="read">Audit en lecture seule (rien n’est modifié)</option><option value="write">Audit et corrections</option></select></div>
     </div>
     <div class="actions"><button id="wooConnect" class="secondary">Lire le catalogue de la boutique</button></div>
     <div id="wooInfo" class="message" aria-live="polite"></div>
@@ -125,14 +126,17 @@
     <div id="proposals" class="table-wrap"></div>
     <div id="approvalSummary" class="message" aria-live="polite"></div>
     <div class="actions">
-      <button id="downloadReport">Télécharger le rapport CSV</button>
+      <button id="downloadAudit">Télécharger le rapport d’audit client</button>
+      <button id="downloadReport" class="secondary">Télécharger le rapport CSV</button>
       <button id="downloadCorrected">Télécharger le catalogue corrigé pour WooCommerce</button>
       <button id="downloadOriginal" class="secondary">Télécharger le CSV original</button>
     </div>
+    <p class="notice">Le rapport d’audit client est une page à ouvrir dans le navigateur, puis à imprimer ou enregistrer en PDF (Ctrl+P).</p>
     <p class="notice" id="csvNotice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
     <div id="wooApply" class="review-card" hidden>
       <h3 style="margin-top:0">Appliquer sur la boutique</h3>
       <p class="help">Seules les corrections et les variations validées sont envoyées. Les modifications sont immédiates sur la boutique : faites une sauvegarde avant le premier essai.</p>
+      <p id="wooReadOnlyNotice" class="message" hidden><strong>Mode lecture seule :</strong> aucune modification ne peut être envoyée à la boutique. Le rapport et le CSV restent disponibles. Pour appliquer des corrections, choisissez « Audit et corrections » puis relisez la boutique, avec une clé « Lecture/Écriture ».</p>
       <div class="actions"><button type="button" id="wooApplyButton">Appliquer les corrections validées sur la boutique</button><button type="button" id="wooReload" class="secondary">Relire la boutique et réanalyser</button></div>
       <div id="wooApplySummary" class="message" aria-live="polite"></div>
       <div id="wooResults" class="table-wrap"></div>
@@ -152,6 +156,7 @@
   const state = {
     file: null, catalog: null, result: null,
     woo: null,                     // client de la boutique connectée (clés en mémoire uniquement)
+    readOnly: false,               // audit en lecture seule : aucun envoi vers la boutique
     verifiedExisting: new Set(),   // clés d’anomalies confirmées comme existantes dans WooCommerce
     manual: new Map()              // clé -> variation à ajouter ; conservée entre deux affichages
   };
@@ -214,6 +219,8 @@
       : "Aucune anomalie détectée par les contrôles actuels. Cela ne garantit pas que toutes les données du catalogue sont exactes.";
     const fromWoo = state.catalog.source === "woocommerce";
     $("wooApply").hidden = !fromWoo;
+    $("wooApplyButton").hidden = state.readOnly;
+    $("wooReadOnlyNotice").hidden = !state.readOnly;
     $("csvNotice").hidden = fromWoo;
     renderIssues(followups);
     renderManual();
@@ -395,11 +402,23 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
-  const baseName = () => (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
+  const baseName = () => state.woo ? new URL(state.woo.site).hostname.replace(/^www\./, "")
+    : (state.file ? state.file.name : "catalogue.csv").replace(/\.csv$/i, "");
 
   $("downloadReport").addEventListener("click", () => {
     if (!state.result) return;
     download(E.buildReportCSV(state.result.issues, { verifiedExisting: state.verifiedExisting, validatedVariations: validatedVariationKeys() }), `${baseName()}_rapport_waypilot.csv`);
+  });
+  $("downloadAudit").addEventListener("click", () => {
+    if (!state.result) return;
+    const html = E.buildAuditReportHTML(state.result, {
+      store: $("storeName").value.trim(),
+      source: state.woo ? state.woo.site : (state.file ? state.file.name : "")
+    });
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
   });
   $("downloadOriginal").addEventListener("click", () => {
     if (!state.file) { alert("Importez d’abord un catalogue CSV."); return; }
@@ -428,7 +447,7 @@
       const catalog = W.toCatalog(E, data);
       clearState();
       $("file").value = "";
-      Object.assign(state, { catalog, woo: client });
+      Object.assign(state, { catalog, woo: client, readOnly: $("wooMode").value === "read" });
       info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations lus.`;
       info.classList.add("success");
       $("analyze").disabled = false;
@@ -448,7 +467,7 @@
   });
 
   $("wooApplyButton").addEventListener("click", async () => {
-    if (!state.result || !state.woo) return;
+    if (!state.result || !state.woo || state.readOnly) return;
     const manual = visibleManual().filter(v => v.validated && v.selected);
     let plan;
     try { plan = W.buildChanges(state.catalog, state.result.proposals, manual); }
@@ -480,7 +499,7 @@
 
   // ---------- Fichier ----------
   function clearState() {
-    Object.assign(state, { file: null, catalog: null, result: null, woo: null });
+    Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false });
     $("wooResults").replaceChildren();
     $("wooApplySummary").textContent = "";
     state.verifiedExisting.clear();
