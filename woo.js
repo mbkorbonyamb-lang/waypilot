@@ -173,7 +173,7 @@
       }
     });
     async function fetchCatalog(onProgress = () => {}) {
-      const products = await getAll("/products", n => onProgress(`${n} produits lus…`));
+      const { products, others } = splitLanguages(await getAll("/products", n => onProgress(`${n} produits lus…`)), site);
       const ids = products.filter(p => p.type === "variable").flatMap(p => (p.variations || []).map(v => v.id));
       const list = [];
       for (let i = 0; i < ids.length; i += BATCH_SIZE) {
@@ -182,9 +182,34 @@
       }
       const variations = {};
       list.forEach(v => { (variations[v.parent] = variations[v.parent] || []).push(v); });
-      return { products, variations };
+      return { products, variations, others };
     }
     return { site, fetchCatalog };
+  }
+
+  // Site multilingue (WPML, Polylang…) : l’API publique renvoie chaque traduction comme un produit à part, avec la même UGS.
+  // La langue se lit dans l’adresse du produit : domaine (fichet-bauche.nl), préfixe (/en/) ou paramètre (?lang=en).
+  const hostOf = h => h.toLowerCase().replace(/^www\./, "");
+  function languageOf(permalink) {
+    try {
+      const u = new URL(permalink);
+      const prefix = (u.pathname.match(/^\/([a-z]{2}(?:[-_][a-z]{2})?)(?:\/|$)/i) || [])[1] || u.searchParams.get("lang") || "";
+      return `${hostOf(u.host)}${prefix ? "/" + prefix.toLowerCase() : ""}`;
+    } catch (_) { return ""; }
+  }
+  /** Garde la langue de l’adresse auditée (sinon la plus fournie). others : [{ language, count }] des versions écartées. */
+  function splitLanguages(products, site) {
+    const groups = new Map();
+    products.forEach(p => { const k = languageOf(p.permalink); if (k) groups.set(k, (groups.get(k) || 0) + 1); });
+    if (groups.size < 2) return { products, others: [] };
+    const host = hostOf(new URL(site).host);
+    const keys = [...groups.keys()];
+    const keep = keys.find(k => k === host) || keys.filter(k => k.split("/")[0] === host).sort((a, b) => groups.get(b) - groups.get(a))[0]
+      || keys.sort((a, b) => groups.get(b) - groups.get(a))[0];
+    return {
+      products: products.filter(p => { const k = languageOf(p.permalink); return !k || k === keep; }),
+      others: keys.filter(k => k !== keep).map(language => ({ language, count: groups.get(language) }))
+    };
   }
 
   // ---------- Conversion API → catalogue du moteur ----------
@@ -273,7 +298,7 @@
    * Catalogue au format du moteur à partir de l’API publique. Lecture seule : pas de meta,
    * aucune correction ne peut être écrite. Colonne « Purchasable » : achetable ou non selon WooCommerce.
    */
-  function publicToCatalog(engine, { products, variations }) {
+  function publicToCatalog(engine, { products, variations, others = [] }) {
     const parents = products.filter(p => p.type !== "variation");
     const maxAttrs = Math.max(1, ...parents.map(p => (p.attributes || []).length));
     const headers = ["ID", "Type", "SKU", "Name", "Published", "Short description", "Description", "Sale price", "Regular price", "Categories", "Images", "Parent", "In stock?", "Purchasable"];
@@ -318,6 +343,7 @@
     const catalog = engine.catalogFromRows(headers, rows, rows.map((_, i) => i + 2), ",");
     catalog.imageAlt = imageAlt;
     catalog.source = "public";
+    catalog.otherLanguages = others;
     return catalog;
   }
 
@@ -476,7 +502,7 @@
     return { products, variations, skipped: [], count, notReversible };
   }
 
-  const api = { normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, buildChanges, buildJournalCSV, buildRollback };
+  const api = { normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, buildChanges, buildJournalCSV, buildRollback };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotWoo = api;
 })(typeof window !== "undefined" ? window : globalThis);

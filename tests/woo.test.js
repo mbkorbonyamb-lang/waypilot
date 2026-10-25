@@ -326,3 +326,36 @@ test("buildChanges : vue 2, vue 3 quand aucune image n’a de texte", () => {
   const k = W.buildChanges(c, r.proposals).products.find(x => x.payload.id === 200);
   assert.deepEqual(k.payload.images.map(i => i.alt), ["Kimono fluide vert", "Kimono fluide vert – vue 2", "Kimono fluide vert – vue 3"]);
 });
+
+test("site multilingue (un domaine par langue) : seule la langue auditée est gardée, plus de faux doublons d’UGS", async () => {
+  const p = (id, name, sku, link) => ({ id, name, sku, type: "simple", permalink: link, prices: { regular_price: "10000", currency_minor_unit: 2 }, images: [], categories: [], attributes: [] });
+  const products = [
+    p(7354, "Kluis Newton S2 80L", "NCS80", "https://www.fichet-bauche.nl/product/kluis-newton-s2-80l/"),
+    p(7353, "Newton S2 safe 80L", "NCS80", "https://www.fichet-bauche.com/product/newton-s2-safe-80l/"),
+    p(7352, "Coffre-fort Newton S2 80L", "NCS80", "https://www.fichet-bauche.fr/produit/coffre-fort-newton-s2-80l/"),
+    p(8648, "Coffre-fort Complice BO 80L", "PCF80", "https://www.fichet-bauche.fr/produit/coffre-fort-complice-bo-80l/")
+  ];
+  const fetchImpl = async () => ({ ok: true, status: 200, text: async () => JSON.stringify(products), headers: { get: () => "1" } });
+  const got = await W.createPublicClient({ url: "fichet-bauche.fr", fetchImpl }).fetchCatalog();
+  assert.deepEqual(got.products.map(x => x.id), [7352, 8648]);
+  assert.deepEqual(got.others, [{ language: "fichet-bauche.nl", count: 1 }, { language: "fichet-bauche.com", count: 1 }]);
+  const c = W.publicToCatalog(E, got);
+  assert.equal(c.otherLanguages.length, 2);
+  assert.ok(!E.analyze(c).issues.some(i => i.code === "SKU_DUPLICATE"));
+});
+
+test("site multilingue par préfixe ou ?lang= : langue par défaut gardée ; site d’une seule langue inchangé", () => {
+  const p = (id, link) => ({ id, permalink: link });
+  const prefixed = W.splitLanguages([p(1, "https://shop.test/produit/a/"), p(2, "https://shop.test/en/product/a/"), p(3, "https://shop.test/produit/b/"), p(4, "https://shop.test/product/a/?lang=de")], "https://shop.test");
+  assert.deepEqual(prefixed.products.map(x => x.id), [1, 3]);
+  assert.deepEqual(prefixed.others.map(o => o.language).sort(), ["shop.test/de", "shop.test/en"]);
+  const single = W.splitLanguages([p(1, "https://shop.test/produit/a/"), p(2, "https://shop.test/produit/b/")], "https://shop.test");
+  assert.equal(single.products.length, 2);
+  assert.deepEqual(single.others, []);
+});
+
+test("site multilingue : adresse auditée absente des liens → langue la plus fournie", () => {
+  const p = (id, link) => ({ id, permalink: link });
+  const r = W.splitLanguages([p(1, "https://a.test/fr/x/"), p(2, "https://a.test/fr/y/"), p(3, "https://a.test/en/x/")], "https://boutique.test");
+  assert.deepEqual(r.products.map(x => x.id), [1, 2]);
+});

@@ -1,3 +1,9 @@
+# WayPilot 1.14.4 — audit express : sites multilingues
+
+- Constaté sur fichet-bauche.fr (WPML, un domaine par langue : .fr, .nl, .com) : l’API publique renvoie chaque traduction comme un produit à part, avec la même UGS. Résultat : 150 « produits » au lieu d’environ 50, et plus de 100 fausses alertes « SKU en double » de gravité élevée.
+- La langue de chaque produit se lit dans son adresse (domaine, préfixe /en/ ou ?lang=en). Si plusieurs langues apparaissent, seule celle de l’adresse auditée est gardée (sinon la plus fournie) ; le résumé indique combien de traductions ont été écartées. Les variations des traductions ne sont plus lues. 3 tests ajoutés.
+- Limite connue : un export CSV ou une connexion par clé API d’un site WPML contient aussi toutes les langues.
+
 # WayPilot 1.14.3 — Shopify : lignes techniques d’applis ignorées
 
 - Constaté sur Allbirds : « Free Returns Coverage » (appli Redo) partage la référence « x-redo » entre ses paliers de prix, d’où une fausse alerte « SKU en double » de gravité élevée. Les lignes ajoutées par les applis de retours gratuits, d’assurance livraison ou de garantie (Redo, Route, Seel, Navidium, Extend, « Shipping Protection »…) sont désormais exclues de l’audit Shopify, repérées par le vendeur, le titre ou l’UGS. Le résumé indique combien ont été ignorées. 2 tests ajoutés.
