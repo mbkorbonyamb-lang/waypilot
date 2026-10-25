@@ -524,7 +524,7 @@
       $("file").value = "";
       Object.assign(state, { catalog, readOnly: true });
       const variationCount = catalog.rows.filter(r => /variation/i.test(r[catalog.col.type] || "")).length;
-      info.textContent = `${site} — ${catalog.platform === "shopify" ? "boutique Shopify, " : ""}${catalog.rows.length - variationCount} produits et ${variationCount} variations visibles par les clients.${imagesNote(catalog)}`;
+      info.textContent = `${site} — ${catalog.platform === "shopify" ? "boutique Shopify, " : ""}${catalog.rows.length - variationCount} produits et ${variationCount} variations visibles par les clients.${(catalog.ignored || []).length ? ` ${catalog.ignored.length} ligne(s) technique(s) d’applis ignorée(s) (${[...new Set(catalog.ignored)].slice(0, 3).join(", ")}).` : ""}${imagesNote(catalog)}`;
       info.classList.add("success");
       $("analyze").disabled = false;
       runAnalysis();
