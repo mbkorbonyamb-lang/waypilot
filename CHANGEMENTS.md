@@ -1,3 +1,7 @@
+# WayPilot 1.14.1 — score jamais à 100 % s’il reste une anomalie
+
+- Constaté sur une grande boutique Shopify (5 012 lignes, 43 anomalies dont 8 élevées) : le score arrondi affichait 100 %, alors que la légende dit « 100 % = aucune anomalie ». Le score plafonne désormais à 99 % tant qu’il reste une anomalie. 1 test ajouté.
+
 # WayPilot 1.14.0 — audit express des boutiques Shopify
 
 - L’audit express accepte aussi les boutiques Shopify, par l’adresse seule. WayPilot essaie d’abord WooCommerce, puis Shopify, sans que l’utilisateur ait à choisir.
