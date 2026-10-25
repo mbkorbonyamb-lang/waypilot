@@ -42,7 +42,7 @@
   </style>
 </head>
 <body>
-<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.13.0</div></header>
+<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.14.0</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -52,7 +52,7 @@
 
   <section class="panel">
     <h2>1. Audit express : l’adresse suffit</h2>
-    <p class="help">Entrez l’adresse d’une boutique WooCommerce. WayPilot lit son catalogue public, tel que les clients le voient : sans clé, sans installation, et sans rien modifier.</p>
+    <p class="help">Entrez l’adresse d’une boutique WooCommerce ou Shopify. WayPilot lit son catalogue public, tel que les clients le voient : sans clé, sans installation, et sans rien modifier.</p>
     <div class="settings"><div><label class="label" for="quickUrl">Adresse de la boutique</label><input id="quickUrl" class="field" type="url" placeholder="maboutique.com" style="margin-top:7px" autocomplete="url"></div></div>
     <div class="actions"><button id="quickAudit">Lancer l’audit express</button></div>
     <div id="quickInfo" class="message" aria-live="polite"></div>
@@ -117,7 +117,7 @@
       <select id="issueFilter"><option value="all">Toutes les anomalies</option><option value="review">À vérifier (rouge)</option><option value="high">Gravité élevée</option><option value="variation">Variations manquantes</option></select>
       <span class="review-tag">À VÉRIFIER</span>
     </div>
-    <p id="publicNotice" class="message" hidden><strong>Audit express :</strong> ce rapport montre ce que voient les clients. Pour corriger ces erreurs, importez un CSV ou connectez la boutique avec une clé API.</p>
+    <p id="publicNotice" class="message" hidden><strong>Audit express :</strong> ce rapport montre ce que voient les clients. Pour corriger ces erreurs sur WooCommerce, importez un CSV ou connectez la boutique avec une clé API. Sur Shopify, la correction se fait pour l’instant en service.</p>
     <p class="help" id="markExistingHelp">Si vous avez vérifié dans WooCommerce qu’une variation signalée existe déjà, cochez sa ligne puis cliquez sur « Marquer comme déjà existante ». Elle ne sera pas ajoutée au CSV.</p>
     <div class="actions" id="markExistingActions"><button type="button" id="markExistingVariations" class="secondary">Marquer comme déjà existante(s) dans WooCommerce</button></div>
     <div class="table-wrap"><table><thead><tr><th>Confirmer</th><th>Ligne</th><th>Produit</th><th>Anomalie</th><th>Gravité</th><th>Suite à donner</th></tr></thead><tbody id="issueRows"></tbody></table></div>
@@ -159,10 +159,12 @@
 <footer>WayPilot · Contrôle qualité des catalogues e-commerce. · <a href="mentions-legales.html">Mentions légales</a> · <a href="cgv.html">CGV</a></footer>
 <script src="engine.js"></script>
 <script src="woo.js"></script>
+<script src="shopify.js"></script>
 <script>
 (() => {
   const E = window.WayPilotEngine;
   const W = window.WayPilotWoo;
+  const S = window.WayPilotShopify;
   const $ = id => document.getElementById(id);
   $("version").textContent = `BÊTA · V${E.VERSION}`;
 
@@ -488,23 +490,41 @@
 
   // ---------- Audit express (API publique, sans clé) ----------
   // WooCommerce bloque cette API depuis un autre site (CORS) : la lecture passe par le relais WayPilot (Worker Cloudflare, dossier relais-cloudflare/).
+  // Shopify : catalogue public /products.json, lu par le même relais. WooCommerce d’abord, Shopify si ce n’en est pas une.
   const RELAY_URL = "https://waypilot-relais.wayzure.workers.dev";
+  async function readPublicStore(url, progress) {
+    try {
+      const client = W.createPublicClient({ url, relay: RELAY_URL });
+      const data = await client.fetchCatalog(progress);
+      if (!data.products.length) throw new Error("Aucun produit public trouvé à cette adresse.");
+      return { site: client.site, catalog: W.publicToCatalog(E, data) };
+    } catch (wooError) {
+      if (wooError.status === 401 || wooError.status === 403) throw wooError;
+      try {
+        const client = S.createShopifyClient({ url, relay: RELAY_URL });
+        const data = await client.fetchCatalog(progress);
+        if (!data.products.length) throw new Error("Aucun produit public trouvé à cette adresse.");
+        return { site: client.site, catalog: S.shopifyToCatalog(E, data) };
+      } catch (shopifyError) {
+        if (shopifyError.status === 404) throw new Error("Aucun catalogue public lisible : ce n’est ni une boutique WooCommerce ni une boutique Shopify, ou son catalogue public est désactivé.");
+        throw shopifyError;
+      }
+    }
+  }
   async function quickAudit() {
     const info = $("quickInfo");
     info.className = "message";
     try {
-      const client = W.createPublicClient({ url: $("quickUrl").value, relay: RELAY_URL });
       $("quickAudit").disabled = true;
       info.textContent = "Lecture du catalogue public…";
-      const data = await client.fetchCatalog(text => { info.textContent = text; });
-      if (!data.products.length) throw new Error("Aucun produit public trouvé à cette adresse.");
-      const catalog = W.publicToCatalog(E, data);
-      catalog.site = client.site;
+      const { site, catalog } = await readPublicStore($("quickUrl").value, text => { info.textContent = text; });
+      catalog.site = site;
       await measureImages(catalog, text => { info.textContent = text; });
       clearState();
       $("file").value = "";
       Object.assign(state, { catalog, readOnly: true });
-      info.textContent = `${client.site} — ${data.products.length} produits et ${Object.values(data.variations).reduce((n, l) => n + l.length, 0)} variations visibles par les clients.${imagesNote(catalog)}`;
+      const variationCount = catalog.rows.filter(r => /variation/i.test(r[catalog.col.type] || "")).length;
+      info.textContent = `${site} — ${catalog.platform === "shopify" ? "boutique Shopify, " : ""}${catalog.rows.length - variationCount} produits et ${variationCount} variations visibles par les clients.${imagesNote(catalog)}`;
       info.classList.add("success");
       $("analyze").disabled = false;
       runAnalysis();

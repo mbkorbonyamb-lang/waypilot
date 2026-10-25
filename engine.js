@@ -322,7 +322,8 @@
     if (col.name < 0) add(-1, "NAME_COLUMN_MISSING", SEVERITY.HIGH, "Colonne du nom introuvable");
     if (col.price < 0) add(-1, "PRICE_COLUMN_MISSING", SEVERITY.HIGH, "Colonne du prix régulier introuvable");
     if (col.description < 0 && col.shortDescription < 0) add(-1, "DESCRIPTION_COLUMN_MISSING", SEVERITY.LOW, "Colonne de description absente");
-    if (col.category < 0) add(-1, "CATEGORY_COLUMN_MISSING", SEVERITY.LOW, "Colonne des catégories introuvable");
+    // Shopify : la colonne n’existe que si la boutique renseigne le type de produit, son absence n’est pas une anomalie.
+    if (col.category < 0 && catalog.platform !== "shopify") add(-1, "CATEGORY_COLUMN_MISSING", SEVERITY.LOW, "Colonne des catégories introuvable");
 
     const types = rows.map(r => productType(get(r, "type")));
     const byId = new Map(), bySku = new Map();
@@ -460,14 +461,14 @@
         }
       }
 
-      // SKU
+      // SKU (sur Shopify, un produit à options n’a pas d’UGS propre : seules ses variantes en portent)
       const sku = clean(get(row, "sku"));
       if (col.sku >= 0) {
         if (sku) {
           const k = normalize(sku);
           if (seenSkus.has(k)) add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU en double (ligne ${lines[seenSkus.get(k)]})`);
           else seenSkus.set(k, i);
-        } else if (!t.isVariation) add(i, "SKU_MISSING", SEVERITY.LOW, "Référence SKU absente (recommandée pour le suivi des produits)");
+        } else if (!t.isVariation && !(t.isVariable && catalog.platform === "shopify")) add(i, "SKU_MISSING", SEVERITY.LOW, "Référence SKU absente (recommandée pour le suivi des produits)");
       }
 
       // Catégorie
@@ -853,7 +854,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.13.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.14.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

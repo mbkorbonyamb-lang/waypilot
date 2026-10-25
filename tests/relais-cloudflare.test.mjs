@@ -30,3 +30,17 @@ test("repli rest_route puis 404 clair ; chemin inconnu", async () => {
   assert.equal((await handle(new Request("https://relais.test/autre"))).status, 404);
   assert.equal((await handle(new Request("https://relais.test/products?site=127.0.0.1"))).status, 400);
 });
+
+test("Shopify : /products.json lu par page, réponse non Shopify refusée", async () => {
+  const seen = [];
+  const res = await handle(new Request("https://relais.test/shopify?site=boutique.example&page=2&limit=9999"), async url => { seen.push(url); return { ...ok('{"products":[{"id":1}]}'), url }; });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*");
+  assert.deepEqual(await res.json(), { products: [{ id: 1 }] });
+  assert.equal(seen[0], "https://boutique.example/products.json?limit=250&page=2");
+  const html = await handle(new Request("https://relais.test/shopify?site=jaaray.site"), async () => ok("<html></html>"));
+  assert.equal(html.status, 404);
+  const other = await handle(new Request("https://relais.test/shopify?site=jaaray.site"), async () => ok('{"items":[]}'));
+  assert.equal(other.status, 404);
+  assert.equal((await handle(new Request("https://relais.test/shopify?site=localhost"))).status, 400);
+});
