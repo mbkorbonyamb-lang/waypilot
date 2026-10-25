@@ -472,21 +472,36 @@
     if (!urls.length) return;
     const sizes = {};
     let done = 0;
-    const one = src => new Promise(resolve => {
+    const one = (src, count = true) => new Promise(resolve => {
       const img = new Image();
+      // Sans référent : beaucoup d’hébergeurs WordPress bloquent les images appelées depuis un autre site (anti-hotlink).
+      img.referrerPolicy = "no-referrer";
       let settled = false;
       const finish = value => { if (settled) return; settled = true; clearTimeout(timer); if (value) sizes[src] = value; resolve(); };
       const timer = setTimeout(() => finish(null), 10000); // trop lente : ni taille ni erreur, pas d’alerte
       img.onload = () => finish({ width: img.naturalWidth, height: img.naturalHeight });
       img.onerror = () => finish({ broken: true });
       img.src = src;
-    }).then(() => report(`Vérification de la taille des images : ${++done} / ${urls.length}`));
+    }).then(() => { if (count) report(`Vérification de la taille des images : ${++done} / ${urls.length}`); });
     const queue = urls.slice();
     await Promise.all(Array.from({ length: 8 }, async () => { while (queue.length) await one(queue.shift()); }));
+    // Un serveur qui limite les requêtes renvoie des erreurs passagères : second essai, lentement, avant de conclure.
+    const failed = urls.filter(u => sizes[u] && sizes[u].broken);
+    if (failed.length) {
+      report(`Second essai pour ${failed.length} image(s) en erreur…`);
+      failed.forEach(u => delete sizes[u]);
+      const retry = failed.slice();
+      await Promise.all(Array.from({ length: 2 }, async () => { while (retry.length) await one(retry.shift(), false); }));
+    }
+    // Si la plupart des images échouent, c’est le site qui bloque la lecture : pas d’alerte image par image.
+    const broken = urls.filter(u => sizes[u] && sizes[u].broken);
+    catalog.imagesBlocked = broken.length >= 10 && broken.length > 0.5 * urls.length;
+    if (catalog.imagesBlocked) broken.forEach(u => delete sizes[u]);
     catalog.imageSizes = sizes;
     catalog.imagesSkipped = all.length - urls.length;
   }
-  const imagesNote = catalog => catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "";
+  const imagesNote = catalog => (catalog.imagesBlocked ? " Le site bloque la lecture de ses images depuis WayPilot : images non vérifiées." : "")
+    + (catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "");
 
   // ---------- Audit express (API publique, sans clé) ----------
   // WooCommerce bloque cette API depuis un autre site (CORS) : la lecture passe par le relais WayPilot (Worker Cloudflare, dossier relais-cloudflare/).
