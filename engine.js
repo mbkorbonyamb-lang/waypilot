@@ -371,7 +371,11 @@
       const saleRaw = clean(get(row, "salePrice"));
       const regular = priceRaw ? parseAmount(priceRaw, decimal) : NaN;
       const sale = saleRaw ? parseAmount(saleRaw, decimal) : NaN;
-      if (col.price >= 0) {
+      // Produit vitrine (prix sur devis) : sans prix et non achetable, WooCommerce affiche « Lire la suite ».
+      const showcase = col.purchasable >= 0 && clean(get(row, "purchasable")) === "0" && !t.isVariable && !t.isGrouped && !(regular > 0);
+      if (showcase) {
+        add(i, "PRICE_ON_REQUEST", SEVERITY.LOW, "Produit sans prix, non achetable (vitrine ou prix sur devis) : à confirmer si c’est voulu");
+      } else if (col.price >= 0) {
         if (!priceRaw) {
           if (!t.isVariable && !t.isGrouped) add(i, "PRICE_MISSING", SEVERITY.HIGH, "Prix régulier manquant");
         } else if (!Number.isFinite(regular)) add(i, "PRICE_INVALID", SEVERITY.HIGH, `Format de prix invalide (« ${priceRaw} »)`);
@@ -756,6 +760,7 @@
     NOT_PURCHASABLE: ["sales", "Affiché mais impossible à ajouter au panier"],
     PRICE_INVALID: ["sales", "Prix illisible"],
     PRICE_NON_POSITIVE: ["sales", "Prix nul ou négatif"],
+    PRICE_ON_REQUEST: ["ops", "Produit vitrine sans prix (sur devis ?)"],
     SALE_INVALID: ["sales", "Prix promotionnel invalide"],
     VARIATION_VALUE_MISSING: ["sales", "Taille ou option affichée mais impossible à commander"],
     VARIATION_DUPLICATE: ["sales", "Variation en double : le client peut tomber sur la mauvaise"],
@@ -858,7 +863,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.14.4", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.14.5", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

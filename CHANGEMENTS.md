@@ -1,3 +1,8 @@
+# WayPilot 1.14.5 — produits vitrine (prix sur devis)
+
+- Constaté sur fichet-bauche.fr : 18 produits (portes fortes, coffres bancaires) à prix 0, non achetables, bouton « Lire la suite ». Ce sont des produits vitrine sur devis, pas des erreurs. Ils remontaient en « Prix nul ou négatif », gravité élevée.
+- Un produit sans prix ET non achetable (connu par l’audit express) devient « Produit vitrine sans prix », gravité faible, à confirmer. Un produit à prix 0 qui reste achetable est toujours signalé en élevé. 1 test ajouté.
+
 # WayPilot 1.14.4 — audit express : sites multilingues
 
 - Constaté sur fichet-bauche.fr (WPML, un domaine par langue : .fr, .nl, .com) : l’API publique renvoie chaque traduction comme un produit à part, avec la même UGS. Résultat : 150 « produits » au lieu d’environ 50, et plus de 100 fausses alertes « SKU en double » de gravité élevée.
