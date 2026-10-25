@@ -1,3 +1,11 @@
+# WayPilot 1.14.0 — audit express des boutiques Shopify
+
+- L’audit express accepte aussi les boutiques Shopify, par l’adresse seule. WayPilot essaie d’abord WooCommerce, puis Shopify, sans que l’utilisateur ait à choisir.
+- Lecture du catalogue public `/products.json` (250 produits par page) par le relais Cloudflare, nouveau chemin `/shopify`. Aucune clé, rien n’est écrit dans la boutique : les corrections Shopify se font en service.
+- Conversion vers le format du moteur : un produit sans option (« Default Title ») devient un produit simple ; sinon un produit variable et ses variantes. Le prix barré Shopify (`compare_at_price`) devient le prix régulier.
+- Pas de fausse alerte : pas d’alerte UGS sur un produit à options (seules ses variantes portent une UGS sur Shopify), contrôle des catégories seulement si la boutique renseigne le type de produit, texte alternatif et GTIN non contrôlés (absents du catalogue public).
+- `shopify.js` publié avec le site. 4 tests JS et 1 test du relais ajoutés.
+
 # WayPilot 1.13.0 — texte alternatif des images corrigé automatiquement
 
 - Connexion avec clé API : pour chaque produit dont des images n’ont pas de texte alternatif, WayPilot propose un texte construit à partir du nom du produit (« Caftan beldi rose », puis « Caftan beldi rose – vue 2 », etc.). Le texte proposé se modifie avant validation. Les textes déjà remplis ne changent pas.
