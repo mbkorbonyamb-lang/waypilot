@@ -658,7 +658,8 @@
       variations: types.filter(t => t.isVariation).length,
       issues: issues.length,
       high: issues.filter(x => x.severity === SEVERITY.HIGH).length,
-      score: rows.length ? Math.round(100 * (1 - lost / rows.length)) : 0,
+      // 100 % est réservé au catalogue sans anomalie : sur 5 000 lignes, 43 anomalies arrondiraient à 100.
+      score: rows.length ? Math.min(lost > 0 ? 99 : 100, Math.round(100 * (1 - lost / rows.length))) : 0,
       rowsWithIssues: penalty.size
     };
     return { issues, proposals, manualCandidates, stats };
@@ -854,7 +855,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.14.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.14.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

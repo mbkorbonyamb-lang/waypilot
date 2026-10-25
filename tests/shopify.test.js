@@ -80,3 +80,12 @@ test("client : pages de 250, arrêt sur page courte, erreurs claires", async () 
   const locked = S.createShopifyClient({ url: "x.example", relay: "https://relais.test", fetchImpl: async () => ({ ok: false, status: 401, text: async () => "{}" }) });
   await assert.rejects(locked.fetchCatalog(), /mot de passe/);
 });
+
+test("score : jamais 100 % s’il reste une anomalie, même sur un grand catalogue", () => {
+  const products = Array.from({ length: 600 }, (_, i) => ({ id: i + 1, title: `Produit ${i + 1}`, body_html: "<p>Texte.</p>", product_type: "", options: [{ name: "Title", values: ["Default Title"] }],
+    images: [{ src: `https://cdn.test/${i}.jpg` }], variants: [{ id: 10000 + i, title: "Default Title", sku: `P${i}`, price: "10.00", available: true }] }));
+  products[0].images = [];
+  const r = E.analyze(S.shopifyToCatalog(E, { products }));
+  assert.ok(r.issues.length > 0);
+  assert.equal(r.stats.score, 99);
+});
