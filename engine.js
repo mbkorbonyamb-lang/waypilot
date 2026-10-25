@@ -224,7 +224,10 @@
       .replace(/<[^>]*>/g, " ")
       .replace(/&nbsp;|&#160;|&#xA0;/gi, " ")
       .replace(/&amp;/gi, "&")
-      .replace(/&euro;/gi, "€");
+      .replace(/&euro;/gi, "€")
+      // WordPress encode les tirets et apostrophes du titre (« Aurea Fides &#8211; 1ml »).
+      .replace(/&#(\d{2,6});|&#x([0-9a-f]{2,5});/gi, (m, d, h) => { const n = d ? Number(d) : parseInt(h, 16); return n > 31 && n < 0x110000 ? String.fromCodePoint(n) : m; })
+      .replace(/&(ndash|mdash|rsquo|lsquo|laquo|raquo|quot|apos|hellip);/gi, (m, k) => ({ ndash: "–", mdash: "—", rsquo: "’", lsquo: "‘", laquo: "«", raquo: "»", quot: "\"", apos: "'", hellip: "…" })[k.toLowerCase()]);
   }
 
   /**
@@ -863,7 +866,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.14.5", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.14.6", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

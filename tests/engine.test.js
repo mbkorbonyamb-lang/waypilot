@@ -249,3 +249,10 @@ test("images : taille mesurée (seuils Google), image cassée, sans mesure aucun
   const html = E.buildAuditReportHTML(r, { date: "2026-10-24" });
   assert.match(html, /Visibilité sur Google <span class="n">2<\/span>/);
 });
+
+test("noms : entités HTML de WordPress décodées (tiret, apostrophe)", () => {
+  const c = E.catalogFromRows(["ID", "Type", "Name", "Regular price"], [["1", "simple", "Aurea Fides &#8211; 1ml", "0"], ["2", "simple", "L&rsquo;eau &amp; co &#x2014; 5ml", "0"]], [2, 3], ",");
+  const names = E.analyze(c).issues.map(i => i.product);
+  assert.ok(names.includes("Aurea Fides – 1ml"), names.join(" | "));
+  assert.ok(names.includes("L’eau & co — 5ml"), names.join(" | "));
+});
