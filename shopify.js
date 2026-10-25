@@ -66,11 +66,23 @@
   const isDefault = p => (p.variants || []).length === 1 && /^default title$/i.test(clean(p.variants[0].title));
   const optionValues = v => [v.option1, v.option2, v.option3].map(clean);
 
+  // Lignes ajoutées par des applis (retours gratuits, assurance livraison, garanties) : pas de vrais produits.
+  // Elles partagent souvent une même UGS entre paliers de prix (« x-redo ») et n’ont ni description ni image.
+  const TECH_VENDOR = /^(re:?do|route|seel|navidium|extend|xcover|shipaid|order ?protection)( app)?$/i;
+  const TECH_TITLE = /(package|shipping|order|delivery) protection|free returns coverage|route (package )?protection|extend protection plan|green shipping protection/i;
+  const TECH_SKU = /^(x-redo|route|routeins|navidium|seel-)/i;
+  function isTechnical(p) {
+    if (TECH_VENDOR.test(clean(p.vendor)) || TECH_TITLE.test(clean(p.title))) return true;
+    return (p.variants || []).some(v => TECH_SKU.test(clean(v.sku)));
+  }
+
   /**
    * Catalogue au format du moteur (en-têtes CSV WooCommerce) à partir de /products.json.
    * Un produit sans option (« Default Title ») devient un produit simple ; sinon un produit variable et ses variantes.
    */
-  function shopifyToCatalog(engine, { products }) {
+  function shopifyToCatalog(engine, { products: all }) {
+    const ignored = all.filter(isTechnical).map(p => clean(p.title));
+    const products = all.filter(p => !isTechnical(p));
     const maxAttrs = Math.max(1, ...products.map(p => (isDefault(p) ? 0 : (p.options || []).length)));
     const headers = ["ID", "Type", "SKU", "Name", "Published", "Description", "Sale price", "Regular price", "Images", "Parent", "In stock?"];
     // Type de produit Shopify comme catégorie, seulement si la boutique s’en sert (sinon une alerte par produit).
@@ -125,10 +137,11 @@
     if (withAlt) catalog.imageAlt = imageAlt;
     catalog.source = "public";
     catalog.platform = "shopify";
+    catalog.ignored = ignored;
     return catalog;
   }
 
-  const api = { createShopifyClient, shopifyToCatalog };
+  const api = { createShopifyClient, shopifyToCatalog, isTechnical };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotShopify = api;
 })(typeof window !== "undefined" ? window : globalThis);

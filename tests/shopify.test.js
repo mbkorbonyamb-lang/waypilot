@@ -96,3 +96,20 @@ test("doublon d’UGS : le message nomme le produit qui porte déjà la référe
   const issue = E.analyze(S.shopifyToCatalog(E, d)).issues.find(i => i.code === "SKU_DUPLICATE");
   assert.match(issue.message, /« RL-S » déjà utilisée par « Robe lin - S » \(ligne 3\)/);
 });
+
+test("lignes techniques d’applis (Redo, Route…) ignorées : pas de fausse alerte UGS en double", () => {
+  const redo = (id, price) => ({ id, title: `Free Returns Coverage - $${price}`, vendor: "re:do", body_html: "", product_type: "", images: [], options: [{ name: "Title", values: ["Default Title"] }], variants: [{ id: id * 10, title: "Default Title", sku: "x-redo", price, available: true }] });
+  const d = data();
+  d.products.push(redo(901, "0.80"), redo(902, "4.98"));
+  const c = S.shopifyToCatalog(E, d);
+  assert.equal(c.ignored.length, 2);
+  assert.equal(c.rows.length, S.shopifyToCatalog(E, data()).rows.length);
+  assert.ok(!E.analyze(c).issues.some(i => i.code === "SKU_DUPLICATE"));
+});
+
+test("détection technique : vrais produits conservés", () => {
+  assert.equal(S.isTechnical({ title: "Shipping Protection", vendor: "Boutique", variants: [] }), true);
+  assert.equal(S.isTechnical({ title: "Route Package Protection", vendor: "Route", variants: [] }), true);
+  assert.equal(S.isTechnical({ title: "Sac de voyage", vendor: "Route 66", variants: [{ sku: "R66-1" }] }), false);
+  assert.equal(S.isTechnical({ title: "Robe longue", vendor: "Extended Studio", variants: [{ sku: "ROBE-1" }] }), false);
+});

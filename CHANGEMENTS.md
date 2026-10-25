@@ -1,3 +1,7 @@
+# WayPilot 1.14.3 — Shopify : lignes techniques d’applis ignorées
+
+- Constaté sur Allbirds : « Free Returns Coverage » (appli Redo) partage la référence « x-redo » entre ses paliers de prix, d’où une fausse alerte « SKU en double » de gravité élevée. Les lignes ajoutées par les applis de retours gratuits, d’assurance livraison ou de garantie (Redo, Route, Seel, Navidium, Extend, « Shipping Protection »…) sont désormais exclues de l’audit Shopify, repérées par le vendeur, le titre ou l’UGS. Le résumé indique combien ont été ignorées. 2 tests ajoutés.
+
 # WayPilot 1.14.2 — doublon d’UGS : le produit concerné est nommé
 
 - L’alerte « Référence SKU en double » donne la référence et le nom du produit qui la porte déjà, pas seulement son numéro de ligne (la première occurrence n’a pas d’anomalie et n’apparaît donc pas dans le tableau). 1 test ajouté.
