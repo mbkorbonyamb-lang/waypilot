@@ -466,7 +466,10 @@
       if (col.sku >= 0) {
         if (sku) {
           const k = normalize(sku);
-          if (seenSkus.has(k)) add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU en double (ligne ${lines[seenSkus.get(k)]})`);
+          if (seenSkus.has(k)) {
+            const first = seenSkus.get(k);
+            add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU « ${sku} » déjà utilisée par « ${displayName(get(rows[first], "name"))} » (ligne ${lines[first]})`);
+          }
           else seenSkus.set(k, i);
         } else if (!t.isVariation && !(t.isVariable && catalog.platform === "shopify")) add(i, "SKU_MISSING", SEVERITY.LOW, "Référence SKU absente (recommandée pour le suivi des produits)");
       }
@@ -855,7 +858,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.14.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.14.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

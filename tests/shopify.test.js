@@ -89,3 +89,10 @@ test("score : jamais 100 % s’il reste une anomalie, même sur un grand catalog
   assert.ok(r.issues.length > 0);
   assert.equal(r.stats.score, 99);
 });
+
+test("doublon d’UGS : le message nomme le produit qui porte déjà la référence", () => {
+  const d = data();
+  d.products[1].variants[0].sku = "RL-S";
+  const issue = E.analyze(S.shopifyToCatalog(E, d)).issues.find(i => i.code === "SKU_DUPLICATE");
+  assert.match(issue.message, /« RL-S » déjà utilisée par « Robe lin - S » \(ligne 3\)/);
+});

@@ -1,3 +1,7 @@
+# WayPilot 1.14.2 — doublon d’UGS : le produit concerné est nommé
+
+- L’alerte « Référence SKU en double » donne la référence et le nom du produit qui la porte déjà, pas seulement son numéro de ligne (la première occurrence n’a pas d’anomalie et n’apparaît donc pas dans le tableau). 1 test ajouté.
+
 # WayPilot 1.14.1 — score jamais à 100 % s’il reste une anomalie
 
 - Constaté sur une grande boutique Shopify (5 012 lignes, 43 anomalies dont 8 élevées) : le score arrondi affichait 100 %, alors que la légende dit « 100 % = aucune anomalie ». Le score plafonne désormais à 99 % tant qu’il reste une anomalie. 1 test ajouté.
