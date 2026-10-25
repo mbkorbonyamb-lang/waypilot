@@ -1,3 +1,7 @@
+# WayPilot 1.14.6 — noms de produits lisibles
+
+- Constaté sur aliusodorem.com : WordPress renvoie les titres avec des entités HTML (« Aurea Fides &#8211; 1ml »), affichées telles quelles dans le tableau et le rapport. Les entités numériques et les plus courantes (tirets, apostrophes, guillemets) sont désormais décodées. 1 test ajouté.
+
 # WayPilot 1.14.5 — produits vitrine (prix sur devis)
 
 - Constaté sur fichet-bauche.fr : 18 produits (portes fortes, coffres bancaires) à prix 0, non achetables, bouton « Lire la suite ». Ce sont des produits vitrine sur devis, pas des erreurs. Ils remontaient en « Prix nul ou négatif », gravité élevée.
