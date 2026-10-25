@@ -359,3 +359,12 @@ test("site multilingue : adresse auditée absente des liens → langue la plus f
   const r = W.splitLanguages([p(1, "https://a.test/fr/x/"), p(2, "https://a.test/fr/y/"), p(3, "https://a.test/en/x/")], "https://boutique.test");
   assert.deepEqual(r.products.map(x => x.id), [1, 2]);
 });
+
+test("produit vitrine (prix 0, non achetable, « Lire la suite ») : faible, pas « prix nul » élevé", () => {
+  const p = (id, purchasable) => ({ id, name: `Porte forte ${id}`, sku: `P${id}`, type: "simple", description: "<p>Porte blindée</p>", is_purchasable: purchasable, is_in_stock: true, prices: { price: "0", regular_price: "0", currency_minor_unit: 2 }, images: [{ src: `https://x.test/${id}.jpg` }], categories: [{ name: "Portes" }], attributes: [] });
+  const r = E.analyze(W.publicToCatalog(E, { products: [p(363, false), p(364, true)], variations: {} }));
+  const byLine = r.issues.map(i => `${i.line}:${i.code}:${i.severity}`);
+  assert.ok(byLine.includes(`2:PRICE_ON_REQUEST:${E.SEVERITY.LOW}`), byLine.join(" "));
+  assert.ok(!byLine.some(x => x.startsWith("2:PRICE_NON_POSITIVE")));
+  assert.ok(byLine.includes(`3:PRICE_NON_POSITIVE:${E.SEVERITY.HIGH}`), "achetable à 0 : toujours élevé");
+});
