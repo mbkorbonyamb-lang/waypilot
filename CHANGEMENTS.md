@@ -1,3 +1,8 @@
+# WayPilot 1.14.7 — images « cassées » vérifiées deux fois
+
+- Constaté sur boutiquesimplementvous.fr : 71 produits signalés « image qui ne s’affiche pas », probablement à tort (protection anti-hotlink ou limitation des requêtes par l’hébergeur).
+- Les images sont chargées sans référent (contourne l’anti-hotlink le plus courant), les échecs sont réessayés une fois, lentement, et si plus de la moitié des images échouent, WayPilot conclut que le site bloque la lecture : pas d’alerte image par image, une mention dans le résumé.
+
 # WayPilot 1.14.6 — noms de produits lisibles
 
 - Constaté sur aliusodorem.com : WordPress renvoie les titres avec des entités HTML (« Aurea Fides &#8211; 1ml »), affichées telles quelles dans le tableau et le rapport. Les entités numériques et les plus courantes (tirets, apostrophes, guillemets) sont désormais décodées. 1 test ajouté.
