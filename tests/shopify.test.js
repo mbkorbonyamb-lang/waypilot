@@ -137,3 +137,15 @@ test("même SKU sur toutes les tailles d’un modèle Shopify : faible, pas éle
   assert.equal(codes.filter(c => c === `SKU_SHARED_MODEL:${E.SEVERITY.LOW}`).length, 2, codes.join(" "));
   assert.equal(codes.filter(c => c.startsWith("SKU_DUPLICATE")).length, 1, "autre produit : toujours élevée");
 });
+
+test("prix d’une variation 10 fois plus bas que les autres : moyenne (faute de frappe ?)", () => {
+  const p = { id: 3, title: "Robe", product_type: "", options: [{ name: "Taille", values: ["S", "M", "L", "XL"] }],
+    variants: ["S", "M", "L", "XL"].map((o, n) => ({ id: 30 + n, sku: `R-${o}`, price: o === "L" ? "15.90" : "159.00", option1: o, available: true })), images: [{ src: "https://x.test/r.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  const hits = r.issues.filter(i => i.code === "VARIATION_PRICE_OUTLIER");
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, E.SEVERITY.MEDIUM);
+  assert.match(hits[0].message, /15,90.*159,00/);
+  const ok = E.analyze(S.shopifyToCatalog(E, { products: [{ ...p, variants: p.variants.map(v => ({ ...v, price: v.option1 === "XL" ? "179.00" : "159.00" })) }] }));
+  assert.ok(!ok.issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"), "écart normal entre tailles : rien");
+});
