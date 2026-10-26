@@ -135,6 +135,10 @@
 
     const catalog = engine.catalogFromRows(headers, rows, rows.map((_, i) => i + 2), ",");
     if (withAlt) catalog.imageAlt = imageAlt;
+    // Shopify donne largeur et hauteur de chaque image : pas besoin de les télécharger pour les mesurer.
+    catalog.knownSizes = {};
+    products.forEach(p => [...(p.images || []), ...(p.variants || []).map(v => v.featured_image).filter(Boolean)]
+      .forEach(i => { if (i.src && i.width > 0 && i.height > 0) catalog.knownSizes[i.src] = { width: i.width, height: i.height }; }));
     catalog.source = "public";
     catalog.platform = "shopify";
     catalog.ignored = ignored;

@@ -527,9 +527,12 @@
     // Photo principale de chaque produit d’abord (celle que voient Google et les clients), puis le reste dans la limite.
     const isVar = r => /variation/i.test(r[catalog.col.type] || "");
     const all = [...new Set([...catalog.rows.filter(r => !isVar(r)).map(r => listOf(r)[0]), ...catalog.rows.map(r => listOf(r)[0]), ...catalog.rows.flatMap(listOf)].filter(Boolean))];
-    const urls = all.slice(0, MAX_IMAGES);
+    // Tailles déjà connues (srcset WordPress, données Shopify) : seules les autres sont téléchargées.
+    const sizes = { ...(catalog.knownSizes || {}) };
+    const urls = all.filter(u => !sizes[u]).slice(0, MAX_IMAGES);
+    catalog.imageSizes = sizes;
+    catalog.imagesSkipped = all.filter(u => !sizes[u]).length - urls.length;
     if (!urls.length) return;
-    const sizes = {};
     let done = 0;
     const one = (src, count = true) => new Promise(resolve => {
       const img = new Image();
@@ -556,8 +559,6 @@
     const broken = urls.filter(u => sizes[u] && sizes[u].broken);
     catalog.imagesBlocked = broken.length >= 10 && broken.length > 0.5 * urls.length;
     if (catalog.imagesBlocked) broken.forEach(u => delete sizes[u]);
-    catalog.imageSizes = sizes;
-    catalog.imagesSkipped = all.length - urls.length;
   }
   const imagesNote = catalog => (catalog.imagesBlocked ? " Le site bloque la lecture de ses images depuis WayPilot : images non vérifiées." : "")
     + (catalog.imagesSkipped ? ` Taille vérifiée pour ${MAX_IMAGES} images, photos principales en priorité (${catalog.imagesSkipped} autres non vérifiées).` : "");
