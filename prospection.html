@@ -133,7 +133,7 @@
     $("export").disabled = !results.length;
   }
 
-  $("run").addEventListener("click", async () => {
+  async function run() {
     const urls = [...new Set($("sites").value.split(/[\s,;]+/).map(u => u.trim()).filter(Boolean))];
     if (!urls.length) return;
     results.length = 0;
@@ -158,7 +158,8 @@
     info.textContent = `${urls.length} boutiques auditées : ${go} avec une accroche possible. Vérifiez chaque exemple sur la boutique avant d’écrire.`;
     info.classList.add("success");
     $("run").disabled = false;
-  });
+  }
+  $("run").addEventListener("click", run);
 
   $("export").addEventListener("click", () => {
     const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -174,6 +175,9 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
+  // Lien prêt à l’emploi : prospection.html?boutiques=a.com,b.fr remplit la liste et lance l’audit.
+  const linked = new URLSearchParams(location.search).get("boutiques");
+  if (linked) { $("sites").value = linked.split(/[\s,;]+/).filter(Boolean).join("\n"); run(); }
 })();
 </script>
 </body>
