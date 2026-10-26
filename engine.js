@@ -296,7 +296,8 @@
 
   const SIZE_TOKENS = { xs: "XS", s: "S", m: "M", l: "L", xl: "XL", xxl: "XXL", xxxl: "XXXL", "2xl": "2XL", "3xl": "3XL", "4xl": "4XL" };
 
-  function splitValues(raw) { return String(raw ?? "").split(/\s*[,|;]\s*/).map(v => v.trim()).filter(Boolean); }
+  // Une virgule échappée « \, » (export WooCommerce) fait partie de la valeur : « 100\,00 € ».
+  function splitValues(raw) { return String(raw ?? "").split(/\s*(?<!\\)[,|;]\s*/).map(v => v.replace(/\\([,|;])/g, "$1").trim()).filter(Boolean); }
 
   function skuSlug(value, max) {
     return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").toUpperCase().slice(0, max);
@@ -868,7 +869,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.15.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.15.3", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

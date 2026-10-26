@@ -1,3 +1,7 @@
+# WayPilot 1.15.3 — virgule dans une valeur d’option
+
+- Une valeur d’option contenant une virgule (carte cadeau « 100,00 € » sur Shopify) était coupée en deux (« 100 » et « 00 € ») : fausses alertes « taille affichée mais impossible à commander » et « valeur non annoncée par le parent ». Les virgules d’une valeur sont désormais échappées (« \, », comme dans l’export WooCommerce) pour Shopify et l’audit express WooCommerce. Vu sur natives-conceptstore.com. 1 test ajouté.
+
 # WayPilot 1.15.2 — cartes cadeaux
 
 - Cartes cadeaux (type « gift-card », « pw-gift-card »…) : leur prix reste à 0 € car le client choisit le montant. Plus d’alerte « Prix nul » élevée (fausse alerte vue sur b-a-conceptstore.com). 1 test ajouté.

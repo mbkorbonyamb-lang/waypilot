@@ -120,3 +120,11 @@ test("Shopify : taille des images reprise du catalogue, sans téléchargement", 
   const c = S.shopifyToCatalog(E, d);
   assert.deepEqual(c.knownSizes["https://cdn.test/a.jpg"], { width: 2000, height: 3000 });
 });
+
+test("valeur d’option avec virgule (carte cadeau « 100,00 € ») : pas de fausse alerte", () => {
+  const p = { id: 7, title: "Carte-cadeau", product_type: "", options: [{ name: "Montant", values: ["50,00 €", "100,00 €"] }],
+    variants: [{ id: 71, sku: "CC50", price: "50.00", option1: "50,00 €", available: true }, { id: 72, sku: "CC100", price: "100.00", option1: "100,00 €", available: true }],
+    images: [{ src: "https://x.test/c.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  assert.ok(!r.issues.some(i => /^VARIATION_VALUE/.test(i.code)), r.issues.map(i => i.code).join(" "));
+});
