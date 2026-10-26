@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WayPilot — Contrôle qualité e-commerce</title>
   <meta name="description" content="WayPilot contrôle vos catalogues e-commerce, propose des corrections validées et prépare un CSV WooCommerce.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5eff'/%3E%3Cpath d='M8 16.5l5 5 11-11' stroke='%23fff' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <style>
-    :root { --blue:#1769ff; --navy:#15243b; --bg:#f4f7fb; --border:#e0e7f0; --muted:#627087; }
+    :root { --blue:#1f5eff; --navy:#0e1a2b; --bg:#f4f7fb; --border:#e0e7f0; --muted:#627087; }
     * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,Arial,sans-serif; color:var(--navy); background:var(--bg); }
-    header { background:white; border-bottom:1px solid var(--border); padding:20px 6%; display:flex; align-items:center; justify-content:space-between; gap:15px; }
-    .brand { font-size:25px; font-weight:800; letter-spacing:-1px; } .brand span { color:var(--blue); }
+    body { margin:0; font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing:antialiased; color:var(--navy); background:var(--bg); }
+    header { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.94); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); padding:0 6%; height:64px; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+    .brand { display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800; letter-spacing:-.5px; } .brand em { font-style:normal; color:var(--blue); } .brand svg { width:30px; height:30px; flex:none; }
     .version { background:#eaf1ff; color:#2458b8; padding:6px 11px; border-radius:20px; font-size:12px; font-weight:700; }
     main { max-width:1000px; margin:42px auto; padding:0 20px 50px; }
     .hero { margin-bottom:28px; } .eyebrow { color:var(--blue); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; }
@@ -42,7 +43,7 @@
   </style>
 </head>
 <body>
-<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">BÊTA · V1.14.2</div></header>
+<header><a class="brand" href="./" style="color:inherit;text-decoration:none"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a><div class="version" id="version">V1</div></header>
 <main>
   <section class="hero">
     <div class="eyebrow">Catalogue e-commerce · Contrôle qualité</div>
@@ -183,7 +184,7 @@
   const W = window.WayPilotWoo;
   const S = window.WayPilotShopify;
   const $ = id => document.getElementById(id);
-  $("version").textContent = `BÊTA · V${E.VERSION}`;
+  $("version").textContent = `V${E.VERSION}`;
 
 
 

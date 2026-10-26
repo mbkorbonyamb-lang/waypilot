@@ -5,152 +5,378 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WayPilot — votre catalogue WooCommerce ou Shopify, vérifié produit par produit</title>
   <meta name="description" content="WayPilot lit votre catalogue WooCommerce ou Shopify et liste ce qui bloque une vente : tailles impossibles à commander, prix faux, variations en double. Audit gratuit en lecture seule.">
+  <meta property="og:title" content="WayPilot — catalogue WooCommerce ou Shopify vérifié produit par produit">
+  <meta property="og:description" content="Tailles impossibles à commander, prix faux, variations en double : l’audit gratuit trouve ce qui bloque vos ventes.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0e1a2b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5eff'/%3E%3Cpath d='M8 16.5l5 5 11-11' stroke='%23fff' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="site.css">
   <style>
-    :root { --blue:#1769ff; --navy:#15243b; --bg:#f4f7fb; --border:#e0e7f0; --muted:#627087; --green:#087443; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,Arial,sans-serif; color:var(--navy); background:white; line-height:1.55; }
-    a { color:var(--blue); }
-    header { padding:18px 6%; display:flex; align-items:center; justify-content:space-between; gap:15px; border-bottom:1px solid var(--border); }
-    .brand { font-size:24px; font-weight:800; letter-spacing:-1px; } .brand span { color:var(--blue); }
-    nav a { margin-left:18px; color:var(--navy); text-decoration:none; font-size:14px; font-weight:600; }
-    .wrap { max-width:1000px; margin:0 auto; padding:0 20px; }
-    .hero { padding:64px 20px 48px; }
-    .eyebrow { color:var(--blue); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; }
-    h1 { font-size:clamp(30px,5.2vw,48px); line-height:1.1; margin:12px 0 18px; max-width:760px; }
-    .lead { font-size:18px; color:var(--muted); max-width:680px; }
-    .cta { display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; }
-    .button { display:inline-block; border-radius:9px; padding:14px 20px; font-weight:700; font-size:15px; text-decoration:none; }
-    .primary { background:var(--blue); color:white; } .secondary { background:#eaf0f8; color:var(--navy); }
-    .note { font-size:13px; color:var(--muted); margin-top:10px; }
-    .quick { display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; max-width:620px; }
-    .quick input { flex:1 1 240px; min-width:0; border:1px solid var(--border); border-radius:9px; padding:13px 14px; font:inherit; font-size:16px; }
-    .quick button { border:0; cursor:pointer; font-family:inherit; }
-    .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
-    section.band { background:var(--bg); padding:52px 0; }
-    section.plain { padding:52px 0; }
-    h2 { font-size:26px; margin:0 0 8px; } .sub { color:var(--muted); margin:0 0 26px; max-width:680px; }
-    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; } .grid.four { grid-template-columns:repeat(2,1fr); }
-    .card { background:white; border:1px solid var(--border); border-radius:14px; padding:20px; }
-    .card h3 { margin:0 0 6px; font-size:17px; } .card p { margin:0; color:var(--muted); font-size:15px; }
-    .step { font-weight:800; color:var(--blue); font-size:13px; }
-    .case { display:grid; grid-template-columns:1.3fr 1fr; gap:24px; align-items:start; }
-    .figures { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .figure { border:1px solid var(--border); border-radius:12px; padding:16px; background:white; }
-    .figure strong { display:block; font-size:28px; } .figure span { color:var(--muted); font-size:13px; }
-    .offer { display:flex; flex-direction:column; } .offer .price { font-weight:800; margin:10px 0; }
-    .offer ul { padding-left:18px; margin:8px 0 0; color:var(--muted); font-size:15px; }
-    .tag { display:inline-block; font-size:12px; font-weight:700; color:var(--green); background:#e7f6ee; border-radius:20px; padding:3px 9px; margin-bottom:8px; align-self:flex-start; }
-    .faq dt { font-weight:700; margin-top:16px; } .faq dd { margin:4px 0 0; color:var(--muted); }
-    footer { padding:28px 6%; color:var(--muted); font-size:13px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    [hidden] { display:none !important; }
-    @media(max-width:760px) { .grid, .grid.four, .case { grid-template-columns:1fr; } nav { display:none; } .hero { padding:40px 20px 32px; } }
+    /* Accueil */
+    .hero { padding:72px 0 88px; background:linear-gradient(180deg,#f3f6ff 0%,#fff 100%); border-bottom:1px solid var(--line); }
+    .hero .wrap { display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; }
+    .quick { display:flex; gap:10px; margin-top:30px; max-width:560px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:8px; box-shadow:var(--shadow); }
+    .quick input { flex:1; min-width:0; border:0; padding:10px 12px; font:inherit; font-size:16px; color:var(--ink); background:transparent; }
+    .quick input:focus { outline:none; }
+    .quick:focus-within { border-color:var(--blue); box-shadow:0 0 0 4px rgba(31,94,255,.12); }
+    .assure { display:flex; flex-wrap:wrap; gap:8px 22px; margin:18px 0 0; padding:0; list-style:none; font-size:14px; color:var(--muted); }
+    .assure li { display:flex; align-items:center; gap:7px; }
+    .assure svg { width:16px; height:16px; color:var(--green); }
+
+    .mock { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 2px 4px rgba(14,26,43,.04), 0 24px 60px rgba(14,26,43,.12); overflow:hidden; }
+    .mock-top { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted); }
+    .mock-top b { color:var(--ink); }
+    .dots { display:flex; gap:6px; } .dots i { width:9px; height:9px; border-radius:50%; background:#e3e8f0; }
+    .mock-body { padding:20px 18px 18px; }
+    .mock-kpis { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .kpi { border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+    .kpi strong { display:block; font-size:26px; color:var(--ink); letter-spacing:-.02em; line-height:1.2; }
+    .kpi span { font-size:12px; color:var(--muted); }
+    .kpi.warn strong { color:var(--red); }
+    .issue { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line); font-size:14px; color:var(--ink); }
+    .sev { flex:none; font-size:11px; font-weight:700; border-radius:99px; padding:2px 8px; }
+    .sev.high { color:var(--red); background:var(--red-soft); }
+    .sev.mid { color:#9a5b00; background:#fff4e0; }
+    .sev.low { color:var(--muted); background:var(--bg); }
+    .mock-cap { font-size:12px; color:var(--muted); text-align:center; margin:12px 0 0; }
+
+    .features { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+    .feature { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
+    .feature .ico { width:42px; height:42px; border-radius:11px; background:var(--blue-soft); color:var(--blue); display:grid; place-items:center; margin-bottom:16px; }
+    .feature .ico svg { width:22px; height:22px; }
+    .feature p { margin:0; color:var(--muted); font-size:15px; }
+
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; counter-reset:step; }
+    .step { position:relative; padding-top:56px; }
+    .step::before { counter-increment:step; content:counter(step); position:absolute; top:0; left:0; width:40px; height:40px; border-radius:50%; background:var(--ink); color:#fff; font-weight:800; display:grid; place-items:center; }
+    .step p { margin:0; color:var(--muted); font-size:15px; }
+
+    .case { display:grid; grid-template-columns:1.25fr .75fr; gap:40px; align-items:start; }
+    .chip { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--green); background:var(--green-soft); border-radius:99px; padding:5px 11px; }
+    .ba { width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; font-size:15px; margin-top:22px; }
+    .ba th, .ba td { text-align:left; padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ba tr:last-child td { border-bottom:0; }
+    .ba thead th { background:var(--bg); font-size:13px; color:var(--muted); font-weight:700; }
+    .ba td:first-child { color:var(--ink); font-weight:600; }
+    .ba .before { color:var(--red); } .ba .after { color:var(--green); }
+    .results { display:grid; gap:14px; }
+    .result { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; }
+    .result strong { display:block; font-size:36px; color:var(--ink); letter-spacing:-.03em; line-height:1.1; }
+    .result span { color:var(--muted); font-size:14px; }
+
+    .offers { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:stretch; }
+    .offer { position:relative; display:flex; flex-direction:column; background:#fff; border:1px solid var(--line); border-radius:18px; padding:28px; }
+    .offer.featured { border:2px solid var(--blue); box-shadow:0 18px 48px rgba(31,94,255,.14); }
+    .badge { position:absolute; top:-12px; left:28px; background:var(--blue); color:#fff; font-size:12px; font-weight:700; border-radius:99px; padding:4px 11px; }
+    .price { margin:12px 0 4px; color:var(--ink); }
+    .price b { font-size:36px; letter-spacing:-.03em; }
+    .price small { color:var(--muted); font-size:14px; }
+    .offer .desc { color:var(--muted); font-size:15px; margin:0 0 16px; }
+    .offer ul { list-style:none; padding:0; margin:0 0 24px; display:grid; gap:9px; font-size:15px; }
+    .offer li { display:flex; gap:9px; }
+    .offer li::before { content:""; flex:none; width:18px; height:18px; margin-top:3px; border-radius:50%; background:var(--green-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.6L13 6.5' stroke='%230b7a4b' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
+    .offer .btn { margin-top:auto; }
+    .agency { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:24px; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:20px 24px; }
+    .agency p { margin:0; } .agency b { color:var(--ink); }
+    .fineprint { font-size:13px; color:var(--muted); margin:16px 0 0; }
+
+    .trust { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .trust .feature .ico { background:var(--green-soft); color:var(--green); }
+
+    .faq { max-width:780px; }
+    .faq details { border-bottom:1px solid var(--line); padding:18px 0; }
+    .faq summary { cursor:pointer; font-weight:700; color:var(--ink); font-size:17px; list-style:none; display:flex; justify-content:space-between; gap:16px; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::after { content:"+"; color:var(--blue); font-size:22px; line-height:1; }
+    .faq details[open] summary::after { content:"–"; }
+    .faq details p { color:var(--muted); margin:10px 0 0; }
+
+    .final { background:var(--ink); color:#c9d3e1; text-align:center; }
+    .final h2 { color:#fff; }
+    .final p { margin:0 auto; max-width:560px; font-size:17px; }
+    .final .quick { margin:28px auto 0; border-color:transparent; }
+    .final .alt-cta { margin-top:18px; font-size:14px; }
+    .final .alt-cta a { color:#fff; }
+
+    @media (max-width:960px) {
+      .hero .wrap, .case { grid-template-columns:1fr; gap:40px; }
+      .features { grid-template-columns:1fr 1fr; }
+      .offers, .trust, .steps { grid-template-columns:1fr; }
+      .offer.featured { order:-1; }
+    }
+    @media (max-width:560px) {
+      .hero { padding:44px 0 56px; }
+      .features { grid-template-columns:1fr; }
+      .quick { flex-direction:column; }
+      .quick .btn { width:100%; }
+      .ba { font-size:14px; }
+      .ba th, .ba td { padding:11px 12px; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <div class="brand">Way<span>Pilot</span></div>
-  <nav><a href="#comment">Comment ça marche</a><a href="#offres">Offres</a><a href="#securite">Sécurité</a><a href="app.html">Ouvrir l’outil</a></nav>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a>
+    <nav class="site-nav">
+      <a href="#controles">Contrôles</a>
+      <a href="#cas">Cas client</a>
+      <a href="#offres">Offres</a>
+      <a href="securite.html">Sécurité</a>
+      <a class="btn btn-primary btn-small" href="app.html">Ouvrir l’outil</a>
+    </nav>
+  </div>
 </header>
 
 <main>
-  <div class="wrap hero">
-    <div class="eyebrow">Catalogues WooCommerce et Shopify</div>
-    <h1>Votre catalogue WooCommerce ou Shopify, vérifié produit par produit.</h1>
-    <p class="lead">Une taille affichée mais impossible à commander. Un prix différent entre la fiche et la description. Des variations en double après un import raté. Ces erreurs ne se voient pas dans l’administration. Vos clients, eux, les voient.</p>
-    <form class="quick" action="app.html" method="get">
-      <label for="boutique" class="sr">Adresse de votre boutique WooCommerce ou Shopify</label>
-      <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
-      <button class="button primary" type="submit">Auditer ma boutique</button>
-    </form>
-    <p class="note">Gratuit. L’adresse suffit : pas de clé, rien à installer, rien n’est modifié. WayPilot lit votre catalogue comme un client le voit.</p>
-    <div class="cta"><a class="button secondary contact-link" href="#" hidden>Demander un audit accompagné</a></div>
-  </div>
-
-  <section class="band" id="probleme">
+  <section class="hero">
     <div class="wrap">
-      <h2>Ce que WayPilot trouve</h2>
-      <p class="sub">Des contrôles pensés pour les erreurs qui coûtent des ventes, pas pour faire du chiffre.</p>
-      <div class="grid four">
-        <div class="card"><h3>Ventes bloquées</h3><p>Tailles ou options proposées sans variation commandable, variations en double, prix absent ou à zéro.</p></div>
-        <div class="card"><h3>Informations contradictoires</h3><p>Prix de la description différent du prix affiché, promotion plus chère que le prix normal, stock incohérent.</p></div>
-        <div class="card"><h3>Catalogue mal tenu</h3><p>Références (UGS) absentes ou en double, images répétées, produits sans catégorie, sans image ou sans description.</p></div>
-        <div class="card"><h3>Visibilité sur Google</h3><p>Codes-barres (GTIN, EAN) invalides ou en double, images trop petites pour Google Shopping, images sans texte alternatif.</p></div>
+      <div>
+        <span class="kicker">Catalogues WooCommerce et Shopify</span>
+        <h1>Votre catalogue, vérifié produit par produit.</h1>
+        <p class="lead">Une taille affichée mais impossible à commander. Un prix différent entre la fiche et la description. Des variations en double après un import. Ces erreurs ne se voient pas dans l’administration. Vos clients, eux, les voient.</p>
+        <form class="quick" action="app.html" method="get">
+          <label for="boutique" class="sr">Adresse de votre boutique WooCommerce ou Shopify</label>
+          <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
+          <button class="btn btn-primary" type="submit">Auditer ma boutique</button>
+        </form>
+        <ul class="assure">
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l2.8 2.8 6.2-6.2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Gratuit</li>
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l2.8 2.8 6.2-6.2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Rien à installer</li>
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l2.8 2.8 6.2-6.2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Lecture seule, rien n’est modifié</li>
+        </ul>
+      </div>
+
+      <figure style="margin:0">
+        <div class="mock" aria-hidden="true">
+          <div class="mock-top"><div class="dots"><i></i><i></i><i></i></div><span>Rapport d’audit · <b>boutique de mode</b></span></div>
+          <div class="mock-body">
+            <div class="mock-kpis">
+              <div class="kpi"><strong>67 %</strong><span>score du catalogue</span></div>
+              <div class="kpi warn"><strong>636 €</strong><span>de ventes en jeu</span></div>
+            </div>
+            <div class="issue"><span class="sev high">Élevée</span>Basket cuir – taille 41 affichée à 0 €</div>
+            <div class="issue"><span class="sev high">Élevée</span>Ensemble lin – taille XL impossible à commander</div>
+            <div class="issue"><span class="sev mid">Moyenne</span>Kimono : 445 € affiché, 446 € dans la description</div>
+            <div class="issue"><span class="sev low">Faible</span>12 images sous 500 px pour Google Shopping</div>
+          </div>
+        </div>
+        <figcaption class="mock-cap">Illustration d’un rapport. Les chiffres varient selon la boutique.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="controles">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Ce que WayPilot contrôle</h2>
+        <p>Les erreurs qui coûtent des ventes, classées selon leur effet sur le client. Pas une liste de détails pour faire du volume.</p>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.4a1.5 1.5 0 0 0 1.5 1.1h8.6a1.5 1.5 0 0 0 1.5-1.1L21 7H6"/><path d="M11 9l5 5M16 9l-5 5"/></svg></div>
+          <h3>Ventes bloquées</h3>
+          <p>Tailles ou options proposées sans variation commandable, variations en double, prix absent ou à zéro.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></div>
+          <h3>Prix contradictoires</h3>
+          <p>Prix de la description différent du prix affiché, promotion plus chère que le prix normal, prix d’une taille aberrant.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+          <h3>Catalogue mal tenu</h3>
+          <p>Références (UGS) absentes ou en double, images répétées, produits sans catégorie, sans image ou sans description.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+          <h3>Visibilité sur Google</h3>
+          <p>Codes-barres (GTIN, EAN) invalides ou en double, images trop petites pour Google Shopping, images sans texte alternatif.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="plain" id="comment">
+  <section class="alt" id="comment">
     <div class="wrap">
-      <h2>Comment ça marche</h2>
-      <p class="sub">Tout se passe dans votre navigateur. Vos clés et vos données ne passent par aucun serveur WayPilot.</p>
-      <div class="grid">
-        <div class="card"><div class="step">1</div><h3>L’adresse de la boutique</h3><p>Pour un premier audit, l’adresse suffit : WayPilot lit le catalogue public. Pour un audit complet et des corrections sur WooCommerce, une clé API ou un export CSV. Sur Shopify, les corrections sont faites par notre équipe.</p></div>
-        <div class="card"><div class="step">2</div><h3>Audit</h3><p>WayPilot lit les produits et les variations, donne un score et classe chaque problème selon son effet sur vos ventes.</p></div>
-        <div class="card"><div class="step">3</div><h3>Corrections validées</h3><p>Vous examinez chaque correction proposée. Seules celles que vous validez sont appliquées, avec un journal et la possibilité d’annuler.</p></div>
+      <div class="section-head">
+        <h2>Comment ça se passe</h2>
+        <p>L’audit tourne dans votre navigateur. Vos clés ne passent par aucun serveur WayPilot.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Vous donnez l’adresse</h3><p>Pour un premier audit, l’adresse suffit : WayPilot lit le catalogue tel qu’un client le voit. Pour un audit complet sur WooCommerce, une clé API en lecture seule.</p></div>
+        <div class="step"><h3>WayPilot vérifie tout</h3><p>Chaque produit et chaque variation. Un score, les ventes en jeu, et chaque problème classé selon son effet sur vos ventes.</p></div>
+        <div class="step"><h3>Vous validez les corrections</h3><p>Seules les corrections que vous acceptez sont appliquées, avec un journal et la possibilité d’annuler. Sur Shopify, elles sont faites par notre équipe.</p></div>
       </div>
     </div>
   </section>
 
-  <section class="band" id="cas">
+  <section id="cas">
     <div class="wrap case">
       <div>
-        <h2>Un cas réel : JAARAY</h2>
-        <p>JAARAY, boutique de mode, 25 produits, octobre 2026. Le premier audit a trouvé deux ensembles dont les tailles L et XL ne pouvaient pas être commandées, un prix erroné et 20 variations en double, créées par des imports CSV.</p>
-        <p>Les corrections ont été appliquées par la connexion directe, après validation, puis la boutique a été relue : plus aucune anomalie détectée.</p>
+        <span class="chip">Cité avec l’accord de la boutique</span>
+        <h2 style="margin-top:14px">Cas client : JAARAY</h2>
+        <p style="color:var(--muted);margin:0">Boutique de mode, 25 produits, octobre 2026. Les erreurs venaient d’imports CSV successifs. Rien ne les signalait dans l’administration WooCommerce.</p>
+        <table class="ba">
+          <thead><tr><th>Point contrôlé</th><th>Avant</th><th>Après</th></tr></thead>
+          <tbody>
+            <tr><td>Tailles L et XL de deux ensembles</td><td class="before">impossibles à commander</td><td class="after">commandables</td></tr>
+            <tr><td>Prix du kimono</td><td class="before">445 € affiché, 446 € dans la description</td><td class="after">446 € partout</td></tr>
+            <tr><td>Variations</td><td class="before">20 en double</td><td class="after">doublons supprimés</td></tr>
+            <tr><td>Références (UGS)</td><td class="before">aucune</td><td class="after">une par produit et par taille</td></tr>
+            <tr><td>Images</td><td class="before">répétées, sans texte alternatif</td><td class="after">dédoublonnées, décrites</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="figures">
-        <div class="figure"><strong>3</strong><span>erreurs qui bloquaient des ventes</span></div>
-        <div class="figure"><strong>20</strong><span>variations en double supprimées</span></div>
-        <div class="figure"><strong>55</strong><span>modifications appliquées</span></div>
-        <div class="figure"><strong>0</strong><span>échec, 0 fausse alerte</span></div>
+      <div class="results">
+        <div class="result"><strong>55</strong><span>modifications appliquées par l’API, après validation</span></div>
+        <div class="result"><strong>0</strong><span>échec pendant l’application</span></div>
+        <div class="result"><strong>0</strong><span>anomalie à la relecture finale</span></div>
       </div>
     </div>
   </section>
 
-  <section class="plain" id="offres">
+  <section class="alt" id="offres">
     <div class="wrap">
-      <h2>Offres</h2>
-      <p class="sub">Pour les boutiques WooCommerce et Shopify, et pour les agences qui en gèrent plusieurs.</p>
-      <div class="grid">
-        <div class="card offer"><span class="tag">Gratuit</span><h3>Audit en libre-service</h3><p>Vous entrez l’adresse de votre boutique et téléchargez le rapport. Aucune clé, rien à installer.</p><a class="button primary" style="margin-top:auto;text-align:center" href="app.html">Lancer l’audit</a></div>
-        <div class="card offer"><h3>Audit et correction accompagnés</h3><p>Nous faisons l’audit, vous présentons les corrections, puis les appliquons après votre accord et une sauvegarde.</p><div class="price">190 € HT jusqu’à 100 produits<br>390 € HT jusqu’à 500 produits</div><p>Au-delà, sur devis. Chaque modification est validée par vous, journalisée et annulable.</p><a class="button primary contact-link" style="margin-top:auto;text-align:center" href="#" hidden>Demander un audit</a></div>
-        <div class="card offer"><h3>Suivi mensuel</h3><p>Correction de départ incluse (jusqu’à 100 produits). Puis chaque mois : nouvel audit, corrections courantes validées, journal des modifications et rapport. Contrôle après chaque gros import.</p><div class="price">49 € HT par mois, 3 mois minimum</div><p>Après le paiement, nous vous contactons pour la mise en place.</p><a class="button secondary" style="margin-top:auto;text-align:center" href="https://buy.stripe.com/bJe9AT7hc0u8bAQc5N2go02" rel="noopener">S’abonner au suivi</a></div>
+      <div class="section-head">
+        <h2>Offres</h2>
+        <p>Pour les boutiques WooCommerce et Shopify. Prix hors taxes.</p>
       </div>
-      <p class="note">Agences : le même service en marque blanche pour vos clients, 30 % sous ces tarifs. Prix hors taxes, voir les <a href="cgv.html">conditions générales de vente</a>.</p>
-      <div class="cta"><a class="button secondary contact-link" href="#" hidden>Nous contacter sur WhatsApp</a></div>
+      <div class="offers">
+        <div class="offer">
+          <h3>Audit en libre-service</h3>
+          <div class="price"><b>0 €</b></div>
+          <p class="desc">Vous entrez l’adresse de votre boutique et lisez le rapport.</p>
+          <ul><li>Catalogue public lu en lecture seule</li><li>Score et ventes en jeu</li><li>Rapport imprimable</li></ul>
+          <a class="btn btn-ghost" href="app.html">Lancer l’audit</a>
+        </div>
+        <div class="offer featured">
+          <span class="badge">Recommandé</span>
+          <h3>Suivi mensuel</h3>
+          <div class="price"><b>49 €</b> <small>HT / mois · 3 mois minimum</small></div>
+          <p class="desc">La correction de départ est comprise, jusqu’à 100 produits.</p>
+          <ul><li>Correction de départ incluse</li><li>Nouvel audit chaque mois et après chaque gros import</li><li>Corrections courantes validées par vous</li><li>Journal des modifications et rapport</li></ul>
+          <a class="btn btn-primary" href="https://buy.stripe.com/bJe9AT7hc0u8bAQc5N2go02" rel="noopener">S’abonner au suivi</a>
+        </div>
+        <div class="offer">
+          <h3>Audit et correction</h3>
+          <div class="price"><b>190 €</b> <small>HT · jusqu’à 100 produits</small></div>
+          <p class="desc">390 € HT jusqu’à 500 produits, sur devis au-delà.</p>
+          <ul><li>Audit complet et corrections présentées</li><li>Application après votre accord et une sauvegarde</li><li>Chaque modification journalisée et annulable</li></ul>
+          <a class="btn btn-ghost contact-link" href="mailto:contact@wayzure.com?subject=Audit%20WayPilot">Demander un audit</a>
+        </div>
+      </div>
+      <div class="agency">
+        <p><b>Agences WooCommerce et Shopify :</b> le même service en marque blanche pour vos clients, 30 % sous ces tarifs.</p>
+        <a class="btn btn-ghost btn-small contact-link" href="mailto:contact@wayzure.com?subject=WayPilot%20agence">Nous écrire</a>
+      </div>
+      <p class="fineprint">Paiement sécurisé par Stripe. Voir les <a href="cgv.html">conditions générales de vente</a>.</p>
     </div>
   </section>
 
-  <section class="band" id="securite">
+  <section id="securite">
     <div class="wrap">
-      <h2>Sécurité</h2>
+      <div class="section-head">
+        <h2>Vos données restent chez vous</h2>
+        <p>WayPilot a été conçu pour qu’un commerçant puisse l’essayer sans rien confier.</p>
+      </div>
+      <div class="trust">
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h3>Lecture seule par défaut</h3>
+          <p>L’audit par adresse voit ce que voit un visiteur : ni commandes, ni clients, ni brouillons.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h3>Clés dans votre navigateur</h3>
+          <p>Une clé API reste dans l’onglet et disparaît à sa fermeture. Vous pouvez la révoquer à tout moment.</p>
+        </div>
+        <div class="feature">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div>
+          <h3>Rien sans votre accord</h3>
+          <p>Chaque correction est validée par vous, notée dans un journal et annulable.</p>
+        </div>
+      </div>
+      <p style="margin:24px 0 0"><a href="securite.html">Lire le détail : ce qui est lu, ce qui est conservé, où c’est hébergé →</a></p>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
+      <div class="section-head"><h2>Questions fréquentes</h2></div>
       <div class="faq">
-        <dl>
-          <dt>Comment WayPilot lit-il ma boutique sans clé ?</dt>
-          <dd>Par le catalogue public de la boutique : l’API publique de WooCommerce, ou le catalogue que Shopify publie pour chaque boutique. C’est ce que la boutique utilise pour afficher ses produits. WayPilot voit ce que voit un visiteur, rien de plus : ni commandes, ni clients, ni brouillons. Cette lecture étant bloquée depuis un autre site, elle passe par un relais WayPilot qui ne reçoit que l’adresse de la boutique et ne conserve rien.</dd>
-          <dt>Où vont mes clés et mes données ?</dt>
-          <dd>Avec une clé : nulle part ailleurs que sur votre boutique. WayPilot tourne dans votre navigateur : les clés restent dans l’onglet et disparaissent quand vous le fermez.</dd>
-          <dt>WayPilot peut-il casser ma boutique ?</dt>
-          <dd>En lecture seule, non. En mode correction, rien n’est envoyé sans votre validation, chaque envoi est noté dans un journal et peut être annulé. Les suppressions de doublons sont définitives : faites une sauvegarde avant.</dd>
-          <dt>Faut-il installer une extension ?</dt>
-          <dd>Non. Sur WooCommerce, une clé API suffit, et vous pouvez la révoquer à tout moment. Sur Shopify, l’audit se fait avec la seule adresse de la boutique.</dd>
-        </dl>
+        <details>
+          <summary>Comment WayPilot lit-il ma boutique sans clé ?</summary>
+          <p>Par le catalogue public : l’API publique de WooCommerce, ou le catalogue que Shopify publie pour chaque boutique. C’est ce que la boutique utilise pour afficher ses produits. Cette lecture passe par un relais WayPilot qui ne reçoit que l’adresse de la boutique et ne conserve rien.</p>
+        </details>
+        <details>
+          <summary>Que veut dire « ventes en jeu » ?</summary>
+          <p>Pour chaque article impossible à commander ou mal tarifé, WayPilot compte le prix d’une vente, en prenant le prix des autres tailles du même produit. C’est un ordre de grandeur pour décider quoi corriger d’abord, pas une prévision de chiffre d’affaires.</p>
+        </details>
+        <details>
+          <summary>WayPilot peut-il casser ma boutique ?</summary>
+          <p>En lecture seule, non. En mode correction, rien n’est envoyé sans votre validation, et chaque envoi est noté dans un journal et peut être annulé. Les suppressions de doublons sont définitives : nous faisons une sauvegarde avant.</p>
+        </details>
+        <details>
+          <summary>Faut-il installer une extension ?</summary>
+          <p>Non. Sur WooCommerce, une clé API suffit pour l’audit complet. Sur Shopify, l’audit se fait avec la seule adresse de la boutique.</p>
+        </details>
+        <details>
+          <summary>Qui est derrière WayPilot ?</summary>
+          <p>Wayzure SAS, société française basée à Clamart (Hauts-de-Seine). Les coordonnées complètes sont dans les <a href="mentions-legales.html">mentions légales</a>.</p>
+        </details>
       </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2>Que voient vos clients sur votre boutique ?</h2>
+      <p>L’audit prend quelques secondes. Aucune inscription.</p>
+      <form class="quick" action="app.html" method="get">
+        <label for="boutique2" class="sr">Adresse de votre boutique</label>
+        <input id="boutique2" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
+        <button class="btn btn-primary" type="submit">Auditer ma boutique</button>
+      </form>
+      <p class="alt-cta">Vous préférez en parler ? <a class="contact-link" href="mailto:contact@wayzure.com">Écrivez-nous</a>.</p>
     </div>
   </section>
 </main>
 
-<footer>
-  <div>WayPilot est une marque de Wayzure. Téléphone : <a href="tel:+33661358652">+33 6 61 35 86 52</a> · WhatsApp : <a href="https://wa.me/33752222106">+33 7 52 22 21 06</a> · <a href="mailto:contact@wayzure.com">contact@wayzure.com</a></div>
-  <div><a href="mentions-legales.html">Mentions légales</a> · <a href="cgv.html">CGV</a> · <a href="app.html">Ouvrir l’outil</a></div>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>WayPilot</a>
+        <p style="margin:0;max-width:320px">Contrôle qualité des catalogues WooCommerce et Shopify. Une marque de Wayzure SAS.</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:contact@wayzure.com">contact@wayzure.com</a></li>
+          <li><a href="https://wa.me/33752222106" rel="noopener">WhatsApp +33 7 52 22 21 06</a></li>
+          <li><a href="tel:+33661358652">+33 6 61 35 86 52</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>WayPilot</h4>
+        <ul>
+          <li><a href="app.html">Ouvrir l’outil</a></li>
+          <li><a href="securite.html">Sécurité et données</a></li>
+          <li><a href="cgv.html">Conditions générales de vente</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
+  </div>
 </footer>
 <script>
-  // Contact commercial : WhatsApp (numéro international sans « + » ni espaces). Vide = boutons masqués.
+  // Contact commercial : WhatsApp (numéro international sans « + » ni espaces). Vide = liens e-mail.
   const CONTACT_WHATSAPP = "33752222106";
   if (CONTACT_WHATSAPP) document.querySelectorAll(".contact-link").forEach(a => {
     a.href = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite un audit de mon catalogue avec WayPilot.")}`;
     a.target = "_blank"; a.rel = "noopener";
-    a.hidden = false;
   });
 </script>
 </body>

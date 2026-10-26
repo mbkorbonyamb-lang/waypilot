@@ -19,7 +19,7 @@ jobs:
       - run: node --test tests/relais-cloudflare.test.mjs
 
   publier:
-    # Publie index.html (accueil), app.html (outil), prospection.html (audit en série, page interne), mentions-legales.html, cgv.html, engine.js, woo.js et shopify.js sur le Space, uniquement depuis main et si les tests passent.
+    # Publie index.html (accueil), app.html (outil), prospection.html (audit en série, page interne), mentions-legales.html, cgv.html, securite.html, site.css, engine.js, woo.js et shopify.js sur le Space, uniquement depuis main et si les tests passent.
     needs: tests
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
           HfApi(token=os.environ["HF_TOKEN"]).create_commit(
               repo_id=os.environ["HF_SPACE"],
               repo_type="space",
-              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "prospection.html", "mentions-legales.html", "cgv.html", "engine.js", "woo.js", "shopify.js")],
+              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "prospection.html", "mentions-legales.html", "cgv.html", "securite.html", "site.css", "engine.js", "woo.js", "shopify.js")],
               commit_message=f"Publication depuis GitHub ({os.environ['GITHUB_SHA'][:7]})",
           )
           print("Space mis à jour.")
@@ -118,7 +118,7 @@ jobs:
         if: steps.secrets.outputs.ok == 'oui'
         run: |
           mkdir -p site
-          cp index.html app.html prospection.html mentions-legales.html cgv.html engine.js woo.js shopify.js site/
+          cp index.html app.html prospection.html mentions-legales.html cgv.html securite.html site.css engine.js woo.js shopify.js site/
       - name: Créer le projet Pages au premier passage
         if: steps.secrets.outputs.ok == 'oui'
         env:

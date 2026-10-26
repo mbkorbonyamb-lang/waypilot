@@ -1,0 +1,74 @@
+/* Pages publiques de WayPilot (accueil, sécurité, CGV, mentions légales). L’outil (app.html) garde ses propres styles. */
+:root {
+  --blue:#1f5eff; --blue-dark:#1747c9; --blue-soft:#eef3ff;
+  --ink:#0e1a2b; --text:#253348; --muted:#5d6b80; --line:#e3e8f0; --bg:#f6f8fb;
+  --green:#0b7a4b; --green-soft:#e6f5ee; --red:#b42318; --red-soft:#fdf0ef;
+  --radius:14px; --shadow:0 1px 2px rgba(14,26,43,.05), 0 8px 24px rgba(14,26,43,.06);
+  --font:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; font-family:var(--font); color:var(--text); background:#fff; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:var(--blue); }
+img, svg { display:block; }
+.wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+[hidden] { display:none !important; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* En-tête */
+.site-header { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.92); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--line); }
+.site-header .wrap { display:flex; align-items:center; justify-content:space-between; gap:20px; height:68px; }
+.logo { display:flex; align-items:center; gap:10px; color:var(--ink); text-decoration:none; font-weight:800; font-size:20px; letter-spacing:-.5px; }
+.logo em { font-style:normal; color:var(--blue); }
+.logo svg { width:30px; height:30px; flex:none; }
+.site-nav { display:flex; align-items:center; gap:26px; }
+.site-nav a { color:var(--text); text-decoration:none; font-size:14px; font-weight:600; }
+.site-nav a:hover { color:var(--blue); }
+.site-nav a.btn-primary, .site-nav a.btn-primary:hover { color:#fff; }
+
+/* Boutons */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:10px; padding:13px 20px; font:inherit; font-size:15px; font-weight:700; text-decoration:none; cursor:pointer; transition:background .15s, box-shadow .15s; }
+.btn-primary { background:var(--blue); color:#fff; box-shadow:0 1px 2px rgba(31,94,255,.3); }
+.btn-primary:hover { background:var(--blue-dark); }
+.btn-ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+.btn-ghost:hover { border-color:#c9d3e1; }
+.btn-small { padding:9px 14px; font-size:14px; }
+
+/* Typographie */
+h1, h2, h3 { color:var(--ink); letter-spacing:-.02em; }
+h1 { font-size:clamp(34px,5vw,54px); line-height:1.08; margin:14px 0 20px; font-weight:800; }
+h2 { font-size:clamp(26px,3.4vw,36px); line-height:1.15; margin:0 0 12px; font-weight:800; }
+h3 { font-size:18px; margin:0 0 8px; }
+.kicker { display:inline-flex; align-items:center; gap:8px; color:var(--blue); background:var(--blue-soft); border-radius:99px; padding:6px 12px; font-size:13px; font-weight:700; }
+.lead { font-size:19px; color:var(--muted); max-width:620px; margin:0; }
+.section-head { max-width:680px; margin-bottom:36px; }
+.section-head p { color:var(--muted); font-size:17px; margin:0; }
+section { padding:88px 0; }
+.alt { background:var(--bg); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+
+/* Pied de page */
+.site-footer { background:var(--ink); color:#aab6c8; font-size:14px; padding:48px 0 32px; }
+.site-footer a { color:#dfe6f0; text-decoration:none; }
+.site-footer a:hover { text-decoration:underline; }
+.footer-grid { display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:32px; }
+.footer-grid h4 { color:#fff; font-size:14px; margin:0 0 12px; }
+.footer-grid ul { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.site-footer .logo { color:#fff; margin-bottom:12px; }
+.legal-line { border-top:1px solid #23324a; margin-top:36px; padding-top:20px; font-size:13px; }
+
+/* Pages de texte (sécurité, CGV, mentions légales) */
+.doc { max-width:780px; margin:0 auto; padding:56px 24px 88px; }
+.doc h1 { font-size:clamp(30px,4vw,42px); }
+.doc h2 { font-size:22px; margin:40px 0 10px; }
+.doc p, .doc li { color:var(--text); }
+.doc .updated { color:var(--muted); font-size:14px; }
+
+@media (max-width:860px) {
+  .site-nav a:not(.btn) { display:none; }
+  section { padding:64px 0; }
+  .footer-grid { grid-template-columns:1fr; }
+}
+@media (max-width:480px) {
+  .wrap { padding:0 16px; }
+  .site-header .wrap { height:60px; }
+}

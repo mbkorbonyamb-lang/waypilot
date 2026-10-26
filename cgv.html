@@ -5,26 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Conditions générales de vente — WayPilot</title>
   <meta name="robots" content="noindex">
-  <style>
-    :root { --blue:#1769ff; --navy:#15243b; --border:#e0e7f0; --muted:#627087; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,Arial,sans-serif; color:var(--navy); background:white; line-height:1.6; }
-    a { color:var(--blue); }
-    header { padding:18px 6%; border-bottom:1px solid var(--border); }
-    .brand { font-size:24px; font-weight:800; letter-spacing:-1px; color:var(--navy); text-decoration:none; } .brand span { color:var(--blue); }
-    main { max-width:760px; margin:0 auto; padding:36px 20px 50px; }
-    h1 { font-size:30px; margin:0 0 24px; }
-    h2 { font-size:19px; margin:30px 0 8px; } ul { margin:0 0 10px; padding-left:20px; }
-    p { margin:0 0 10px; }
-    .muted { color:var(--muted); font-size:14px; }
-    footer { padding:28px 6%; color:var(--muted); font-size:13px; border-top:1px solid var(--border); }
-  </style>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5eff'/%3E%3Cpath d='M8 16.5l5 5 11-11' stroke='%23fff' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<header><a class="brand" href="index.html">Way<span>Pilot</span></a></header>
-<main>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a>
+    <nav class="site-nav">
+      <a href="./#controles">Contrôles</a>
+      <a href="./#cas">Cas client</a>
+      <a href="./#offres">Offres</a>
+      <a href="securite.html">Sécurité</a>
+      <a class="btn btn-primary btn-small" href="app.html">Ouvrir l’outil</a>
+    </nav>
+  </div>
+</header>
+<main class="doc">
   <h1>Conditions générales de vente</h1>
-  <p class="muted">Version du 26 octobre 2026. Wayzure SAS, capital de 1 000 €, RCS Nanterre 901 524 082, 132 avenue Jean Jaurès, 92140 Clamart, TVA FR 22 901 524 082, <a href="mailto:contact@wayzure.com">contact@wayzure.com</a>, ci-après « Wayzure ».</p>
+  <p class="updated">Version du 26 octobre 2026. Wayzure SAS, capital de 1 000 €, RCS Nanterre 901 524 082, 132 avenue Jean Jaurès, 92140 Clamart, TVA FR 22 901 524 082, <a href="mailto:contact@wayzure.com">contact@wayzure.com</a>, ci-après « Wayzure ».</p>
 
   <h2>1. Objet</h2>
   <p>Ces conditions s'appliquent aux prestations WayPilot vendues par Wayzure à des clients professionnels : commerçants en ligne et agences. Elles prévalent sur les conditions d'achat du client, sauf accord écrit contraire. Toute commande vaut acceptation de ces conditions.</p>
@@ -67,6 +66,33 @@
   <h2>11. Droit applicable et litiges</h2>
   <p>Ces conditions sont régies par le droit français. Les parties cherchent d'abord une solution amiable. À défaut, tout litige relève du tribunal de commerce de Nanterre.</p>
 </main>
-<footer>WayPilot est une marque de Wayzure. <a href="index.html">Accueil</a> · <a href="mentions-legales.html">Mentions légales</a> · <a href="app.html">Ouvrir l’outil</a></footer>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>WayPilot</a>
+        <p style="margin:0;max-width:320px">Contrôle qualité des catalogues WooCommerce et Shopify. Une marque de Wayzure SAS.</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:contact@wayzure.com">contact@wayzure.com</a></li>
+          <li><a href="https://wa.me/33752222106" rel="noopener">WhatsApp +33 7 52 22 21 06</a></li>
+          <li><a href="tel:+33661358652">+33 6 61 35 86 52</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>WayPilot</h4>
+        <ul>
+          <li><a href="app.html">Ouvrir l’outil</a></li>
+          <li><a href="securite.html">Sécurité et données</a></li>
+          <li><a href="cgv.html">Conditions générales de vente</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
+  </div>
+</footer>
 </body>
 </html>
