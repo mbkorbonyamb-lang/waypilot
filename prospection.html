@@ -53,7 +53,7 @@
     <textarea id="sites" class="field" style="margin-top:7px" placeholder="maboutique.com&#10;autreboutique.fr"></textarea>
     <div class="actions"><button id="run">Auditer la liste</button><button id="export" class="secondary" disabled>Télécharger le tableau (CSV)</button></div>
     <div id="info" class="message" aria-live="polite"></div>
-    <div class="table-wrap"><table id="table" hidden><thead><tr><th>Boutique</th><th>Verdict</th><th>Produits</th><th>Score</th><th>Ventes</th><th>Info fausse</th><th>Google</th><th>Exemple à citer</th></tr></thead><tbody></tbody></table></div>
+    <div class="table-wrap"><table id="table" hidden><thead><tr><th>Boutique</th><th>Verdict</th><th>Produits</th><th>Score</th><th>Ventes</th><th>Info fausse</th><th>Google</th><th>En jeu</th><th>Exemple à citer</th></tr></thead><tbody></tbody></table></div>
   </section>
 </main>
 <footer>WayPilot · Wayzure SAS · page interne</footer>
@@ -101,6 +101,7 @@
   }
 
   // Verdict : une anomalie élevée ou moyenne qui touche la vente ou l’information client fait une accroche.
+  const stakeText = r => (r.summary && r.summary.atStake.items ? `${E.formatMoney(r.summary.atStake.total, r.summary.atStake.currency)} (${r.summary.atStake.items} art.)` : "—");
   const verdictOf = r => (r.error ? "err" : (r.summary.counts.sales + r.summary.counts.trust > 0 ? "go" : "no"));
   const VERDICT = { go: "À vérifier puis contacter", no: "Cible faible", err: "Illisible" };
   const results = [];
@@ -114,8 +115,8 @@
       const tr = document.createElement("tr");
       const v = verdictOf(r);
       const cells = r.error
-        ? [r.url, null, "", "", "", "", "", r.error]
-        : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.)`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google,
+        ? [r.url, null, "", "", "", "", "", "", r.error]
+        : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.)`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, stakeText(r),
            r.summary.example ? `${r.summary.example.product}${r.summary.example.productId ? ` (ID ${r.summary.example.productId})` : ""} : ${r.summary.example.message}` : "—"];
       cells.forEach(text => {
         const td = document.createElement("td");
@@ -163,11 +164,12 @@
 
   $("export").addEventListener("click", () => {
     const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const lines = [["Boutique", "Plateforme", "Verdict", "Produits", "Variations", "Score", "Ventes", "Info fausse", "Google", "Gestion", "Exemple", "Date"].join(";")];
+    const lines = [["Boutique", "Plateforme", "Verdict", "Produits", "Variations", "Score", "Ventes", "Info fausse", "Google", "Gestion", "En jeu", "Articles en jeu", "Exemple", "Date"].join(";")];
     const date = new Date().toISOString().slice(0, 10);
     results.forEach(r => lines.push((r.error
-      ? [r.url, "", VERDICT.err, "", "", "", "", "", "", "", r.error, date]
+      ? [r.url, "", VERDICT.err, "", "", "", "", "", "", "", "", "", r.error, date]
       : [r.site, r.platform, VERDICT[verdictOf(r)], r.stats.products, r.stats.variations, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, r.summary.counts.ops,
+         r.summary.atStake.items ? E.formatMoney(r.summary.atStake.total, r.summary.atStake.currency) : "", r.summary.atStake.items || "",
          r.summary.example ? `${r.summary.example.product} : ${r.summary.example.message}` : "", date]).map(cell).join(";")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));

@@ -156,3 +156,16 @@ test("bon cadeau : montants différents par variation, pas de prix aberrant", ()
   const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
   assert.ok(!r.issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"));
 });
+
+test("montant en jeu : tailles à 0 € comptées au prix des autres tailles, devise inconnue", () => {
+  const p = { id: 5, title: "Baskets GEN1", product_type: "", options: [{ name: "Taille", values: ["38", "39", "40", "41", "42", "43"] }],
+    variants: ["38", "39", "40", "41", "42", "43"].map((o, n) => ({ id: 50 + n, sku: `G-${o}`, price: n < 4 ? "0.00" : "159.00", option1: o, available: true })), images: [{ src: "https://x.test/g.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  const zero = r.issues.filter(i => i.code === "PRICE_NON_POSITIVE");
+  assert.equal(zero.length, 4);
+  assert.ok(zero.every(i => i.atStake === 159));
+  assert.deepEqual(r.stats.atStake, { items: 4, total: 636, currency: "" });
+  assert.equal(E.formatMoney(636, ""), "636");
+  assert.equal(E.formatMoney(1234.5, "EUR"), "1 234,50 €");
+  assert.match(E.buildAuditReportHTML(r), /636 en jeu<\/strong>.*devise de la boutique/);
+});

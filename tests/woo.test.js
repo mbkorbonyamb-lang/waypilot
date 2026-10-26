@@ -385,3 +385,18 @@ test("taille d’image WordPress déduite du srcset, sans téléchargement", () 
   const c = W.publicToCatalog(E, { products: [p], variations: {} });
   assert.deepEqual(c.knownSizes["https://x.test/robe.jpg"], { width: 1200, height: 1800 });
 });
+
+test("montant en jeu : taille non commandable au prix des autres tailles, produit non achetable à son prix", () => {
+  const data = storeApi();
+  data.products.forEach(p => { p.prices.currency_code = "EUR"; });
+  const c = W.publicToCatalog(E, data);
+  assert.equal(c.currency, "EUR");
+  const r = E.analyze(c, { decimal: "." });
+  assert.equal(r.issues.find(i => i.code === "VARIATION_VALUE_MISSING" && i.value === "L").atStake, 421);
+  assert.equal(r.issues.find(i => i.code === "NOT_PURCHASABLE").atStake, 446);
+  assert.deepEqual(r.stats.atStake, { items: 2, total: 867, currency: "EUR" });
+  assert.equal(E.prospectSummary(r).atStake.total, 867);
+  const html = E.buildAuditReportHTML(r, { store: "jaaray.site" });
+  assert.match(html, /867 € en jeu<\/strong> : 2 articles/);
+  assert.match(html, /446 € en jeu/);
+});

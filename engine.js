@@ -677,6 +677,25 @@
       issue.proposalIds = (proposalsByRow.get(issue.row) || []).filter(p => p.resolves.includes(issue.code)).map(p => p.id);
     });
 
+    // Montant en jeu : prix d’une vente de chaque article qui ne peut pas être commandé ou qui est mal tarifé.
+    // Prix de référence = prix habituel des autres variations du même produit (médiane), sinon le prix de l’article.
+    const priceOf = i => { const v = parseAmount(clean(get(rows[i], "price")), decimal); return Number.isFinite(v) && v > 0 ? v : NaN; };
+    const medianOf = list => { const v = list.map(priceOf).filter(Number.isFinite).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : NaN; };
+    const siblingsPrice = i => parentOf[i] >= 0 ? medianOf((variationsByParent.get(parentOf[i]) || []).filter(c => c !== i)) : NaN;
+    const AT_STAKE = {
+      VARIATION_VALUE_MISSING: i => Number.isFinite(medianOf(variationsByParent.get(i) || [])) ? medianOf(variationsByParent.get(i)) : priceOf(i),
+      NOT_PURCHASABLE: priceOf,
+      PRICE_NON_POSITIVE: siblingsPrice, PRICE_MISSING: siblingsPrice, PRICE_INVALID: siblingsPrice,
+      VARIATION_PRICE_OUTLIER: siblingsPrice
+    };
+    issues.forEach(x => {
+      if (x.row < 0 || !AT_STAKE[x.code]) return;
+      const v = AT_STAKE[x.code](x.row);
+      if (Number.isFinite(v) && v > 0) x.atStake = Math.round(v * 100) / 100;
+    });
+    const staked = issues.filter(x => x.atStake);
+    const atStake = { items: staked.length, total: Math.round(staked.reduce((a, x) => a + x.atStake, 0) * 100) / 100, currency: catalog.currency || "" };
+
     // Score : chaque ligne perd des points selon ses anomalies (élevée 1, moyenne 0,5, faible 0,15), plafonné à 1 par ligne.
     const WEIGHT = { [SEVERITY.HIGH]: 1, [SEVERITY.MEDIUM]: 0.5, [SEVERITY.LOW]: 0.15 };
     const penalty = new Map();
@@ -690,7 +709,8 @@
       high: issues.filter(x => x.severity === SEVERITY.HIGH).length,
       // 100 % est réservé au catalogue sans anomalie : sur 5 000 lignes, 43 anomalies arrondiraient à 100.
       score: rows.length ? Math.min(lost > 0 ? 99 : 100, Math.round(100 * (1 - lost / rows.length))) : 0,
-      rowsWithIssues: penalty.size
+      rowsWithIssues: penalty.size,
+      atStake
     };
     return { issues, proposals, manualCandidates, stats };
   }
@@ -816,6 +836,15 @@
     IMAGE_ALT_MISSING: ["google", "Images sans texte alternatif"]
   };
 
+  /** Montant lisible : « 1 234,50 € ». Devise inconnue : montant seul (la devise de la boutique). */
+  const CURRENCY_SYMBOL = { EUR: "€", USD: "$", GBP: "£", CHF: "CHF", CAD: "$ CA", XOF: "F CFA", XAF: "F CFA", MAD: "DH", GNF: "GNF" };
+  function formatMoney(value, currency = "") {
+    const n = Number(value) || 0;
+    const text = n.toLocaleString("fr-FR", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 }).replace(/[\u202f\u00a0]/g, " ");
+    const symbol = CURRENCY_SYMBOL[String(currency).toUpperCase()] || String(currency);
+    return symbol ? `${text} ${symbol}` : text;
+  }
+
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
@@ -839,7 +868,8 @@
     const best = serious[0];
     return {
       counts, serious: serious.length,
-      example: best ? { product: best.issue.product || "", productId: best.issue.productId || "", label: best.label, message: best.issue.message, severity: best.issue.severity, group: best.group } : null
+      atStake: (result.stats && result.stats.atStake) || { items: 0, total: 0, currency: "" },
+      example: best ? { product: best.issue.product || "", productId: best.issue.productId || "", label: best.label, message: best.issue.message, severity: best.issue.severity, group: best.group, atStake: best.issue.atStake || 0 } : null
     };
   }
 
@@ -858,6 +888,7 @@
     });
     const structural = issues.filter(i => i.row < 0);
     const count = key => [...groups.get(key).values()].reduce((n, c) => n + c.items.length, 0);
+    const stake = stats.atStake || { items: 0, total: 0, currency: "" };
     const productLabel = i => `${escapeHtml(i.product || "(sans nom)")}${i.productId ? ` <span class="id">ID ${escapeHtml(i.productId)}</span>` : ""}`;
     const section = g => {
       const byCode = groups.get(g.key);
@@ -867,10 +898,12 @@
         const products = new Map();
         c.items.forEach(i => {
           const k = `${i.productId}|${i.product}`;
-          if (!products.has(k)) products.set(k, { issue: i, values: [] });
+          if (!products.has(k)) products.set(k, { issue: i, values: [], amount: 0 });
           if (i.value) products.get(k).values.push(i.value);
+          products.get(k).amount += i.atStake || 0;
         });
-        const cell = [...products.values()].map(p => productLabel(p.issue) + (p.values.length ? ` : ${escapeHtml(p.values.join(", "))}` : "")).join("<br>");
+        const cell = [...products.values()].map(p => productLabel(p.issue) + (p.values.length ? ` : ${escapeHtml(p.values.join(", "))}` : "")
+          + (p.amount ? ` <span class="money">${escapeHtml(formatMoney(p.amount, stake.currency))} en jeu</span>` : "")).join("<br>");
         return `<tr><td><strong>${escapeHtml(c.label)}</strong></td><td class="num">${c.items.length}</td><td>${cell}</td></tr>`;
       }).join("");
       return `<section><h2>${g.title} <span class="n">${count(g.key)}</span></h2><p class="intro">${g.intro}</p><table><thead><tr><th>Problème</th><th>Nombre</th><th>Produits concernés</th></tr></thead><tbody>${rows}</tbody></table></section>`;
@@ -886,7 +919,8 @@ header{display:flex;justify-content:space-between;align-items:flex-end;border-bo
 h1{font-size:26px;margin:24px 0 4px}h2{font-size:18px;margin:28px 0 4px}.n{background:#eaf1ff;color:#2458b8;border-radius:12px;padding:2px 9px;font-size:13px}
 .intro{color:#627087;margin:0 0 8px;font-size:14px}.ok{color:#087443}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e0e7f0;padding:8px;text-align:left;vertical-align:top}th{background:#f5f8fc}
-.num{text-align:right;width:70px}.id{color:#627087;font-size:11px}
+.num{text-align:right;width:70px}.id{color:#627087;font-size:11px}.money{color:#b42318;font-size:12px;white-space:nowrap}
+.stake{border-left:4px solid #b42318;background:#fff5f4;padding:12px 16px;border-radius:6px;margin:0 0 16px}.stake strong{font-size:20px}
 footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0;padding-top:10px}
 @media print{body{margin:0}section{break-inside:avoid-page}}
 @media(max-width:600px){.summary{grid-template-columns:1fr 1fr}}
@@ -898,6 +932,7 @@ footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0
 ${REPORT_GROUPS.map(g => `<div class="box"><span>${g.title}</span><strong>${count(g.key)}</strong></div>`).join("\n")}
 </div>
 <p>${stats.products} produits et ${stats.variations} variations contrôlés. ${issues.length ? `${issues.length} anomalies trouvées sur ${stats.rowsWithIssues} lignes.` : "Aucune anomalie trouvée."}</p>
+${stake.items ? `<div class="stake"><strong>${escapeHtml(formatMoney(stake.total, stake.currency))} en jeu</strong> : ${stake.items} article${stake.items > 1 ? "s" : ""} ne peu${stake.items > 1 ? "vent" : "t"} pas être commandé${stake.items > 1 ? "s" : ""} ou ${stake.items > 1 ? "sont" : "est"} mal tarifé${stake.items > 1 ? "s" : ""}. Ce montant correspond à une seule vente de chacun ; chaque commande manquée le répète.${stake.currency ? "" : " Montant dans la devise de la boutique."}</div>` : ""}
 ${structural.length ? `<p class="intro">Remarques sur le fichier : ${structural.map(i => escapeHtml(i.message)).join(" ; ")}.</p>` : ""}
 ${REPORT_GROUPS.map(section).join("\n")}
 <footer>Score : 100 % = aucune anomalie. Chaque ligne perd des points selon la gravité de ses anomalies. Ce rapport repose sur les contrôles automatiques de WayPilot : il ne garantit pas que toutes les données du catalogue sont exactes. Aucune modification n’a été faite par ce rapport.</footer>
@@ -911,7 +946,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.16.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.17.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

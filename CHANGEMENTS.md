@@ -1,3 +1,10 @@
+# WayPilot 1.17.0 — montant en jeu
+
+- Nouveau : « montant en jeu » = prix d’une vente de chaque article qui ne peut pas être commandé ou qui est mal tarifé (taille affichée sans variation, article non achetable, variation à 0 € ou sans prix, prix de variation aberrant). Le prix de référence est le prix habituel des autres tailles du même produit, sinon celui de l’article. Les articles sans prix connu ne sont pas comptés.
+- Affiché en tête du rapport client (encadré rouge), à côté de chaque produit de la rubrique ventes, dans le résumé de l’audit express et dans l’audit en série (colonne « En jeu », export CSV).
+- Devise lue dans l’audit express WooCommerce ; inconnue sur Shopify : montant affiché seul, « dans la devise de la boutique ».
+- 2 tests ajoutés.
+
 # WayPilot 1.16.2 — accroches de prospection plus fiables
 
 - Bons et cartes cadeaux : plus d’alerte « prix de variation aberrant » (chaque variation est un montant). Vu sur antilopeboutique.be.
