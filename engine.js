@@ -538,7 +538,9 @@
       const parentRow = rows[p];
       // Prix d’une variation 5 fois plus bas ou plus haut que les autres : souvent un chiffre oublié ou en trop (15,90 au lieu de 159).
       const priced = children.map(c => ({ c, v: parseAmount(clean(get(rows[c], "price")), decimal) })).filter(x => Number.isFinite(x.v) && x.v > 0);
-      if (priced.length >= 3) {
+      // Bon ou carte cadeau : chaque variation est un montant, les écarts sont voulus.
+      const giftCard = types[p].isGiftCard || /cadeau|gift/i.test(clean(get(parentRow, "name")));
+      if (priced.length >= 3 && !giftCard) {
         const sorted = priced.map(x => x.v).sort((a, b) => a - b);
         const median = sorted[Math.floor(sorted.length / 2)];
         const amount = v => v.toFixed(2).replace(".", ",");
@@ -822,11 +824,13 @@
    * Résumé pour la prospection : anomalies élevées et moyennes par rubrique, et l’exemple le plus parlant à citer
    * (rubrique « ventes » d’abord, gravité élevée d’abord). Les anomalies faibles ne font pas une accroche.
    */
+  const WEAK_HOOKS = new Set(["NAME_DUPLICATE"]);
   function prospectSummary(result) {
     const rank = { [SEVERITY.HIGH]: 0, [SEVERITY.MEDIUM]: 1 };
     const order = REPORT_GROUPS.map(g => g.key);
     const counts = Object.fromEntries(order.map(k => [k, 0]));
-    const serious = result.issues.filter(i => i.row >= 0 && i.severity in rank).map(i => {
+    // Un nom en double (souvent un coloris) n’est pas une erreur qui convainc un commerçant : pas d’accroche.
+    const serious = result.issues.filter(i => i.row >= 0 && i.severity in rank && !WEAK_HOOKS.has(i.code)).map(i => {
       const [group, label] = REPORT_CODES[i.code] || ["ops", i.message];
       counts[group]++;
       return { issue: i, group, label };
@@ -907,7 +911,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.16.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.16.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

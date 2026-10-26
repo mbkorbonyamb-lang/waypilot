@@ -1,3 +1,8 @@
+# WayPilot 1.16.2 — accroches de prospection plus fiables
+
+- Bons et cartes cadeaux : plus d’alerte « prix de variation aberrant » (chaque variation est un montant). Vu sur antilopeboutique.be.
+- Audit en série : un nom en double ne compte plus comme accroche (souvent un coloris, peu convaincant pour un commerçant). Il reste dans le rapport. Vu sur icon-shop.be et stijl.be. 2 tests ajoutés.
+
 # WayPilot 1.16.1 — prix de variation aberrant
 
 - Nouveau contrôle « Prix d’une variation très différent des autres » (moyenne, rubrique ventes) : dans un produit à 3 variations ou plus, un prix 5 fois plus bas ou plus haut que le prix habituel signale un chiffre oublié ou en trop (15,90 au lieu de 159,00). Les écarts normaux entre tailles ne sont pas signalés. 1 test ajouté.

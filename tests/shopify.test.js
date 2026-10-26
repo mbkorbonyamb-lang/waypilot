@@ -149,3 +149,10 @@ test("prix d’une variation 10 fois plus bas que les autres : moyenne (faute de
   const ok = E.analyze(S.shopifyToCatalog(E, { products: [{ ...p, variants: p.variants.map(v => ({ ...v, price: v.option1 === "XL" ? "179.00" : "159.00" })) }] }));
   assert.ok(!ok.issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"), "écart normal entre tailles : rien");
 });
+
+test("bon cadeau : montants différents par variation, pas de prix aberrant", () => {
+  const p = { id: 4, title: "Bons cadeaux", product_type: "", options: [{ name: "Montant", values: ["10", "50", "100", "500"] }],
+    variants: ["10", "50", "100", "500"].map((o, n) => ({ id: 40 + n, sku: `BC-${o}`, price: `${o}.00`, option1: o, available: true })), images: [{ src: "https://x.test/b.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  assert.ok(!r.issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"));
+});
