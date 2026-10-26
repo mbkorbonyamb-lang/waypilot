@@ -1,3 +1,7 @@
+# WayPilot 1.16.1 — prix de variation aberrant
+
+- Nouveau contrôle « Prix d’une variation très différent des autres » (moyenne, rubrique ventes) : dans un produit à 3 variations ou plus, un prix 5 fois plus bas ou plus haut que le prix habituel signale un chiffre oublié ou en trop (15,90 au lieu de 159,00). Les écarts normaux entre tailles ne sont pas signalés. 1 test ajouté.
+
 # WayPilot 1.16.0 — audit en série pour la prospection
 
 - Nouvelle page interne prospection.html (non référencée, sans lien) : on colle une liste d’adresses, chaque boutique WooCommerce ou Shopify est auditée comme en audit express (sans télécharger les images), puis classée : « À vérifier puis contacter » s’il y a une anomalie élevée ou moyenne qui touche la vente ou l’information client, « Cible faible » sinon, « Illisible » si ce n’est ni WooCommerce ni Shopify. L’exemple à citer est choisi dans la rubrique ventes d’abord. Export CSV.

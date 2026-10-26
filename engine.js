@@ -536,6 +536,15 @@
     const manualCandidates = [];
     variationsByParent.forEach((children, p) => {
       const parentRow = rows[p];
+      // Prix d’une variation 5 fois plus bas ou plus haut que les autres : souvent un chiffre oublié ou en trop (15,90 au lieu de 159).
+      const priced = children.map(c => ({ c, v: parseAmount(clean(get(rows[c], "price")), decimal) })).filter(x => Number.isFinite(x.v) && x.v > 0);
+      if (priced.length >= 3) {
+        const sorted = priced.map(x => x.v).sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const amount = v => v.toFixed(2).replace(".", ",");
+        priced.filter(x => x.v * 5 <= median || x.v >= median * 5).forEach(x => add(x.c, "VARIATION_PRICE_OUTLIER", SEVERITY.MEDIUM,
+          `Prix ${amount(x.v)} très différent des autres variations du même produit (${amount(median)} en général) : chiffre oublié ou en trop ?`));
+      }
       const parentAttrs = new Map(attributesOf(parentRow).map(a => [normalize(a.name), a]));
       // Attributs réellement utilisés par les variations de ce parent.
       const used = new Map(); // nom normalisé -> { values:Set, any:boolean }
@@ -770,6 +779,7 @@
   const REPORT_CODES = {
     PRICE_MISSING: ["sales", "Prix absent : le produit ne peut pas être acheté"],
     NOT_PURCHASABLE: ["sales", "Affiché mais impossible à ajouter au panier"],
+    VARIATION_PRICE_OUTLIER: ["sales", "Prix d’une variation très différent des autres (faute de frappe ?)"],
     PRICE_INVALID: ["sales", "Prix illisible"],
     PRICE_NON_POSITIVE: ["sales", "Prix nul ou négatif"],
     PRICE_ON_REQUEST: ["ops", "Produit vitrine sans prix (sur devis ?)"],
@@ -897,7 +907,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.16.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.16.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
