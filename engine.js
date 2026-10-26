@@ -260,7 +260,7 @@
     const tokens = normalize(raw).split(/\s*,\s*/).filter(Boolean);
     const known = ["variation", "variable", "grouped", "external", "simple"];
     const primary = tokens.find(t => known.includes(t)) || tokens[0] || "";
-    return { raw: clean(raw), primary, isVariation: primary === "variation", isVariable: primary === "variable", isGrouped: primary === "grouped" };
+    return { raw: clean(raw), primary, isVariation: primary === "variation", isVariable: primary === "variable", isGrouped: primary === "grouped", isGiftCard: tokens.some(t => /gift.?card|carte.?cadeau/.test(t)) };
   }
 
   function cleanId(value) { return normalize(value).replace(/^id\s*:\s*/, "").trim(); }
@@ -376,7 +376,9 @@
       const sale = saleRaw ? parseAmount(saleRaw, decimal) : NaN;
       // Produit vitrine (prix sur devis) : sans prix et non achetable, WooCommerce affiche « Lire la suite ».
       const showcase = col.purchasable >= 0 && clean(get(row, "purchasable")) === "0" && !t.isVariable && !t.isGrouped && !(regular > 0);
-      if (showcase) {
+      if (t.isGiftCard) {
+        // Carte cadeau : le client choisit le montant, le prix du produit reste à 0.
+      } else if (showcase) {
         add(i, "PRICE_ON_REQUEST", SEVERITY.LOW, "Produit sans prix, non achetable (vitrine ou prix sur devis) : à confirmer si c’est voulu");
       } else if (col.price >= 0) {
         if (!priceRaw) {
@@ -866,7 +868,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.15.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.15.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
