@@ -351,6 +351,7 @@
     })).filter(a => a.name);
 
     const seenNames = new Map(), seenSkus = new Map(), seenGtins = new Map();
+    const sharedModelSku = new Set();
     // GTIN absent signalé seulement si le catalogue en utilise ailleurs : une marque propre n’en a souvent aucun.
     const catalogUsesGtin = col.gtin >= 0 && rows.some(r => clean(get(r, "gtin")));
     const imageSizes = catalog.imageSizes || null;
@@ -478,7 +479,12 @@
           const k = normalize(sku);
           if (seenSkus.has(k)) {
             const first = seenSkus.get(k);
-            add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU « ${sku} » déjà utilisée par « ${displayName(get(rows[first], "name"))} » (ligne ${lines[first]})`);
+            // Shopify : une même référence sur toutes les variantes d’un produit est souvent la référence du modèle, voulue.
+            const parent = t.isVariation && catalog.platform === "shopify" ? resolveParent(get(row, "parent")) : -1;
+            if (parent >= 0 && types[first].isVariation && resolveParent(get(rows[first], "parent")) === parent) {
+              sharedModelSku.add(i);
+              add(i, "SKU_SHARED_MODEL", SEVERITY.LOW, `Référence « ${sku} » commune à plusieurs variantes de ce produit (référence du modèle ?) : le stock et les ventes ne se suivent pas par taille ou couleur, et un export vers un logiciel de caisse ou une place de marché peut les confondre`);
+            } else add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU « ${sku} » déjà utilisée par « ${displayName(get(rows[first], "name"))} » (ligne ${lines[first]})`);
           }
           else seenSkus.set(k, i);
         } else if (!t.isVariation && !(t.isVariable && catalog.platform === "shopify")) add(i, "SKU_MISSING", SEVERITY.LOW, "Référence SKU absente (recommandée pour le suivi des produits)");
@@ -647,7 +653,7 @@
           label: isDuplicate ? "Remplacer la référence en double par une référence unique" : (current ? "Remplacer l’UGS par une référence normalisée unique" : "Générer une UGS unique"),
           before: current || "(vide)", after: candidate,
           safe: !current, // changer une référence existante n’est jamais « sûr »
-          resolves: isDuplicate ? ["SKU_DUPLICATE"] : (current ? [] : ["SKU_MISSING"]),
+          resolves: sharedModelSku.has(i) ? ["SKU_SHARED_MODEL"] : isDuplicate ? ["SKU_DUPLICATE"] : (current ? [] : ["SKU_MISSING"]),
           note: notes.join(" ")
         });
       });
@@ -786,6 +792,7 @@
     DESCRIPTION_MISSING: ["trust", "Produit sans description"],
     SKU_MISSING: ["ops", "Référence (UGS) absente"],
     SKU_DUPLICATE: ["ops", "Référence (UGS) utilisée deux fois"],
+    SKU_SHARED_MODEL: ["ops", "Même référence sur toutes les tailles d’un modèle"],
     IMAGE_DUPLICATE: ["ops", "Même image répétée dans la galerie"],
     CATEGORY_MISSING: ["ops", "Produit sans catégorie"],
     IMAGE_BROKEN: ["trust", "Image qui ne s’affiche pas"],
@@ -869,7 +876,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.15.3", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.15.4", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
