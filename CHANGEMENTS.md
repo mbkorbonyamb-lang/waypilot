@@ -1,7 +1,10 @@
+# WayPilot 1.15.2 — cartes cadeaux
+
+- Cartes cadeaux (type « gift-card », « pw-gift-card »…) : leur prix reste à 0 € car le client choisit le montant. Plus d’alerte « Prix nul » élevée (fausse alerte vue sur b-a-conceptstore.com). 1 test ajouté.
+
 # WayPilot 1.15.1 — taille des images sans téléchargement
 
 - Le contrôle de taille des images était lent (jusqu’à 400 téléchargements). Shopify donne la largeur et la hauteur de chaque image ; WordPress les laisse déduire du srcset (plus grande largeur, proportions d’une version réduite « -300x450 »). Ces images ne sont plus téléchargées : seules les autres le sont, dans la même limite. 2 tests ajoutés.
-- Cartes cadeaux (type « gift-card », « pw-gift-card »…) : leur prix reste à 0 € car le client choisit le montant. Plus d’alerte « Prix nul » élevée (fausse alerte vue sur b-a-conceptstore.com). 1 test ajouté.
 
 # WayPilot 1.15.0 — corrections réservées aux clients, contact après l’audit
 
