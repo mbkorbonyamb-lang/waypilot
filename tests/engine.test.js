@@ -256,3 +256,18 @@ test("noms : entités HTML de WordPress décodées (tiret, apostrophe)", () => {
   assert.ok(names.includes("Aurea Fides – 1ml"), names.join(" | "));
   assert.ok(names.includes("L’eau & co — 5ml"), names.join(" | "));
 });
+
+test("prospectSummary : exemple pris dans « ventes » d’abord, faibles ignorées", () => {
+  const result = { issues: [
+    { row: 1, code: "IMAGE_ALT_MISSING", severity: E.SEVERITY.LOW, product: "A", message: "alt" },
+    { row: 2, code: "GTIN_INVALID", severity: E.SEVERITY.MEDIUM, product: "B", message: "gtin" },
+    { row: 3, code: "PRICE_NON_POSITIVE", severity: E.SEVERITY.HIGH, product: "Baskets", productId: "9", message: "Prix nul ou négatif" },
+    { row: -1, code: "PRICE_COLUMN_MISSING", severity: E.SEVERITY.HIGH, product: "", message: "structure" }
+  ] };
+  const s = E.prospectSummary(result);
+  assert.equal(s.serious, 2);
+  assert.equal(s.counts.sales, 1);
+  assert.equal(s.counts.google, 1);
+  assert.equal(s.example.product, "Baskets");
+  assert.equal(E.prospectSummary({ issues: [result.issues[0]] }).example, null);
+});

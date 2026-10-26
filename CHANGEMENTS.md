@@ -1,3 +1,8 @@
+# WayPilot 1.16.0 — audit en série pour la prospection
+
+- Nouvelle page interne prospection.html (non référencée, sans lien) : on colle une liste d’adresses, chaque boutique WooCommerce ou Shopify est auditée comme en audit express (sans télécharger les images), puis classée : « À vérifier puis contacter » s’il y a une anomalie élevée ou moyenne qui touche la vente ou l’information client, « Cible faible » sinon, « Illisible » si ce n’est ni WooCommerce ni Shopify. L’exemple à citer est choisi dans la rubrique ventes d’abord. Export CSV.
+- Moteur : prospectSummary(result). 1 test ajouté.
+
 # WayPilot 1.15.4 — référence commune aux tailles d’un modèle (Shopify)
 
 - Sur Shopify, beaucoup de boutiques mettent la même référence sur toutes les tailles d’un modèle (ex. « MOE-BAS-GEN1 »). C’était compté comme « Référence utilisée deux fois », gravité élevée : 5 375 alertes élevées sur natives-conceptstore.com, score écrasé. Ce cas devient « Même référence sur toutes les tailles d’un modèle », gravité faible. Une référence partagée entre deux produits différents reste élevée. 1 test ajouté.

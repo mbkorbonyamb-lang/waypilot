@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WayPilot — Prospection</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root { --blue:#1769ff; --navy:#15243b; --bg:#f4f7fb; --border:#e0e7f0; --muted:#627087; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Arial,sans-serif; color:var(--navy); background:var(--bg); }
+    header { background:white; border-bottom:1px solid var(--border); padding:20px 6%; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+    .brand { font-size:25px; font-weight:800; letter-spacing:-1px; } .brand span { color:var(--blue); }
+    .version { background:#eaf1ff; color:#2458b8; padding:6px 11px; border-radius:20px; font-size:12px; font-weight:700; }
+    main { max-width:1000px; margin:42px auto; padding:0 20px 50px; }
+    .hero { margin-bottom:28px; } .eyebrow { color:var(--blue); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; }
+    h1 { font-size:clamp(30px,5vw,44px); line-height:1.1; margin:12px 0; } .subtitle { color:var(--muted); font-size:17px; line-height:1.6; max-width:650px; }
+    .panel { background:white; border:1px solid var(--border); border-radius:16px; padding:25px; margin:20px 0; box-shadow:0 5px 22px #15243b08; }
+    h2 { font-size:19px; margin:0 0 8px; } h3 { font-size:16px; margin:18px 0 8px; }
+    .help { color:var(--muted); font-size:14px; line-height:1.5; }
+    .label { display:block; font-weight:700; margin-top:14px; }
+    .settings { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:4px 18px; }
+    .drop { display:block; border:2px dashed #b9c9df; border-radius:12px; background:#f9fbff; padding:30px 16px; text-align:center; margin-top:18px; cursor:pointer; }
+    .drop strong { display:block; margin:8px 0; font-size:16px; } .drop input { max-width:100%; margin-top:10px; }
+    button,.download,a.button { border:0; background:var(--blue); color:white; font-size:14px; font-weight:700; border-radius:9px; padding:13px 18px; cursor:pointer; text-decoration:none; display:inline-block; }
+    button:disabled { background:#aab6c8; cursor:not-allowed; } button.secondary,a.button.secondary { color:var(--navy); background:#eaf0f8; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; } .notice { margin-top:15px; color:var(--muted); font-size:13px; line-height:1.5; }
+    .message { margin-top:14px; font-size:14px; line-height:1.5; } .error { color:#b42318; } .success { color:#087443; }
+    .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0; }
+    .metric { border:1px solid var(--border); border-radius:12px; padding:18px; background:#fbfcff; } .metric span { display:block; color:var(--muted); font-size:13px; } .metric strong { display:block; font-size:30px; margin-top:7px; }
+    .table-wrap { overflow-x:auto; margin-top:18px; } table { border-collapse:collapse; width:100%; font-size:13px; } th,td { border-bottom:1px solid var(--border); padding:12px 10px; text-align:left; vertical-align:top; } th { background:#f5f8fc; }
+    .severity { font-weight:700; } .decision { min-width:150px; } .decision select { max-width:100%; padding:8px; border:1px solid var(--border); border-radius:7px; }
+    .field { width:100%; min-width:110px; padding:8px; border:1px solid var(--border); border-radius:7px; font:inherit; }
+    .needs-review { background:#fff0f0 !important; } .needs-review td { border-bottom-color:#f2b8b5; }
+    .review-tag { display:inline-block;background:#b42318;color:white;border-radius:5px;padding:3px 7px;font-weight:800;font-size:11px; }
+    .review-toolbar { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0; } .review-toolbar select { padding:10px;border:1px solid #e5a4a0;border-radius:8px; }
+    .review-card { border:1px solid #f0b7b3;background:#fffafa;border-radius:12px;padding:16px;margin:14px 0; }
+    .code { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--muted); display:block; margin-top:3px; }
+    .note { color:#8a5a00; font-size:12px; margin-top:5px; }
+    footer { text-align:center; padding:25px 15px; color:var(--muted); font-size:12px; } [hidden] { display:none !important; }
+    @media(max-width:600px) { main { margin-top:28px; padding:0 14px 35px; } .panel { padding:18px; } .metrics { grid-template-columns:1fr 1fr; gap:9px; } .metric strong { font-size:25px; } }
+    .tag { display:inline-block; border-radius:5px; padding:2px 7px; font-weight:700; font-size:12px; } .tag.go { background:#e3f6ec; color:#087443; } .tag.no { background:#eef1f5; color:var(--muted); } .tag.err { background:#fff0f0; color:#b42318; }
+    textarea.field { min-height:160px; font-family:ui-monospace,Menlo,monospace; font-size:13px; }
+  </style>
+</head>
+<body>
+<header><a class="brand" href="index.html" style="color:inherit;text-decoration:none">Way<span>Pilot</span></a><div class="version" id="version">PROSPECTION</div></header>
+<main>
+  <section class="panel">
+    <h2>Audit en série</h2>
+    <p class="help">Une adresse par ligne (WooCommerce ou Shopify). Chaque boutique est auditée comme avec l’audit express, sans mesurer la taille des images, puis classée selon ses anomalies élevées et moyennes. L’exemple proposé est à vérifier sur la boutique avant tout envoi.</p>
+    <label class="label" for="sites">Boutiques</label>
+    <textarea id="sites" class="field" style="margin-top:7px" placeholder="maboutique.com&#10;autreboutique.fr"></textarea>
+    <div class="actions"><button id="run">Auditer la liste</button><button id="export" class="secondary" disabled>Télécharger le tableau (CSV)</button></div>
+    <div id="info" class="message" aria-live="polite"></div>
+    <div class="table-wrap"><table id="table" hidden><thead><tr><th>Boutique</th><th>Verdict</th><th>Produits</th><th>Score</th><th>Ventes</th><th>Info fausse</th><th>Google</th><th>Exemple à citer</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</main>
+<footer>WayPilot · Wayzure SAS · page interne</footer>
+<script src="engine.js"></script>
+<script src="woo.js"></script>
+<script src="shopify.js"></script>
+<script>
+(() => {
+  "use strict";
+  const E = window.WayPilotEngine;
+  const W = window.WayPilotWoo;
+  const S = window.WayPilotShopify;
+  const $ = id => document.getElementById(id);
+  $("version").textContent = `PROSPECTION · V${E.VERSION}`;
+
+  // Même lecture que l’audit express (app.html) : WooCommerce d’abord, Shopify sinon, via le relais WayPilot.
+  const RELAY_URL = "https://waypilot-relais.wayzure.workers.dev";
+  async function readPublicStore(url) {
+    try {
+      const client = W.createPublicClient({ url, relay: RELAY_URL });
+      const data = await client.fetchCatalog(() => {});
+      if (!data.products.length) throw new Error("Aucun produit public.");
+      return { site: client.site, catalog: W.publicToCatalog(E, data) };
+    } catch (wooError) {
+      if (wooError.status === 401 || wooError.status === 403) throw wooError;
+      try {
+        const client = S.createShopifyClient({ url, relay: RELAY_URL });
+        const data = await client.fetchCatalog(() => {});
+        if (!data.products.length) throw new Error("Aucun produit public.");
+        return { site: client.site, catalog: S.shopifyToCatalog(E, data) };
+      } catch (shopifyError) {
+        if (shopifyError.status === 404) throw new Error("Ni WooCommerce ni Shopify lisible");
+        throw shopifyError;
+      }
+    }
+  }
+
+  // Sans téléchargement d’images : seules les tailles connues (srcset, données Shopify) sont contrôlées.
+  async function auditOne(url) {
+    const { site, catalog } = await readPublicStore(url);
+    catalog.site = site;
+    catalog.imageSizes = { ...(catalog.knownSizes || {}) };
+    const result = E.analyze(catalog);
+    return { site, platform: catalog.platform === "shopify" ? "Shopify" : "WooCommerce", stats: result.stats, summary: E.prospectSummary(result) };
+  }
+
+  // Verdict : une anomalie élevée ou moyenne qui touche la vente ou l’information client fait une accroche.
+  const verdictOf = r => (r.error ? "err" : (r.summary.counts.sales + r.summary.counts.trust > 0 ? "go" : "no"));
+  const VERDICT = { go: "À vérifier puis contacter", no: "Cible faible", err: "Illisible" };
+  const results = [];
+
+  function render() {
+    const order = { go: 0, no: 1, err: 2 };
+    const sorted = results.slice().sort((a, b) => order[verdictOf(a)] - order[verdictOf(b)]
+      || (b.summary ? b.summary.counts.sales : -1) - (a.summary ? a.summary.counts.sales : -1));
+    const body = $("table").querySelector("tbody");
+    body.replaceChildren(...sorted.map(r => {
+      const tr = document.createElement("tr");
+      const v = verdictOf(r);
+      const cells = r.error
+        ? [r.url, null, "", "", "", "", "", r.error]
+        : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.)`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google,
+           r.summary.example ? `${r.summary.example.product}${r.summary.example.productId ? ` (ID ${r.summary.example.productId})` : ""} : ${r.summary.example.message}` : "—"];
+      cells.forEach(text => {
+        const td = document.createElement("td");
+        if (text === null) {
+          const tag = document.createElement("span");
+          tag.className = `tag ${v}`;
+          tag.textContent = VERDICT[v];
+          td.append(tag);
+        } else td.textContent = String(text);
+        tr.append(td);
+      });
+      return tr;
+    }));
+    $("table").hidden = !results.length;
+    $("export").disabled = !results.length;
+  }
+
+  $("run").addEventListener("click", async () => {
+    const urls = [...new Set($("sites").value.split(/[\s,;]+/).map(u => u.trim()).filter(Boolean))];
+    if (!urls.length) return;
+    results.length = 0;
+    $("run").disabled = true;
+    let done = 0;
+    const info = $("info");
+    info.className = "message";
+    const queue = urls.slice();
+    // Deux boutiques à la fois : le relais et les boutiques ne sont pas surchargés.
+    const worker = async () => {
+      while (queue.length) {
+        const url = queue.shift();
+        info.textContent = `Audit en cours : ${done} / ${urls.length} terminés…`;
+        try { results.push({ url, ...(await auditOne(url)) }); }
+        catch (error) { results.push({ url, error: error.message || "Lecture impossible" }); }
+        done++;
+        render();
+      }
+    };
+    await Promise.all([worker(), worker()]);
+    const go = results.filter(r => verdictOf(r) === "go").length;
+    info.textContent = `${urls.length} boutiques auditées : ${go} avec une accroche possible. Vérifiez chaque exemple sur la boutique avant d’écrire.`;
+    info.classList.add("success");
+    $("run").disabled = false;
+  });
+
+  $("export").addEventListener("click", () => {
+    const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const lines = [["Boutique", "Plateforme", "Verdict", "Produits", "Variations", "Score", "Ventes", "Info fausse", "Google", "Gestion", "Exemple", "Date"].join(";")];
+    const date = new Date().toISOString().slice(0, 10);
+    results.forEach(r => lines.push((r.error
+      ? [r.url, "", VERDICT.err, "", "", "", "", "", "", "", r.error, date]
+      : [r.site, r.platform, VERDICT[verdictOf(r)], r.stats.products, r.stats.variations, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, r.summary.counts.ops,
+         r.summary.example ? `${r.summary.example.product} : ${r.summary.example.message}` : "", date]).map(cell).join(";")));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    a.download = `prospection-${date}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+})();
+</script>
+</body>
+</html>
