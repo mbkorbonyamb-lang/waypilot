@@ -136,8 +136,8 @@
         <h1>Votre catalogue, vérifié produit par produit.</h1>
         <p class="lead">Une taille affichée mais impossible à commander. Un prix différent entre la fiche et la description. Des variations en double après un import. Ces erreurs ne se voient pas dans l’administration. Vos clients, eux, les voient.</p>
         <form class="quick" action="app.html" method="get">
-          <label for="boutique" class="sr">Adresse de votre boutique WooCommerce ou Shopify</label>
-          <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
+          <label for="boutique" class="sr">Site web de votre boutique WooCommerce ou Shopify</label>
+          <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="Site web de votre boutique" required autocomplete="url">
           <button class="btn btn-primary" type="submit">Auditer ma boutique</button>
         </form>
         <ul class="assure">
@@ -204,7 +204,7 @@
         <p>L’audit tourne dans votre navigateur. Vos clés ne passent par aucun serveur WayPilot.</p>
       </div>
       <div class="steps">
-        <div class="step"><h3>Vous donnez l’adresse</h3><p>Pour un premier audit, l’adresse suffit : WayPilot lit le catalogue tel qu’un client le voit. Pour un audit complet sur WooCommerce, une clé API en lecture seule.</p></div>
+        <div class="step"><h3>Vous donnez le site web de votre boutique</h3><p>Pour un premier audit, le site suffit : WayPilot lit le catalogue tel qu’un client le voit. Pour un audit complet sur WooCommerce, une clé API en lecture seule.</p></div>
         <div class="step"><h3>WayPilot vérifie tout</h3><p>Chaque produit et chaque variation. Un score, les ventes en jeu, et chaque problème classé selon son effet sur vos ventes.</p></div>
         <div class="step"><h3>Vous validez les corrections</h3><p>Seules les corrections que vous acceptez sont appliquées, avec un journal et la possibilité d’annuler. Sur Shopify, elles sont faites par notre équipe.</p></div>
       </div>
@@ -246,7 +246,7 @@
         <div class="offer">
           <h3>Audit en libre-service</h3>
           <div class="price"><b>0 €</b></div>
-          <p class="desc">Vous entrez l’adresse de votre boutique et lisez le rapport.</p>
+          <p class="desc">Vous entrez le site web de votre boutique et lisez le rapport.</p>
           <ul><li>Catalogue public lu en lecture seule</li><li>Score et ventes en jeu</li><li>Rapport imprimable</li></ul>
           <a class="btn btn-ghost" href="app.html">Lancer l’audit</a>
         </div>
@@ -284,7 +284,7 @@
         <div class="feature">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
           <h3>Lecture seule par défaut</h3>
-          <p>L’audit par adresse voit ce que voit un visiteur : ni commandes, ni clients, ni brouillons.</p>
+          <p>L’audit à partir du site web voit ce que voit un visiteur : ni commandes, ni clients, ni brouillons.</p>
         </div>
         <div class="feature">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
@@ -307,7 +307,7 @@
       <div class="faq">
         <details>
           <summary>Comment WayPilot lit-il ma boutique sans clé ?</summary>
-          <p>Par le catalogue public : l’API publique de WooCommerce, ou le catalogue que Shopify publie pour chaque boutique. C’est ce que la boutique utilise pour afficher ses produits. Cette lecture passe par un relais WayPilot qui ne reçoit que l’adresse de la boutique et ne conserve rien.</p>
+          <p>Par le catalogue public : l’API publique de WooCommerce, ou le catalogue que Shopify publie pour chaque boutique. C’est ce que la boutique utilise pour afficher ses produits. Cette lecture passe par un relais WayPilot qui ne reçoit que le site web de la boutique et ne conserve rien.</p>
         </details>
         <details>
           <summary>Que veut dire « ventes en jeu » ?</summary>
@@ -319,7 +319,7 @@
         </details>
         <details>
           <summary>Faut-il installer une extension ?</summary>
-          <p>Non. Sur WooCommerce, une clé API suffit pour l’audit complet. Sur Shopify, l’audit se fait avec la seule adresse de la boutique.</p>
+          <p>Non. Sur WooCommerce, une clé API suffit pour l’audit complet. Sur Shopify, l’audit se fait avec le seul site web de la boutique.</p>
         </details>
         <details>
           <summary>Qui est derrière WayPilot ?</summary>
@@ -334,8 +334,8 @@
       <h2>Que voient vos clients sur votre boutique ?</h2>
       <p>L’audit prend quelques secondes. Aucune inscription.</p>
       <form class="quick" action="app.html" method="get">
-        <label for="boutique2" class="sr">Adresse de votre boutique</label>
-        <input id="boutique2" name="boutique" type="text" inputmode="url" placeholder="maboutique.com" required autocomplete="url">
+        <label for="boutique2" class="sr">Site web de votre boutique</label>
+        <input id="boutique2" name="boutique" type="text" inputmode="url" placeholder="Site web de votre boutique" required autocomplete="url">
         <button class="btn btn-primary" type="submit">Auditer ma boutique</button>
       </form>
       <p class="alt-cta">Vous préférez en parler ? <a class="contact-link" href="mailto:contact@wayzure.com">Écrivez-nous</a>.</p>
