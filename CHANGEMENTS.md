@@ -1,3 +1,7 @@
+# WayPilot 1.15.4 — référence commune aux tailles d’un modèle (Shopify)
+
+- Sur Shopify, beaucoup de boutiques mettent la même référence sur toutes les tailles d’un modèle (ex. « MOE-BAS-GEN1 »). C’était compté comme « Référence utilisée deux fois », gravité élevée : 5 375 alertes élevées sur natives-conceptstore.com, score écrasé. Ce cas devient « Même référence sur toutes les tailles d’un modèle », gravité faible. Une référence partagée entre deux produits différents reste élevée. 1 test ajouté.
+
 # WayPilot 1.15.3 — virgule dans une valeur d’option
 
 - Une valeur d’option contenant une virgule (carte cadeau « 100,00 € » sur Shopify) était coupée en deux (« 100 » et « 00 € ») : fausses alertes « taille affichée mais impossible à commander » et « valeur non annoncée par le parent ». Les virgules d’une valeur sont désormais échappées (« \, », comme dans l’export WooCommerce) pour Shopify et l’audit express WooCommerce. Vu sur natives-conceptstore.com. 1 test ajouté.

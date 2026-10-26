@@ -128,3 +128,12 @@ test("valeur d’option avec virgule (carte cadeau « 100,00 € ») : pas de fa
   const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
   assert.ok(!r.issues.some(i => /^VARIATION_VALUE/.test(i.code)), r.issues.map(i => i.code).join(" "));
 });
+
+test("même SKU sur toutes les tailles d’un modèle Shopify : faible, pas élevée", () => {
+  const mk = (id, sku, opts) => ({ id, title: `Basket ${id}`, product_type: "", options: [{ name: "Taille", values: opts }],
+    variants: opts.map((o, n) => ({ id: id * 10 + n, sku: typeof sku === "function" ? sku(n) : sku, price: "159.00", option1: o, available: true })), images: [{ src: `https://x.test/${id}.jpg` }] });
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [mk(1, "MOE-GEN1", ["39", "40", "41"]), mk(2, n => n ? `B-${n}` : "MOE-GEN1", ["39", "40"])] }));
+  const codes = r.issues.map(i => `${i.code}:${i.severity}`);
+  assert.equal(codes.filter(c => c === `SKU_SHARED_MODEL:${E.SEVERITY.LOW}`).length, 2, codes.join(" "));
+  assert.equal(codes.filter(c => c.startsWith("SKU_DUPLICATE")).length, 1, "autre produit : toujours élevée");
+});
