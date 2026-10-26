@@ -889,6 +889,9 @@
     const structural = issues.filter(i => i.row < 0);
     const count = key => [...groups.get(key).values()].reduce((n, c) => n + c.items.length, 0);
     const stake = stats.atStake || { items: 0, total: 0, currency: "" };
+    // Version « aperçu » (lien envoyé à un prospect) : totaux par problème et un seul exemple vérifiable, sans la liste des produits.
+    const teaser = Boolean(info.teaser);
+    const example = teaser ? prospectSummary(result).example : null;
     const productLabel = i => `${escapeHtml(i.product || "(sans nom)")}${i.productId ? ` <span class="id">ID ${escapeHtml(i.productId)}</span>` : ""}`;
     const section = g => {
       const byCode = groups.get(g.key);
@@ -904,9 +907,11 @@
         });
         const cell = [...products.values()].map(p => productLabel(p.issue) + (p.values.length ? ` : ${escapeHtml(p.values.join(", "))}` : "")
           + (p.amount ? ` <span class="money">${escapeHtml(formatMoney(p.amount, stake.currency))} en jeu</span>` : "")).join("<br>");
+        if (teaser) return `<tr><td><strong>${escapeHtml(c.label)}</strong></td><td class="num">${c.items.length}</td></tr>`;
         return `<tr><td><strong>${escapeHtml(c.label)}</strong></td><td class="num">${c.items.length}</td><td>${cell}</td></tr>`;
       }).join("");
-      return `<section><h2>${g.title} <span class="n">${count(g.key)}</span></h2><p class="intro">${g.intro}</p><table><thead><tr><th>Problème</th><th>Nombre</th><th>Produits concernés</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+      const head = teaser ? "<th>Problème</th><th>Nombre</th>" : "<th>Problème</th><th>Nombre</th><th>Produits concernés</th>";
+      return `<section><h2>${g.title} <span class="n">${count(g.key)}</span></h2><p class="intro">${g.intro}</p><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></section>`;
     };
     const date = info.date || new Date().toISOString().slice(0, 10);
     return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Audit de catalogue — ${escapeHtml(info.store || "boutique")}</title>
@@ -920,6 +925,7 @@ h1{font-size:26px;margin:24px 0 4px}h2{font-size:18px;margin:28px 0 4px}.n{backg
 .intro{color:#627087;margin:0 0 8px;font-size:14px}.ok{color:#087443}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e0e7f0;padding:8px;text-align:left;vertical-align:top}th{background:#f5f8fc}
 .num{text-align:right;width:70px}.id{color:#627087;font-size:11px}.money{color:#b42318;font-size:12px;white-space:nowrap}
+.example{border:1px solid #e0e7f0;border-radius:6px;padding:10px 14px;margin:0 0 16px;font-size:14px}.cta{background:#eaf1ff;border-radius:8px;padding:14px 16px;margin-top:28px}
 .stake{border-left:4px solid #b42318;background:#fff5f4;padding:12px 16px;border-radius:6px;margin:0 0 16px}.stake strong{font-size:20px}
 footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0;padding-top:10px}
 @media print{body{margin:0}section{break-inside:avoid-page}}
@@ -934,7 +940,9 @@ ${REPORT_GROUPS.map(g => `<div class="box"><span>${g.title}</span><strong>${coun
 <p>${stats.products} produits et ${stats.variations} variations contrôlés. ${issues.length ? `${issues.length} anomalies trouvées sur ${stats.rowsWithIssues} lignes.` : "Aucune anomalie trouvée."}</p>
 ${stake.items ? `<div class="stake"><strong>${escapeHtml(formatMoney(stake.total, stake.currency))} en jeu</strong> : ${stake.items} article${stake.items > 1 ? "s" : ""} ne peu${stake.items > 1 ? "vent" : "t"} pas être commandé${stake.items > 1 ? "s" : ""} ou ${stake.items > 1 ? "sont" : "est"} mal tarifé${stake.items > 1 ? "s" : ""}. Ce montant correspond à une seule vente de chacun ; chaque commande manquée le répète.${stake.currency ? "" : " Montant dans la devise de la boutique."}</div>` : ""}
 ${structural.length ? `<p class="intro">Remarques sur le fichier : ${structural.map(i => escapeHtml(i.message)).join(" ; ")}.</p>` : ""}
+${example ? `<div class="example"><strong>Exemple à vérifier sur votre boutique :</strong> ${escapeHtml(example.product || "(sans nom)")}${example.productId ? ` <span class="id">ID ${escapeHtml(example.productId)}</span>` : ""} : ${escapeHtml(example.message)}</div>` : ""}
 ${REPORT_GROUPS.map(section).join("\n")}
+${teaser ? `<div class="cta"><strong>La liste produit par produit et les corrections</strong> sont remises sur demande${info.contact ? ` : ${escapeHtml(info.contact)}` : ""}.</div>` : ""}
 <footer>Score : 100 % = aucune anomalie. Chaque ligne perd des points selon la gravité de ses anomalies. Ce rapport repose sur les contrôles automatiques de WayPilot : il ne garantit pas que toutes les données du catalogue sont exactes. Aucune modification n’a été faite par ce rapport.</footer>
 </body></html>`;
   }
@@ -946,7 +954,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.17.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.18.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

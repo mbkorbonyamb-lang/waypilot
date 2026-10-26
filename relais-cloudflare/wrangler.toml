@@ -2,3 +2,8 @@ name = "waypilot-relais"
 main = "worker.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
+
+# Empreinte SHA-256 du code d'accès WayPilot (la même que ACCESS_HASH dans app.html) : seule la personne qui a le code publie des rapports.
+[vars]
+ACCESS_HASH = "e9d1008baa338276c1d597a13b16ac2f2c980de9e5b2c931561befa40d49e960"
+# Le stockage KV « RAPPORTS » est ajouté par l'action GitHub au déploiement (identifiant propre au compte Cloudflare).
