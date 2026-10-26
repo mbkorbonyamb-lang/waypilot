@@ -1,3 +1,8 @@
+# WayPilot 1.15.0 — corrections réservées aux clients, contact après l’audit
+
+- L’audit reste gratuit (adresse, CSV ou clé en lecture seule). Les corrections — validation des propositions, catalogue corrigé, mode « Audit et corrections », application dans la boutique — demandent le code d’accès remis à la commande (Espace client). Le contrôle se fait dans le navigateur : il dissuade, il ne protège pas un secret. Le code est mémorisé sur l’appareil.
+- Après un audit avec anomalies, un encadré « Vous voulez que ces erreurs soient corrigées ? » propose d’envoyer le résultat (site, score, nombre d’anomalies) par WhatsApp ou par e-mail, prérempli.
+
 # Offre — suivi mensuel avec correction de départ incluse (26/10/2026)
 
 - Le suivi à 49 € HT/mois inclut désormais la correction de départ (jusqu’à 100 produits), avec 3 mois minimum. Objectif : un prix d’entrée plus bas pour les petites boutiques (147 € sur 3 mois au lieu de 190 € d’un coup) et un revenu récurrent dès le premier client. La correction seule reste à 190 € / 390 € HT.

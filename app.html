@@ -22,8 +22,8 @@
     .settings { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:4px 18px; }
     .drop { display:block; border:2px dashed #b9c9df; border-radius:12px; background:#f9fbff; padding:30px 16px; text-align:center; margin-top:18px; cursor:pointer; }
     .drop strong { display:block; margin:8px 0; font-size:16px; } .drop input { max-width:100%; margin-top:10px; }
-    button,.download { border:0; background:var(--blue); color:white; font-size:14px; font-weight:700; border-radius:9px; padding:13px 18px; cursor:pointer; text-decoration:none; display:inline-block; }
-    button:disabled { background:#aab6c8; cursor:not-allowed; } button.secondary { color:var(--navy); background:#eaf0f8; }
+    button,.download,a.button { border:0; background:var(--blue); color:white; font-size:14px; font-weight:700; border-radius:9px; padding:13px 18px; cursor:pointer; text-decoration:none; display:inline-block; }
+    button:disabled { background:#aab6c8; cursor:not-allowed; } button.secondary,a.button.secondary { color:var(--navy); background:#eaf0f8; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; } .notice { margin-top:15px; color:var(--muted); font-size:13px; line-height:1.5; }
     .message { margin-top:14px; font-size:14px; line-height:1.5; } .error { color:#b42318; } .success { color:#087443; }
     .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0; }
@@ -88,6 +88,14 @@
     <div class="actions"><button id="analyze" disabled>Analyser mon catalogue</button><button id="reset" class="secondary">Réinitialiser</button></div>
     <p class="notice">WayPilot ne devine pas les prix, les tailles ou les stocks inconnus. Les corrections proposées doivent être vérifiées avant l’importation.</p>
 
+    <div class="review-card" id="accessBox">
+      <h3 style="margin-top:0">Espace client</h3>
+      <p class="help">L’audit est gratuit. Les corrections (catalogue corrigé, écriture dans la boutique) sont réservées aux clients WayPilot, avec le code d’accès remis à la commande.</p>
+      <div class="settings"><div><label class="label" for="accessCode">Code d’accès</label><input id="accessCode" class="field" type="password" placeholder="WP-…" style="margin-top:7px" autocomplete="off"></div></div>
+      <div class="actions"><button type="button" id="unlock" class="secondary">Déverrouiller les corrections</button></div>
+      <div id="accessInfo" class="message" aria-live="polite"></div>
+    </div>
+
     <h3>Ou connecter directement votre boutique WooCommerce</h3>
     <p class="help">Plus besoin d’exporter puis de réimporter un CSV : WayPilot lit le catalogue et, après votre validation, écrit les corrections dans la boutique. Créez une clé dans WooCommerce › Réglages › Avancé › API REST › Ajouter une clé : droits « Lecture » pour un audit, « Lecture/Écriture » pour appliquer des corrections. Les clés restent dans cet onglet : elles ne sont ni enregistrées ni envoyées ailleurs qu’à votre boutique. Révoquez la clé après usage si vous le souhaitez.</p>
     <div class="settings">
@@ -112,6 +120,11 @@
     </div>
     <p class="help">Score qualité : 100 % = aucune anomalie. Chaque ligne perd des points selon ses anomalies (élevée : 1 point, moyenne : 0,5, faible : 0,15 ; au plus 1 point par ligne).</p>
     <div id="summary" class="message" aria-live="polite"></div>
+    <div id="leadBox" class="review-card" hidden>
+      <h3 style="margin-top:0">Vous voulez que ces erreurs soient corrigées ?</h3>
+      <p class="help" id="leadText">Wayzure vérifie chaque anomalie avec vous, applique les corrections validées et vous remet un rapport. Envoyez-nous ce résultat : nous revenons vers vous sous 24 h ouvrées avec le rapport commenté.</p>
+      <div class="actions"><a class="button primary" id="leadWhatsapp" target="_blank" rel="noopener">Envoyer le résultat sur WhatsApp</a><a class="button secondary" id="leadEmail">Envoyer le résultat par e-mail</a></div>
+    </div>
     <div class="review-toolbar">
       <label for="issueFilter"><strong>Filtrer les anomalies :</strong></label>
       <select id="issueFilter"><option value="all">Toutes les anomalies</option><option value="review">À vérifier (rouge)</option><option value="high">Gravité élevée</option><option value="variation">Variations manquantes</option></select>
@@ -168,10 +181,13 @@
   const $ = id => document.getElementById(id);
   $("version").textContent = `BÊTA · V${E.VERSION}`;
 
+
+
   const state = {
     file: null, catalog: null, result: null,
     woo: null,                     // client de la boutique connectée (clés en mémoire uniquement)
     readOnly: false,               // audit en lecture seule : aucun envoi vers la boutique
+    unlocked: false,               // code d’accès client saisi : corrections disponibles
     journal: [],                   // résultats de tous les envois de la séance (corrections et annulations)
     lastApply: null,               // résultats du dernier envoi, pour pouvoir l’annuler
     journalSite: "",               // boutique à laquelle se rapporte le journal
@@ -179,6 +195,43 @@
     manual: new Map()              // clé -> variation à ajouter ; conservée entre deux affichages
   };
 
+  // ---------- Accès client ----------
+  // Les corrections sont réservées aux clients. Contrôle dans le navigateur : il dissuade, il ne protège pas un secret.
+  // Changer le code : remplacer cette empreinte par le SHA-256 du nouveau code.
+  const ACCESS_HASH = "e9d1008baa338276c1d597a13b16ac2f2c980de9e5b2c931561befa40d49e960";
+  const CONTACT_WHATSAPP = "33752222106", CONTACT_EMAIL = "contact@wayzure.com";
+  async function sha256(text) {
+    const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  function setUnlocked(on) {
+    state.unlocked = on;
+    $("accessInfo").className = "message" + (on ? " success" : "");
+    $("accessInfo").textContent = on ? "Accès client actif : corrections disponibles." : "";
+    $("wooMode").querySelector('option[value="write"]').disabled = !on;
+    if (!on) $("wooMode").value = "read";
+    if (state.result) render();
+  }
+  $("unlock").addEventListener("click", async () => {
+    const ok = (await sha256($("accessCode").value.trim().toUpperCase())) === ACCESS_HASH;
+    if (!ok) { $("accessInfo").className = "message error"; $("accessInfo").textContent = "Code inconnu. Contactez-nous pour obtenir votre accès."; return; }
+    try { localStorage.setItem("waypilot.access", ACCESS_HASH); } catch (_) {}
+    $("accessCode").value = "";
+    setUnlocked(true);
+  });
+  let remembered = false;
+  try { remembered = localStorage.getItem("waypilot.access") === ACCESS_HASH; } catch (_) {}
+  setUnlocked(remembered);
+
+  function renderLead(stats, issues) {
+    const show = issues.length > 0 && (state.catalog.source === "public" || !state.unlocked);
+    $("leadBox").hidden = !show;
+    if (!show) return;
+    const site = state.catalog.site || (state.file && state.file.name) || "ma boutique";
+    const text = `Bonjour, je viens d’auditer ${site} avec WayPilot : score ${stats.score} %, ${issues.length} anomalies dont ${stats.high} élevées. Je souhaite recevoir le rapport commenté et votre proposition de correction.`;
+    $("leadWhatsapp").href = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent(text)}`;
+    $("leadEmail").href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Audit WayPilot : ${site}`)}&body=${encodeURIComponent(text + "\n\nNom :\nTéléphone :")}`;
+  }
   // ---------- Paramètres ----------
   let prefixManuallyEdited = false;
   const suggestPrefix = name => (E.normalize(name).toUpperCase().match(/[A-Z0-9]+/) || [""])[0].slice(0, 3);
@@ -243,11 +296,13 @@
     if (isPublic && issues.length) $("summary").textContent = `${stats.products} produits et ${stats.variations} variations visibles par les clients. ${issues.length} anomalies, dont ${stats.high} de gravité élevée.`;
     $("csvNotice").hidden = fromWoo || isPublic;
     $("publicNotice").hidden = !isPublic;
-    ["corrections", "downloadCorrected", "markExistingHelp", "markExistingActions"].forEach(id => { $(id).hidden = isPublic; });
+    const noFix = isPublic || !state.unlocked;
+    ["corrections", "downloadCorrected", "markExistingHelp", "markExistingActions"].forEach(id => { $(id).hidden = noFix; });
+    renderLead(stats, issues);
     $("downloadOriginal").hidden = !state.file;
     renderIssues(followups);
     renderManual();
-    if (isPublic) $("manualFixes").hidden = true;
+    if (noFix) $("manualFixes").hidden = true;
     renderProposals();
     applyFilter();
   }
@@ -451,6 +506,7 @@
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 1500);
   });
   $("downloadCorrected").addEventListener("click", () => {
+    if (!state.unlocked) return;
     if (!state.result) { alert("Importez et analysez d’abord un catalogue."); return; }
     const pending = state.result.proposals.filter(p => p.status === "pending").length;
     if (pending) { alert(`Il reste ${pending} correction(s) à examiner. Validez ou refusez chaque proposition avant de télécharger.`); return; }
@@ -561,6 +617,7 @@
     const info = $("wooInfo");
     info.className = "message";
     try {
+      if ($("wooMode").value === "write" && !state.unlocked) throw new Error("Le mode « Audit et corrections » est réservé aux clients : saisissez votre code d’accès dans l’Espace client.");
       const client = W.createClient({ url: $("wooUrl").value, key: $("wooKey").value, secret: $("wooSecret").value });
       $("wooConnect").disabled = true;
       info.textContent = "Lecture du catalogue…";
@@ -590,7 +647,7 @@
   });
 
   $("wooApplyButton").addEventListener("click", async () => {
-    if (!state.result || !state.woo || state.readOnly) return;
+    if (!state.result || !state.woo || state.readOnly || !state.unlocked) return;
     if (state.lastApply) { alert("Des corrections viennent d’être envoyées. Relisez la boutique avant d’en appliquer d’autres : un second envoi créerait des variations en double."); return; }
     const manual = visibleManual().filter(v => v.validated && v.selected);
     let plan;
