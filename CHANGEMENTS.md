@@ -1,3 +1,8 @@
+# Offre — suivi mensuel avec correction de départ incluse (26/10/2026)
+
+- Le suivi à 49 € HT/mois inclut désormais la correction de départ (jusqu’à 100 produits), avec 3 mois minimum. Objectif : un prix d’entrée plus bas pour les petites boutiques (147 € sur 3 mois au lieu de 190 € d’un coup) et un revenu récurrent dès le premier client. La correction seule reste à 190 € / 390 € HT.
+- Page d’accueil et CGV (version du 26 octobre 2026, articles 2 et 9) mises à jour. L’audit gratuit mentionne aussi Shopify.
+
 # WayPilot 1.14.8 — photos principales vérifiées en priorité
 
 - Sur une grande boutique (shop.femmeapart.com : 276 produits, 1 908 images), seules les 400 premières images de la liste étaient mesurées. La limite reste (chaque image est téléchargée en entier par le navigateur), mais la photo principale de chaque produit passe désormais en premier, puis celle de chaque variation, puis le reste de la galerie : les 276 produits ont tous leur photo principale contrôlée.
