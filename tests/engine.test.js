@@ -278,3 +278,23 @@ test("prospectSummary : un nom en double ne fait pas une accroche", () => {
   assert.equal(s.counts.trust, 0);
   assert.equal(s.example, null);
 });
+
+test("rapport en marque blanche : nom et couleur de l’agence, aucune mention de WayPilot", () => {
+  const r = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price,Categories,Description\n1,simple,A,Robe,,Robes,Texte\n"), {});
+  const html = E.buildAuditReportHTML(r, { date: "2026-10-24", brand: { name: "Agence <Lumière>", color: "#0a7f5a" } });
+  assert.ok(!/WayPilot/i.test(html), "WayPilot absent");
+  assert.ok(html.includes("Agence &lt;Lumière&gt;"));
+  assert.ok(html.includes("solid #0a7f5a"));
+  const bad = E.buildAuditReportHTML(r, { brand: { name: "X", color: "red;}</style><script>" } });
+  assert.ok(!bad.includes("<script>") && bad.includes("solid #1769ff"), "couleur invalide ignorée");
+  assert.match(E.buildAuditReportHTML(r, {}), /Way<span>Pilot<\/span>/);
+});
+
+test("durée d’audit : format lisible et reprise dans le rapport", () => {
+  assert.equal(E.formatDuration(0.4), "1 s");
+  assert.equal(E.formatDuration(14.2), "14 s");
+  assert.equal(E.formatDuration(125), "2 min 05 s");
+  const r = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price\n1,simple,A,Robe,10\n"), {});
+  assert.match(E.buildAuditReportHTML(r, { date: "2026-10-24", seconds: 14 }), /Audit du 2026-10-24 · réalisé en 14 s/);
+  assert.ok(!/réalisé en/.test(E.buildAuditReportHTML(r, { date: "2026-10-24" })));
+});

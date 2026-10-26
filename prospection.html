@@ -102,11 +102,12 @@
 
   // Sans téléchargement d’images : seules les tailles connues (srcset, données Shopify) sont contrôlées.
   async function auditOne(url) {
+    const started = performance.now();
     const { site, catalog } = await readPublicStore(url);
     catalog.site = site;
     catalog.imageSizes = { ...(catalog.knownSizes || {}) };
     const result = E.analyze(catalog);
-    return { site, platform: catalog.platform === "shopify" ? "Shopify" : "WooCommerce", stats: result.stats, summary: E.prospectSummary(result), result };
+    return { site, platform: catalog.platform === "shopify" ? "Shopify" : "WooCommerce", stats: result.stats, summary: E.prospectSummary(result), result, seconds: (performance.now() - started) / 1000 };
   }
 
   // Verdict : une anomalie élevée ou moyenne qui touche la vente ou l’information client fait une accroche.
@@ -125,7 +126,7 @@
       const v = verdictOf(r);
       const cells = r.error
         ? [r.url, null, "", "", "", "", "", "", r.error, ""]
-        : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.)`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, stakeText(r),
+        : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.) · ${E.formatDuration(r.seconds)}`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, stakeText(r),
            r.summary.example ? `${r.summary.example.product}${r.summary.example.productId ? ` (ID ${r.summary.example.productId})` : ""} : ${r.summary.example.message}` : "—", v === "go" ? r : ""];
       cells.forEach(text => {
         const td = document.createElement("td");
@@ -190,7 +191,7 @@
       if (!typed || (await sha256(typed)) !== ACCESS_HASH) throw new Error("Code d’accès requis.");
       accessCode = typed;
     }
-    const html = E.buildAuditReportHTML(r.result, { store: r.site.replace(/^https?:\/\/(www\.)?/, ""), source: r.site, teaser: true, contact: "WhatsApp +33 7 52 22 21 06 ou contact@wayzure.com" });
+    const html = E.buildAuditReportHTML(r.result, { store: r.site.replace(/^https?:\/\/(www\.)?/, ""), source: r.site, teaser: true, seconds: r.seconds, contact: "WhatsApp +33 7 52 22 21 06 ou contact@wayzure.com" });
     const res = await fetch(RELAY_URL + "/rapports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: accessCode, html, boutique: r.site.replace(/^https?:\/\/(www\.)?/, "") }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { if (res.status === 403) accessCode = ""; throw new Error(data.message || `Erreur ${res.status}.`); }
@@ -246,13 +247,13 @@
 
   $("export").addEventListener("click", () => {
     const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const lines = [["Boutique", "Plateforme", "Verdict", "Produits", "Variations", "Score", "Ventes", "Info fausse", "Google", "Gestion", "En jeu", "Articles en jeu", "Exemple", "Date"].join(";")];
+    const lines = [["Boutique", "Plateforme", "Verdict", "Produits", "Variations", "Score", "Ventes", "Info fausse", "Google", "Gestion", "En jeu", "Articles en jeu", "Exemple", "Durée (s)", "Date"].join(";")];
     const date = new Date().toISOString().slice(0, 10);
     results.forEach(r => lines.push((r.error
-      ? [r.url, "", VERDICT.err, "", "", "", "", "", "", "", "", "", r.error, date]
+      ? [r.url, "", VERDICT.err, "", "", "", "", "", "", "", "", "", r.error, "", date]
       : [r.site, r.platform, VERDICT[verdictOf(r)], r.stats.products, r.stats.variations, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, r.summary.counts.ops,
          r.summary.atStake.items ? E.formatMoney(r.summary.atStake.total, r.summary.atStake.currency) : "", r.summary.atStake.items || "",
-         r.summary.example ? `${r.summary.example.product} : ${r.summary.example.message}` : "", date]).map(cell).join(";")));
+         r.summary.example ? `${r.summary.example.product} : ${r.summary.example.message}` : "", Math.max(1, Math.round(r.seconds)), date]).map(cell).join(";")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
     a.download = `prospection-${date}.csv`;
