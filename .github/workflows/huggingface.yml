@@ -91,6 +91,21 @@ jobs:
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then echo "ok=oui" >> "$GITHUB_OUTPUT"; else echo "Secrets Cloudflare absents : relais non déployé."; fi
+      - name: Stockage des rapports en ligne (KV)
+        if: steps.secrets.outputs.ok == 'oui'
+        # Crée le stockage KV au premier passage et l'ajoute à wrangler.toml. En cas d'échec (droits du jeton), le relais est déployé sans : seuls les liens de rapport sont indisponibles.
+        continue-on-error: true
+        working-directory: relais-cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          find_id() { npx --yes wrangler@3.90.0 kv namespace list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const n=JSON.parse(s).find(x=>x.title.endsWith("RAPPORTS"));process.stdout.write(n?n.id:"")})'; }
+          ID=$(find_id)
+          if [ -z "$ID" ]; then npx --yes wrangler@3.90.0 kv namespace create RAPPORTS; ID=$(find_id); fi
+          test -n "$ID"
+          printf '\n[[kv_namespaces]]\nbinding = "RAPPORTS"\nid = "%s"\n' "$ID" >> wrangler.toml
+          echo "Stockage des rapports : $ID"
       - name: Déployer le relais
         if: steps.secrets.outputs.ok == 'oui'
         uses: cloudflare/wrangler-action@v3

@@ -1,3 +1,11 @@
+# WayPilot 1.18.0 — lien d’aperçu du rapport
+
+- Nouveau bouton « Créer un lien d’aperçu à envoyer » : publie une version courte du rapport (score, montant en jeu, nombre d’anomalies par problème, un exemple vérifiable, contact) sans la liste des produits. Le lien s’ouvre sans installation et expire au bout de 90 jours.
+- Réservé au détenteur du code d’accès : le relais vérifie le code avant d’enregistrer (sinon n’importe qui pourrait héberger des pages chez nous). Pages servies sans script possible (CSP stricte) et non indexées.
+- Espace client : « Voir les ouvertures des liens d’aperçu » (nombre d’ouvertures, première et dernière). Nos propres ouvertures sont comptées aussi.
+- Relais Cloudflare : routes POST /rapports, GET /r/<id>, POST /rapports/suivi, stockage KV « RAPPORTS » créé automatiquement par l’action GitHub au déploiement.
+- 2 tests ajoutés (relais, rapport d’aperçu).
+
 # WayPilot 1.17.0 — montant en jeu
 
 - Nouveau : « montant en jeu » = prix d’une vente de chaque article qui ne peut pas être commandé ou qui est mal tarifé (taille affichée sans variation, article non achetable, variation à 0 € ou sans prix, prix de variation aberrant). Le prix de référence est le prix habituel des autres tailles du même produit, sinon celui de l’article. Les articles sans prix connu ne sont pas comptés.

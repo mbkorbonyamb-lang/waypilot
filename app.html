@@ -94,6 +94,8 @@
       <div class="settings"><div><label class="label" for="accessCode">Code d’accès</label><input id="accessCode" class="field" type="password" placeholder="WP-…" style="margin-top:7px" autocomplete="off"></div></div>
       <div class="actions"><button type="button" id="unlock" class="secondary">Déverrouiller les corrections</button></div>
       <div id="accessInfo" class="message" aria-live="polite"></div>
+      <div class="actions"><button type="button" id="showViews" class="secondary">Voir les ouvertures des liens d’aperçu</button></div>
+      <div id="viewsInfo" class="table-wrap"></div>
     </div>
 
     <h3>Ou connecter directement votre boutique WooCommerce</h3>
@@ -152,11 +154,13 @@
     </div>
     <div class="actions">
       <button id="downloadAudit">Télécharger le rapport d’audit client</button>
+      <button id="publishTeaser" class="secondary">Créer un lien d’aperçu à envoyer</button>
       <button id="downloadReport" class="secondary">Télécharger le rapport CSV</button>
       <button id="downloadCorrected">Télécharger le catalogue corrigé pour WooCommerce</button>
       <button id="downloadOriginal" class="secondary">Télécharger le CSV original</button>
     </div>
-    <p class="notice">Le rapport d’audit client est une page à ouvrir dans le navigateur, puis à imprimer ou enregistrer en PDF (Ctrl+P).</p>
+    <div id="teaserInfo" class="message" aria-live="polite"></div>
+    <p class="notice">Le rapport d’audit client est une page à ouvrir dans le navigateur, puis à imprimer ou enregistrer en PDF (Ctrl+P). Le lien d’aperçu (réservé aux détenteurs du code d’accès) montre les totaux et un exemple, sans la liste des produits ; il expire au bout de 90 jours.</p>
     <p class="notice" id="csvNotice">Important : à l’importation, cochez dans WooCommerce l’option de mise à jour des produits existants. Testez d’abord sur une sauvegarde ou quelques produits.</p>
     <div id="wooApply" class="review-card" hidden>
       <h3 style="margin-top:0">Appliquer sur la boutique</h3>
@@ -216,6 +220,7 @@
     const ok = (await sha256($("accessCode").value.trim().toUpperCase())) === ACCESS_HASH;
     if (!ok) { $("accessInfo").className = "message error"; $("accessInfo").textContent = "Code inconnu. Contactez-nous pour obtenir votre accès."; return; }
     try { localStorage.setItem("waypilot.access", ACCESS_HASH); } catch (_) {}
+    state.accessCode = $("accessCode").value.trim().toUpperCase();
     $("accessCode").value = "";
     setUnlocked(true);
   });
@@ -500,6 +505,52 @@
     const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
+  // Lien d’aperçu : publié sur le relais, qui exige le code d’accès (gardé en mémoire le temps de l’onglet).
+  async function accessCodeForRelay() {
+    if (!state.accessCode) {
+      const typed = (prompt("Code d’accès WayPilot :") || "").trim().toUpperCase();
+      if (!typed || (await sha256(typed)) !== ACCESS_HASH) throw new Error("Code d’accès requis.");
+      state.accessCode = typed;
+    }
+    return state.accessCode;
+  }
+  async function relayPost(path, body) {
+    const res = await fetch(RELAY_URL + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { if (res.status === 403) state.accessCode = ""; throw new Error(data.message || `Erreur ${res.status}.`); }
+    return data;
+  }
+  $("publishTeaser").addEventListener("click", async () => {
+    if (!state.result) return;
+    const info = $("teaserInfo");
+    info.className = "message"; info.textContent = "Publication du lien…";
+    try {
+      const code = await accessCodeForRelay();
+      const html = E.buildAuditReportHTML(state.result, {
+        store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true,
+        contact: `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL}`
+      });
+      const { url } = await relayPost("/rapports", { code, html, boutique: baseName() });
+      info.className = "message success";
+      info.replaceChildren("Lien d’aperçu : ", el("a", { href: url, target: "_blank", rel: "noopener", textContent: url }), " ");
+      const copy = el("button", { type: "button", className: "secondary", textContent: "Copier" });
+      copy.addEventListener("click", () => navigator.clipboard && navigator.clipboard.writeText(url).then(() => { copy.textContent = "Copié"; }));
+      info.append(copy);
+    } catch (e) { info.className = "message error"; info.textContent = e.message; }
+  });
+  $("showViews").addEventListener("click", async () => {
+    const box = $("viewsInfo");
+    box.replaceChildren(el("p", { className: "help", textContent: "Chargement…" }));
+    try {
+      const rows = await relayPost("/rapports/suivi", { code: await accessCodeForRelay() });
+      if (!rows.length) { box.replaceChildren(el("p", { className: "help", textContent: "Aucun lien d’aperçu publié." })); return; }
+      const date = d => (d ? new Date(d).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "—");
+      const table = el("table", {}, [el("thead", {}, [el("tr", {}, ["Boutique", "Créé le", "Ouvertures", "Première", "Dernière", "Lien"].map(t => el("th", { textContent: t })))]),
+        el("tbody", {}, rows.map(r => el("tr", {}, [el("td", { textContent: r.store }), el("td", { textContent: date(r.created) }), el("td", { textContent: String(r.views) }),
+          el("td", { textContent: date(r.firstView) }), el("td", { textContent: date(r.lastView) }), el("td", {}, [el("a", { href: r.url, target: "_blank", rel: "noopener", textContent: "ouvrir" })])])))]);
+      box.replaceChildren(table, el("p", { className: "help", textContent: "Vos propres ouvertures sont comptées aussi : notez-les avant d’envoyer le lien." }));
+    } catch (e) { box.replaceChildren(el("p", { className: "message error", textContent: e.message })); }
   });
   $("downloadOriginal").addEventListener("click", () => {
     if (!state.file) { alert("Importez d’abord un catalogue CSV."); return; }

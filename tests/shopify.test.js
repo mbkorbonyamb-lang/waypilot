@@ -169,3 +169,16 @@ test("montant en jeu : tailles à 0 € comptées au prix des autres tailles, de
   assert.equal(E.formatMoney(1234.5, "EUR"), "1 234,50 €");
   assert.match(E.buildAuditReportHTML(r), /636 en jeu<\/strong>.*devise de la boutique/);
 });
+
+test("rapport d’aperçu : totaux et un exemple, sans la liste des produits", () => {
+  const p = { id: 6, title: "Baskets GEN1", product_type: "", options: [{ name: "Taille", values: ["38", "39", "40"] }],
+    variants: ["38", "39", "40"].map((o, n) => ({ id: 60 + n, sku: `G-${o}`, price: n === 0 ? "0.00" : "159.00", option1: o, available: true })), images: [{ src: "https://x.test/g.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  const full = E.buildAuditReportHTML(r);
+  const teaser = E.buildAuditReportHTML(r, { teaser: true, contact: "contact@wayzure.com" });
+  assert.match(full, /Produits concernés/);
+  assert.doesNotMatch(teaser, /Produits concernés/);
+  assert.match(teaser, /Exemple à vérifier sur votre boutique :<\/strong> Baskets GEN1 - 38/);
+  assert.match(teaser, /remises sur demande : contact@wayzure.com/);
+  assert.match(teaser, /159 en jeu/);
+});

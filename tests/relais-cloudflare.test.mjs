@@ -44,3 +44,46 @@ test("Shopify : /products.json lu par page, réponse non Shopify refusée", asyn
   assert.equal(other.status, 404);
   assert.equal((await handle(new Request("https://relais.test/shopify?site=localhost"))).status, 400);
 });
+
+// Stockage KV simulé (get, put avec métadonnées, list par préfixe).
+const kv = () => {
+  const m = new Map();
+  return {
+    m,
+    get: async k => (m.has(k) ? m.get(k).v : null),
+    put: async (k, v, o = {}) => { m.set(k, { v, metadata: o.metadata }); },
+    list: async ({ prefix }) => ({ keys: [...m.entries()].filter(([k]) => k.startsWith(prefix)).map(([name, x]) => ({ name, metadata: x.metadata })) })
+  };
+};
+const HASH = "94ee059335e587e501cc4bf90613e0814f00a7b08bc7c648fd865a2af6a22cc2"; // SHA-256 de « TEST »
+const post = (path, body) => new Request(`https://relais.test${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+test("rapports : publication réservée au code, affichage sans script, ouvertures comptées", async () => {
+  const env = { RAPPORTS: kv(), ACCESS_HASH: HASH };
+  const html = "<!doctype html><html><body>Audit</body></html>";
+  assert.equal((await handle(post("/rapports", { code: "faux", html }), fetch, env)).status, 403);
+  assert.equal((await handle(post("/rapports", { code: "test", html: "<script>x</script>" }), fetch, env)).status, 400);
+  const created = await handle(post("/rapports", { code: "test", html, boutique: "jaaray.site" }), fetch, env);
+  assert.equal(created.status, 201);
+  const { id, url } = await created.json();
+  assert.match(id, /^[A-Za-z0-9]{12}$/);
+  assert.equal(url, `https://relais.test/r/${id}`);
+
+  const page = await handle(new Request(url), fetch, env);
+  assert.equal(page.status, 200);
+  assert.equal(await page.text(), html);
+  assert.match(page.headers.get("Content-Security-Policy"), /default-src 'none'/);
+  assert.equal(page.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  await handle(new Request(url), fetch, env);
+
+  assert.equal((await handle(post("/rapports/suivi", { code: "faux" }), fetch, env)).status, 403);
+  const rows = await (await handle(post("/rapports/suivi", { code: "test" }), fetch, env)).json();
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].store, "jaaray.site");
+  assert.equal(rows[0].views, 2);
+  assert.ok(rows[0].firstView && rows[0].lastView);
+
+  assert.equal((await handle(new Request("https://relais.test/r/inconnu"), fetch, env)).status, 404);
+  assert.equal((await handle(new Request("https://relais.test/r/ABCDEFGHJKLM"), fetch, env)).status, 404);
+  assert.equal((await handle(post("/rapports", { code: "test", html }), fetch, {})).status, 503, "sans stockage : message clair");
+});
