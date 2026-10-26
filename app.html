@@ -153,6 +153,15 @@
     <div id="proposals" class="table-wrap"></div>
     <div id="approvalSummary" class="message" aria-live="polite"></div>
     </div>
+    <details id="whiteLabel" style="margin-top:18px;border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:white">
+      <summary><strong>Marque blanche (agences)</strong> : rapport au nom de l’agence, sans mention de WayPilot</summary>
+      <div class="settings" style="margin-top:12px">
+        <div><label class="label" for="brandName">Nom de l’agence</label><input id="brandName" class="field" type="text" maxlength="60" placeholder="Vide = rapport WayPilot" style="margin-top:7px"></div>
+        <div><label class="label" for="brandColor">Couleur</label><input id="brandColor" class="field" type="color" value="#1769ff" style="margin-top:7px;height:44px;padding:4px"></div>
+        <div><label class="label" for="brandContact">Contact affiché dans le lien d’aperçu</label><input id="brandContact" class="field" type="text" maxlength="120" placeholder="Ex. contact@agence.fr" style="margin-top:7px"></div>
+      </div>
+      <p class="help">Réglage gardé dans ce navigateur. S’applique au rapport d’audit client et au lien d’aperçu.</p>
+    </details>
     <div class="actions">
       <button id="downloadAudit">Télécharger le rapport d’audit client</button>
       <button id="publishTeaser" class="secondary">Créer un lien d’aperçu à envoyer</button>
@@ -500,13 +509,24 @@
     if (!state.result) return;
     const html = E.buildAuditReportHTML(state.result, {
       store: $("storeName").value.trim(),
-      source: siteOf() || (state.file ? state.file.name : "")
+      source: siteOf() || (state.file ? state.file.name : ""),
+      brand: brandInfo()
     });
     const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   });
+  // Marque blanche : réglages de l’agence gardés dans ce navigateur (rien de sensible).
+  function brandInfo() {
+    const name = $("brandName").value.trim();
+    return name ? { name, color: $("brandColor").value } : null;
+  }
+  ["brandName", "brandColor", "brandContact"].forEach(id => {
+    try { const v = localStorage.getItem(`waypilot.${id}`); if (v) $(id).value = v; } catch (_) {}
+    $(id).addEventListener("change", () => { try { localStorage.setItem(`waypilot.${id}`, $(id).value.trim()); } catch (_) {} });
+  });
+  if ($("brandName").value) $("whiteLabel").open = true;
   // Lien d’aperçu : publié sur le relais, qui exige le code d’accès (gardé en mémoire le temps de l’onglet).
   async function accessCodeForRelay() {
     if (!state.accessCode) {
@@ -529,8 +549,8 @@
     try {
       const code = await accessCodeForRelay();
       const html = E.buildAuditReportHTML(state.result, {
-        store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true,
-        contact: `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL}`
+        store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true, brand: brandInfo(),
+        contact: (brandInfo() && $("brandContact").value.trim()) || `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL}`
       });
       const { url } = await relayPost("/rapports", { code, html, boutique: baseName() });
       info.className = "message success";

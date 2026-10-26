@@ -914,11 +914,15 @@
       return `<section><h2>${g.title} <span class="n">${count(g.key)}</span></h2><p class="intro">${g.intro}</p><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></section>`;
     };
     const date = info.date || new Date().toISOString().slice(0, 10);
+    // Marque blanche (agences) : nom et couleur de l’agence à la place de WayPilot.
+    const brand = info.brand && String(info.brand.name || "").trim() ? info.brand : null;
+    const accent = brand && /^#[0-9a-f]{6}$/i.test(brand.color || "") ? brand.color : "#1769ff";
+    const brandHtml = brand ? escapeHtml(String(brand.name).trim()) : "Way<span>Pilot</span>";
     return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Audit de catalogue — ${escapeHtml(info.store || "boutique")}</title>
 <style>
 body{font-family:Inter,Arial,sans-serif;color:#15243b;max-width:900px;margin:32px auto;padding:0 20px;line-height:1.5}
-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1769ff;padding-bottom:12px}
-.brand{font-weight:800;font-size:22px}.brand span{color:#1769ff}.meta{color:#627087;font-size:13px;text-align:right}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid ${accent};padding-bottom:12px}
+.brand{font-weight:800;font-size:22px}.brand span{color:${accent}}.meta{color:#627087;font-size:13px;text-align:right}
 .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0}
 .box{border:1px solid #e0e7f0;border-radius:10px;padding:14px}.box span{display:block;color:#627087;font-size:12px}.box strong{font-size:26px}
 h1{font-size:26px;margin:24px 0 4px}h2{font-size:18px;margin:28px 0 4px}.n{background:#eaf1ff;color:#2458b8;border-radius:12px;padding:2px 9px;font-size:13px}
@@ -931,7 +935,7 @@ footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0
 @media print{body{margin:0}section{break-inside:avoid-page}}
 @media(max-width:600px){.summary{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<header><div class="brand">Way<span>Pilot</span></div><div class="meta">Audit du ${escapeHtml(date)}<br>${escapeHtml(info.source || "")}</div></header>
+<header><div class="brand">${brandHtml}</div><div class="meta">Audit du ${escapeHtml(date)}<br>${escapeHtml(info.source || "")}</div></header>
 <h1>Audit du catalogue${info.store ? ` — ${escapeHtml(info.store)}` : ""}</h1>
 <div class="summary">
 <div class="box"><span>Score qualité</span><strong>${stats.score} %</strong></div>
@@ -943,7 +947,7 @@ ${structural.length ? `<p class="intro">Remarques sur le fichier : ${structural.
 ${example ? `<div class="example"><strong>Exemple à vérifier sur votre boutique :</strong> ${escapeHtml(example.product || "(sans nom)")}${example.productId ? ` <span class="id">ID ${escapeHtml(example.productId)}</span>` : ""} : ${escapeHtml(example.message)}</div>` : ""}
 ${REPORT_GROUPS.map(section).join("\n")}
 ${teaser ? `<div class="cta"><strong>La liste produit par produit et les corrections</strong> sont remises sur demande${info.contact ? ` : ${escapeHtml(info.contact)}` : ""}.</div>` : ""}
-<footer>Score : 100 % = aucune anomalie. Chaque ligne perd des points selon la gravité de ses anomalies. Ce rapport repose sur les contrôles automatiques de WayPilot : il ne garantit pas que toutes les données du catalogue sont exactes. Aucune modification n’a été faite par ce rapport.</footer>
+<footer>Score : 100 % = aucune anomalie. Chaque ligne perd des points selon la gravité de ses anomalies. Ce rapport repose sur des contrôles automatiques${brand ? "" : " (WayPilot)"} : il ne garantit pas que toutes les données du catalogue sont exactes. Aucune modification n’a été faite par ce rapport.</footer>
 </body></html>`;
   }
 
@@ -954,7 +958,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.18.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
