@@ -294,6 +294,7 @@
     $("wooReadOnlyNotice").hidden = !state.readOnly;
     const isPublic = state.catalog.source === "public";
     if (isPublic && issues.length) $("summary").textContent = `${stats.products} produits et ${stats.variations} variations visibles par les clients. ${issues.length} anomalies, dont ${stats.high} de gravité élevée.`;
+    if (stats.atStake && stats.atStake.items) $("summary").textContent += ` ${E.formatMoney(stats.atStake.total, stats.atStake.currency)} en jeu : ${stats.atStake.items} article(s) non commandable(s) ou mal tarifé(s), au prix d’une vente de chacun.`;
     $("csvNotice").hidden = fromWoo || isPublic;
     $("publicNotice").hidden = !isPublic;
     const noFix = isPublic || !state.unlocked;

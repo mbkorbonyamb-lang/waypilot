@@ -366,6 +366,8 @@
     catalog.knownSizes = knownSizesOf([...parents.flatMap(p => p.images || []), ...Object.values(variations).flat().flatMap(v => v.images || [])]);
     catalog.source = "public";
     catalog.otherLanguages = others;
+    const priced = [...parents, ...Object.values(variations).flat()].find(x => x.prices && x.prices.currency_code);
+    catalog.currency = priced ? clean(priced.prices.currency_code) : "";
     return catalog;
   }
 
