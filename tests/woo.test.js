@@ -369,6 +369,13 @@ test("produit vitrine (prix 0, non achetable, « Lire la suite ») : faible, pas
   assert.ok(byLine.includes(`3:PRICE_NON_POSITIVE:${E.SEVERITY.HIGH}`), "achetable à 0 : toujours élevé");
 });
 
+test("carte cadeau à 0 € : pas d’alerte de prix (montant choisi par le client)", () => {
+  const p = { id: 19348, name: "Carte cadeaux", sku: "", type: "gift-card", description: "<p>Carte</p>", is_purchasable: true, is_in_stock: true, prices: { price: "0", regular_price: "0", currency_minor_unit: 2 }, images: [{ src: "https://x.test/c.jpg" }], categories: [{ name: "Cadeaux" }], attributes: [] };
+  const r = E.analyze(W.publicToCatalog(E, { products: [p], variations: {} }));
+  assert.ok(!r.issues.some(i => /^PRICE_/.test(i.code)), r.issues.map(i => i.code).join(" "));
+  assert.ok(E.productType("pw-gift-card").isGiftCard);
+});
+
 test("taille d’image WordPress déduite du srcset, sans téléchargement", () => {
   const img = { src: "https://x.test/robe.jpg", srcset: "https://x.test/robe.jpg 1200w, https://x.test/robe-200x300.jpg 200w, https://x.test/robe-683x1024.jpg 683w" };
   assert.deepEqual(W.sizeFromSrcset(img), { width: 1200, height: 1800 });
