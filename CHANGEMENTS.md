@@ -1,3 +1,7 @@
+# WayPilot 1.14.8 — photos principales vérifiées en priorité
+
+- Sur une grande boutique (shop.femmeapart.com : 276 produits, 1 908 images), seules les 400 premières images de la liste étaient mesurées. La limite reste (chaque image est téléchargée en entier par le navigateur), mais la photo principale de chaque produit passe désormais en premier, puis celle de chaque variation, puis le reste de la galerie : les 276 produits ont tous leur photo principale contrôlée.
+
 # WayPilot 1.14.7 — images « cassées » vérifiées deux fois
 
 - Constaté sur boutiquesimplementvous.fr : 71 produits signalés « image qui ne s’affiche pas », probablement à tort (protection anti-hotlink ou limitation des requêtes par l’hébergeur).
