@@ -335,7 +335,7 @@
         ...(isVariable ? ["", ""] : prices(p)), joinNames(p.categories), (p.images || []).map(i => i.src).join(", "), "", ...flags(p)];
       for (let n = 0; n < maxAttrs; n++) {
         const a = attrs[n];
-        row.push(a ? a.name : "", a ? (a.terms || []).map(t => t.name).join(", ") : "", a ? "1" : "", a ? (a.id ? "1" : "0") : "");
+        row.push(a ? a.name : "", a ? (a.terms || []).map(t => String(t.name).replace(/[,|;]/g, "\\$&")).join(", ") : "", a ? "1" : "", a ? (a.id ? "1" : "0") : "");
       }
       rows.push(row);
       imageAlt.push(altOf(p.images || []));

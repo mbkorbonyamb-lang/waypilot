@@ -114,7 +114,7 @@
       const row = [String(p.id), "variable", "", clean(p.title), "1", p.body_html || "", "", "", ...typeCell(p), images, "", variants.some(v => v.available !== false) ? "1" : "0", ...gtinCell(null)];
       for (let n = 0; n < maxAttrs; n++) {
         const o = options[n];
-        row.push(o ? clean(o.name) : "", o ? (o.values || []).map(clean).join(", ") : "", o ? "1" : "", o ? "0" : "");
+        row.push(o ? clean(o.name) : "", o ? (o.values || []).map(x => clean(x).replace(/[,|;]/g, "\\$&")).join(", ") : "", o ? "1" : "", o ? "0" : "");
       }
       rows.push(row);
       imageAlt.push(withAlt ? alts(p.images || []) : undefined);
