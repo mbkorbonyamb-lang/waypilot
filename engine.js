@@ -877,6 +877,12 @@
    * Rapport HTML autonome et imprimable (Imprimer › PDF) : score, anomalies regroupées par conséquence.
    * info : { store, source, date }. Toutes les données de la boutique sont échappées.
    */
+  /** Durée lisible : « 14 s », « 2 min 05 s ». */
+  function formatDuration(seconds) {
+    const s = Math.max(1, Math.round(seconds));
+    return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+  }
+
   function buildAuditReportHTML(result, info = {}) {
     const { issues, stats } = result;
     const groups = new Map(REPORT_GROUPS.map(g => [g.key, new Map()]));
@@ -935,7 +941,7 @@ footer{margin-top:32px;color:#627087;font-size:12px;border-top:1px solid #e0e7f0
 @media print{body{margin:0}section{break-inside:avoid-page}}
 @media(max-width:600px){.summary{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<header><div class="brand">${brandHtml}</div><div class="meta">Audit du ${escapeHtml(date)}<br>${escapeHtml(info.source || "")}</div></header>
+<header><div class="brand">${brandHtml}</div><div class="meta">Audit du ${escapeHtml(date)}${info.seconds > 0 ? ` · réalisé en ${escapeHtml(formatDuration(info.seconds))}` : ""}<br>${escapeHtml(info.source || "")}</div></header>
 <h1>Audit du catalogue${info.store ? ` — ${escapeHtml(info.store)}` : ""}</h1>
 <div class="summary">
 <div class="box"><span>Score qualité</span><strong>${stats.score} %</strong></div>
@@ -958,7 +964,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.19.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -510,7 +510,7 @@
     const html = E.buildAuditReportHTML(state.result, {
       store: $("storeName").value.trim(),
       source: siteOf() || (state.file ? state.file.name : ""),
-      brand: brandInfo()
+      brand: brandInfo(), seconds: state.auditSeconds
     });
     const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
     const a = el("a", { href: url, download: `${baseName()}_audit_waypilot.html` });
@@ -549,7 +549,7 @@
     try {
       const code = await accessCodeForRelay();
       const html = E.buildAuditReportHTML(state.result, {
-        store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true, brand: brandInfo(),
+        store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true, brand: brandInfo(), seconds: state.auditSeconds,
         contact: (brandInfo() && $("brandContact").value.trim()) || `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL}`
       });
       const { url } = await relayPost("/rapports", { code, html, boutique: baseName() });
@@ -662,6 +662,7 @@
   async function quickAudit() {
     const info = $("quickInfo");
     info.className = "message";
+    const started = performance.now();
     try {
       $("quickAudit").disabled = true;
       info.textContent = "Lecture du catalogue public…";
@@ -676,6 +677,9 @@
       info.classList.add("success");
       $("analyze").disabled = false;
       runAnalysis();
+      // Durée réelle (lecture + mesure des images + analyse), affichée et reprise dans le rapport.
+      state.auditSeconds = (performance.now() - started) / 1000;
+      info.textContent += ` Audit réalisé en ${E.formatDuration(state.auditSeconds)}.`;
     } catch (error) {
       const sleeping = /pas du JSON|n’a pas répondu|HTTP 50[234]/.test(error.message || "");
       info.textContent = (error.message || "Lecture impossible.") + (sleeping ? " Le service de lecture se réveille peut-être après une période sans usage : réessayez dans une minute." : "");
@@ -786,7 +790,7 @@
 
   // ---------- Fichier ----------
   function clearState() {
-    Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false, lastApply: null });
+    Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false, lastApply: null, auditSeconds: 0 });
     $("wooAfterApply").hidden = !state.journal.length; // le journal de la séance reste téléchargeable après relecture
     $("wooUndo").hidden = true;
     $("wooResults").replaceChildren();

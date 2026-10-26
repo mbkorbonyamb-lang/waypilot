@@ -289,3 +289,12 @@ test("rapport en marque blanche : nom et couleur de l’agence, aucune mention d
   assert.ok(!bad.includes("<script>") && bad.includes("solid #1769ff"), "couleur invalide ignorée");
   assert.match(E.buildAuditReportHTML(r, {}), /Way<span>Pilot<\/span>/);
 });
+
+test("durée d’audit : format lisible et reprise dans le rapport", () => {
+  assert.equal(E.formatDuration(0.4), "1 s");
+  assert.equal(E.formatDuration(14.2), "14 s");
+  assert.equal(E.formatDuration(125), "2 min 05 s");
+  const r = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price\n1,simple,A,Robe,10\n"), {});
+  assert.match(E.buildAuditReportHTML(r, { date: "2026-10-24", seconds: 14 }), /Audit du 2026-10-24 · réalisé en 14 s/);
+  assert.ok(!/réalisé en/.test(E.buildAuditReportHTML(r, { date: "2026-10-24" })));
+});
