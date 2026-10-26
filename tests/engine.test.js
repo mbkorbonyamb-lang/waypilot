@@ -271,3 +271,10 @@ test("prospectSummary : exemple pris dans « ventes » d’abord, faibles ignor�
   assert.equal(s.example.product, "Baskets");
   assert.equal(E.prospectSummary({ issues: [result.issues[0]] }).example, null);
 });
+
+test("prospectSummary : un nom en double ne fait pas une accroche", () => {
+  const s = E.prospectSummary({ issues: [{ row: 1, code: "NAME_DUPLICATE", severity: E.SEVERITY.MEDIUM, product: "Belt", message: "Nom en double" }] });
+  assert.equal(s.serious, 0);
+  assert.equal(s.counts.trust, 0);
+  assert.equal(s.example, null);
+});
