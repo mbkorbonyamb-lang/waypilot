@@ -467,7 +467,10 @@
   async function measureImages(catalog, report) {
     const col = catalog.col.images;
     if (col < 0) return;
-    const all = [...new Set(catalog.rows.flatMap(r => String(r[col] || "").split(/\s*,\s*/).map(u => u.trim()).filter(u => /^https?:\/\//i.test(u))))];
+    const listOf = r => String(r[col] || "").split(/\s*,\s*/).map(u => u.trim()).filter(u => /^https?:\/\//i.test(u));
+    // Photo principale de chaque produit d’abord (celle que voient Google et les clients), puis le reste dans la limite.
+    const isVar = r => /variation/i.test(r[catalog.col.type] || "");
+    const all = [...new Set([...catalog.rows.filter(r => !isVar(r)).map(r => listOf(r)[0]), ...catalog.rows.map(r => listOf(r)[0]), ...catalog.rows.flatMap(listOf)].filter(Boolean))];
     const urls = all.slice(0, MAX_IMAGES);
     if (!urls.length) return;
     const sizes = {};
@@ -501,7 +504,7 @@
     catalog.imagesSkipped = all.length - urls.length;
   }
   const imagesNote = catalog => (catalog.imagesBlocked ? " Le site bloque la lecture de ses images depuis WayPilot : images non vérifiées." : "")
-    + (catalog.imagesSkipped ? ` Taille vérifiée pour les ${MAX_IMAGES} premières images seulement (${catalog.imagesSkipped} non vérifiées).` : "");
+    + (catalog.imagesSkipped ? ` Taille vérifiée pour ${MAX_IMAGES} images, photos principales en priorité (${catalog.imagesSkipped} autres non vérifiées).` : "");
 
   // ---------- Audit express (API publique, sans clé) ----------
   // WooCommerce bloque cette API depuis un autre site (CORS) : la lecture passe par le relais WayPilot (Worker Cloudflare, dossier relais-cloudflare/).
