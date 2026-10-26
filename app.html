@@ -52,9 +52,9 @@
   </section>
 
   <section class="panel">
-    <h2>1. Audit express : l’adresse suffit</h2>
-    <p class="help">Entrez l’adresse d’une boutique WooCommerce ou Shopify. WayPilot lit son catalogue public, tel que les clients le voient : sans clé, sans installation, et sans rien modifier.</p>
-    <div class="settings"><div><label class="label" for="quickUrl">Adresse de la boutique</label><input id="quickUrl" class="field" type="url" placeholder="maboutique.com" style="margin-top:7px" autocomplete="url"></div></div>
+    <h2>1. Audit express : le site web suffit</h2>
+    <p class="help">Entrez le site web d’une boutique WooCommerce ou Shopify. WayPilot lit son catalogue public, tel que les clients le voient : sans clé, sans installation, et sans rien modifier.</p>
+    <div class="settings"><div><label class="label" for="quickUrl">Site web de la boutique</label><input id="quickUrl" class="field" type="url" placeholder="maboutique.com" style="margin-top:7px" autocomplete="url"></div></div>
     <div class="actions"><button id="quickAudit">Lancer l’audit express</button></div>
     <div id="quickInfo" class="message" aria-live="polite"></div>
   </section>
@@ -102,7 +102,7 @@
     <h3>Ou connecter directement votre boutique WooCommerce</h3>
     <p class="help">Plus besoin d’exporter puis de réimporter un CSV : WayPilot lit le catalogue et, après votre validation, écrit les corrections dans la boutique. Créez une clé dans WooCommerce › Réglages › Avancé › API REST › Ajouter une clé : droits « Lecture » pour un audit, « Lecture/Écriture » pour appliquer des corrections. Les clés restent dans cet onglet : elles ne sont ni enregistrées ni envoyées ailleurs qu’à votre boutique. Révoquez la clé après usage si vous le souhaitez.</p>
     <div class="settings">
-      <div><label class="label" for="wooUrl">Adresse de la boutique</label><input id="wooUrl" class="field" type="url" placeholder="https://maboutique.com" style="margin-top:7px" autocomplete="url"></div>
+      <div><label class="label" for="wooUrl">Site web de la boutique</label><input id="wooUrl" class="field" type="url" placeholder="https://maboutique.com" style="margin-top:7px" autocomplete="url"></div>
       <div><label class="label" for="wooKey">Clé client (ck_…)</label><input id="wooKey" class="field" type="password" placeholder="ck_…" style="margin-top:7px" autocomplete="off"></div>
       <div><label class="label" for="wooSecret">Secret client (cs_…)</label><input id="wooSecret" class="field" type="password" placeholder="cs_…" style="margin-top:7px" autocomplete="off"></div>
       <div><label class="label" for="wooMode">Mode</label><select id="wooMode" class="field" style="margin-top:7px"><option value="read">Audit en lecture seule (rien n’est modifié)</option><option value="write">Audit et corrections</option></select></div>
