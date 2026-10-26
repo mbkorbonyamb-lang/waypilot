@@ -809,6 +809,27 @@
   }
 
   /**
+   * Résumé pour la prospection : anomalies élevées et moyennes par rubrique, et l’exemple le plus parlant à citer
+   * (rubrique « ventes » d’abord, gravité élevée d’abord). Les anomalies faibles ne font pas une accroche.
+   */
+  function prospectSummary(result) {
+    const rank = { [SEVERITY.HIGH]: 0, [SEVERITY.MEDIUM]: 1 };
+    const order = REPORT_GROUPS.map(g => g.key);
+    const counts = Object.fromEntries(order.map(k => [k, 0]));
+    const serious = result.issues.filter(i => i.row >= 0 && i.severity in rank).map(i => {
+      const [group, label] = REPORT_CODES[i.code] || ["ops", i.message];
+      counts[group]++;
+      return { issue: i, group, label };
+    });
+    serious.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || rank[a.issue.severity] - rank[b.issue.severity]);
+    const best = serious[0];
+    return {
+      counts, serious: serious.length,
+      example: best ? { product: best.issue.product || "", productId: best.issue.productId || "", label: best.label, message: best.issue.message, severity: best.issue.severity, group: best.group } : null
+    };
+  }
+
+  /**
    * Rapport HTML autonome et imprimable (Imprimer › PDF) : score, anomalies regroupées par conséquence.
    * info : { store, source, date }. Toutes les données de la boutique sont échappées.
    */
@@ -876,7 +897,7 @@ ${REPORT_GROUPS.map(section).join("\n")}
     return missing;
   }
 
-  const api = { VERSION: "1.15.4", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.16.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
