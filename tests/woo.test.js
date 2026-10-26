@@ -368,3 +368,13 @@ test("produit vitrine (prix 0, non achetable, « Lire la suite ») : faible, pas
   assert.ok(!byLine.some(x => x.startsWith("2:PRICE_NON_POSITIVE")));
   assert.ok(byLine.includes(`3:PRICE_NON_POSITIVE:${E.SEVERITY.HIGH}`), "achetable à 0 : toujours élevé");
 });
+
+test("taille d’image WordPress déduite du srcset, sans téléchargement", () => {
+  const img = { src: "https://x.test/robe.jpg", srcset: "https://x.test/robe.jpg 1200w, https://x.test/robe-200x300.jpg 200w, https://x.test/robe-683x1024.jpg 683w" };
+  assert.deepEqual(W.sizeFromSrcset(img), { width: 1200, height: 1800 });
+  assert.equal(W.sizeFromSrcset({ src: "https://x.test/a.jpg", srcset: "" }), null);
+  assert.equal(W.sizeFromSrcset({ src: "https://x.test/a.jpg", srcset: "https://x.test/a.jpg 800w" }), null, "proportions inconnues");
+  const p = { id: 1, name: "Robe", sku: "R", type: "simple", prices: { regular_price: "1000", currency_minor_unit: 2 }, images: [img], categories: [], attributes: [] };
+  const c = W.publicToCatalog(E, { products: [p], variations: {} });
+  assert.deepEqual(c.knownSizes["https://x.test/robe.jpg"], { width: 1200, height: 1800 });
+});

@@ -113,3 +113,10 @@ test("détection technique : vrais produits conservés", () => {
   assert.equal(S.isTechnical({ title: "Sac de voyage", vendor: "Route 66", variants: [{ sku: "R66-1" }] }), false);
   assert.equal(S.isTechnical({ title: "Robe longue", vendor: "Extended Studio", variants: [{ sku: "ROBE-1" }] }), false);
 });
+
+test("Shopify : taille des images reprise du catalogue, sans téléchargement", () => {
+  const d = data();
+  d.products[0].images = [{ src: "https://cdn.test/a.jpg", width: 2000, height: 3000 }];
+  const c = S.shopifyToCatalog(E, d);
+  assert.deepEqual(c.knownSizes["https://cdn.test/a.jpg"], { width: 2000, height: 3000 });
+});

@@ -1,3 +1,7 @@
+# WayPilot 1.15.1 — taille des images sans téléchargement
+
+- Le contrôle de taille des images était lent (jusqu’à 400 téléchargements). Shopify donne la largeur et la hauteur de chaque image ; WordPress les laisse déduire du srcset (plus grande largeur, proportions d’une version réduite « -300x450 »). Ces images ne sont plus téléchargées : seules les autres le sont, dans la même limite. 2 tests ajoutés.
+
 # WayPilot 1.15.0 — corrections réservées aux clients, contact après l’audit
 
 - L’audit reste gratuit (adresse, CSV ou clé en lecture seule). Les corrections — validation des propositions, catalogue corrigé, mode « Audit et corrections », application dans la boutique — demandent le code d’accès remis à la commande (Espace client). Le contrôle se fait dans le navigateur : il dissuade, il ne protège pas un secret. Le code est mémorisé sur l’appareil.

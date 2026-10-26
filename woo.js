@@ -229,6 +229,27 @@
   const altOf = list => list.filter(i => i && i.src).map(i => ({ src: i.src, alt: clean(i.alt) }));
 
   /**
+   * Taille d’une image WordPress sans la télécharger, d’après son srcset : la plus grande largeur déclarée,
+   * et la hauteur déduite d’une version réduite nommée « -300x450 ». null si on ne peut pas conclure.
+   */
+  function sizeFromSrcset(image) {
+    const entries = String((image && image.srcset) || "").split(/,\s*(?=https?:)/).map(e => {
+      const m = e.trim().match(/^(\S+)\s+(\d+)w$/);
+      return m ? { url: m[1], w: Number(m[2]) } : null;
+    }).filter(Boolean);
+    if (!entries.length) return null;
+    const width = Math.max(...entries.map(e => e.w));
+    const ratio = entries.map(e => e.url.match(/-(\d+)x(\d+)\.[a-z0-9]+(?:\?|$)/i)).find(Boolean);
+    if (!ratio || !Number(ratio[1])) return null;
+    return { width, height: Math.round(width * Number(ratio[2]) / Number(ratio[1])) };
+  }
+  const knownSizesOf = list => {
+    const out = {};
+    list.forEach(i => { if (i && i.src) { const size = sizeFromSrcset(i); if (size) out[i.src] = size; } });
+    return out;
+  };
+
+  /**
    * Construit un catalogue au format CSV WooCommerce (en-têtes anglais) à partir des réponses de l’API.
    * catalog.meta[i] garde ce qu’il faut pour écrire les corrections : id, parent, images, attributs.
    */
@@ -342,6 +363,7 @@
 
     const catalog = engine.catalogFromRows(headers, rows, rows.map((_, i) => i + 2), ",");
     catalog.imageAlt = imageAlt;
+    catalog.knownSizes = knownSizesOf([...parents.flatMap(p => p.images || []), ...Object.values(variations).flat().flatMap(v => v.images || [])]);
     catalog.source = "public";
     catalog.otherLanguages = others;
     return catalog;
@@ -502,7 +524,7 @@
     return { products, variations, skipped: [], count, notReversible };
   }
 
-  const api = { normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, buildChanges, buildJournalCSV, buildRollback };
+  const api = { normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, sizeFromSrcset, buildChanges, buildJournalCSV, buildRollback };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotWoo = api;
 })(typeof window !== "undefined" ? window : globalThis);
