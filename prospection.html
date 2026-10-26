@@ -53,7 +53,16 @@
     <textarea id="sites" class="field" style="margin-top:7px" placeholder="maboutique.com&#10;autreboutique.fr"></textarea>
     <div class="actions"><button id="run">Auditer la liste</button><button id="export" class="secondary" disabled>Télécharger le tableau (CSV)</button></div>
     <div id="info" class="message" aria-live="polite"></div>
-    <div class="table-wrap"><table id="table" hidden><thead><tr><th>Boutique</th><th>Verdict</th><th>Produits</th><th>Score</th><th>Ventes</th><th>Info fausse</th><th>Google</th><th>En jeu</th><th>Exemple à citer</th></tr></thead><tbody></tbody></table></div>
+    <div id="draft" class="panel" style="margin-top:18px" hidden>
+      <h3 style="margin-top:0">E-mail pour <span id="draftSite"></span></h3>
+      <p class="help">Vérifiez l’exemple sur la boutique et relisez avant d’envoyer. Le lien d’aperçu est déjà en ligne (90 jours).</p>
+      <label class="label" for="draftSubject">Objet</label>
+      <input id="draftSubject" class="field" style="margin-top:7px">
+      <label class="label" for="draftBody" style="display:block;margin-top:12px">Message</label>
+      <textarea id="draftBody" class="field" style="margin-top:7px;min-height:340px;font-family:inherit"></textarea>
+      <div class="actions"><button type="button" id="copyDraft">Copier le message</button><a id="mailDraft" class="secondary" style="display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid var(--line);text-decoration:none;color:inherit" href="#">Ouvrir dans ma messagerie</a></div>
+    </div>
+    <div class="table-wrap"><table id="table" hidden><thead><tr><th>Boutique</th><th>Verdict</th><th>Produits</th><th>Score</th><th>Ventes</th><th>Info fausse</th><th>Google</th><th>En jeu</th><th>Exemple à citer</th><th>E-mail</th></tr></thead><tbody></tbody></table></div>
   </section>
 </main>
 <footer>WayPilot · Wayzure SAS · page interne</footer>
@@ -97,7 +106,7 @@
     catalog.site = site;
     catalog.imageSizes = { ...(catalog.knownSizes || {}) };
     const result = E.analyze(catalog);
-    return { site, platform: catalog.platform === "shopify" ? "Shopify" : "WooCommerce", stats: result.stats, summary: E.prospectSummary(result) };
+    return { site, platform: catalog.platform === "shopify" ? "Shopify" : "WooCommerce", stats: result.stats, summary: E.prospectSummary(result), result };
   }
 
   // Verdict : une anomalie élevée ou moyenne qui touche la vente ou l’information client fait une accroche.
@@ -115,12 +124,17 @@
       const tr = document.createElement("tr");
       const v = verdictOf(r);
       const cells = r.error
-        ? [r.url, null, "", "", "", "", "", "", r.error]
+        ? [r.url, null, "", "", "", "", "", "", r.error, ""]
         : [r.site, null, `${r.stats.products} (+${r.stats.variations} var.)`, `${r.stats.score} %`, r.summary.counts.sales, r.summary.counts.trust, r.summary.counts.google, stakeText(r),
-           r.summary.example ? `${r.summary.example.product}${r.summary.example.productId ? ` (ID ${r.summary.example.productId})` : ""} : ${r.summary.example.message}` : "—"];
+           r.summary.example ? `${r.summary.example.product}${r.summary.example.productId ? ` (ID ${r.summary.example.productId})` : ""} : ${r.summary.example.message}` : "—", v === "go" ? r : ""];
       cells.forEach(text => {
         const td = document.createElement("td");
-        if (text === null) {
+        if (text && typeof text === "object") {
+          const button = document.createElement("button");
+          button.type = "button"; button.className = "secondary"; button.textContent = "Préparer";
+          button.addEventListener("click", () => prepareEmail(text, button));
+          td.append(button);
+        } else if (text === null) {
           const tag = document.createElement("span");
           tag.className = `tag ${v}`;
           tag.textContent = VERDICT[v];
@@ -161,6 +175,74 @@
     $("run").disabled = false;
   }
   $("run").addEventListener("click", run);
+
+  // ---------- E-mail de prospection ----------
+  // Même code d’accès que app.html (et ACCESS_HASH du relais) : sans lui, le relais refuse de publier l’aperçu.
+  const ACCESS_HASH = "e9d1008baa338276c1d597a13b16ac2f2c980de9e5b2c931561befa40d49e960";
+  let accessCode = "";
+  async function sha256(text) {
+    const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function publishTeaser(r) {
+    if (!accessCode) {
+      const typed = (prompt("Code d’accès WayPilot :") || "").trim().toUpperCase();
+      if (!typed || (await sha256(typed)) !== ACCESS_HASH) throw new Error("Code d’accès requis.");
+      accessCode = typed;
+    }
+    const html = E.buildAuditReportHTML(r.result, { store: r.site.replace(/^https?:\/\/(www\.)?/, ""), source: r.site, teaser: true, contact: "WhatsApp +33 7 52 22 21 06 ou contact@wayzure.com" });
+    const res = await fetch(RELAY_URL + "/rapports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: accessCode, html, boutique: r.site.replace(/^https?:\/\/(www\.)?/, "") }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { if (res.status === 403) accessCode = ""; throw new Error(data.message || `Erreur ${res.status}.`); }
+    return data.url;
+  }
+
+  // Modèle validé : « nous », problème concret, un exemple vérifiable, montant en jeu, offre suivi 49 € HT, pas d’appel (WhatsApp ou réponse).
+  function draftEmail(r, link) {
+    const host = r.site.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+    const { atStake, example, serious } = r.summary;
+    const money = atStake.items ? E.formatMoney(atStake.total, atStake.currency) + (atStake.currency ? "" : " (devise de la boutique)") : "";
+    const plural = n => (n > 1 ? "s" : "");
+    const subject = atStake.items
+      ? `${host} : ${atStake.items} article${plural(atStake.items)} impossible${plural(atStake.items)} à commander ou mal tarifé${plural(atStake.items)}`
+      : `${host} : ${example ? example.label.toLowerCase() : "erreurs dans le catalogue"}`;
+    const lines = [
+      "Bonjour,", "",
+      `Nous avons contrôlé le catalogue en ligne du site ${host} avec WayPilot, notre outil d’audit des boutiques ${r.platform}.`, ""
+    ];
+    if (example) lines.push(`Un exemple à vérifier : « ${example.product} » : ${example.label.charAt(0).toLowerCase() + example.label.slice(1)}.`, "");
+    lines.push(atStake.items
+      ? `Au total, ${atStake.items} article${plural(atStake.items)} ne peu${atStake.items > 1 ? "vent" : "t"} pas être commandé${plural(atStake.items)} ou ${atStake.items > 1 ? "sont" : "est"} mal tarifé${plural(atStake.items)} : ${money} de ventes en jeu, à chaque commande manquée.`
+      : `Au total, ${serious} anomalie${plural(serious)} peu${serious > 1 ? "vent" : "t"} faire perdre une vente ou faire douter un client.`, "");
+    lines.push(`Le résumé de l’audit : ${link}`, "");
+    lines.push(`Notre proposition : le suivi WayPilot à 49 € HT par mois (3 mois minimum). Nous corrigeons d’abord votre catalogue${r.stats.products > 100 ? " (au-delà de 100 produits, cette correction de départ fait l’objet d’un devis)" : " (correction comprise dans l’abonnement)"}, puis nous le contrôlons chaque mois pour que ces erreurs ne reviennent pas.`, "");
+    lines.push("Pour recevoir la liste complète, produit par produit, répondez simplement à ce message, ou écrivez-nous sur WhatsApp au +33 7 52 22 21 06.", "");
+    lines.push("Bien cordialement,", "", "Moussa Balde", "Président — Wayzure SAS", "https://waypilot.wayzure.com", "", "Si vous ne souhaitez plus recevoir nos messages, répondez « stop ».");
+    return { subject, body: lines.join("\n") };
+  }
+
+  async function prepareEmail(r, button) {
+    button.disabled = true; button.textContent = "…";
+    try {
+      const link = await publishTeaser(r);
+      const { subject, body } = draftEmail(r, link);
+      $("draftSite").textContent = r.site;
+      $("draftSubject").value = subject;
+      $("draftBody").value = body;
+      $("mailDraft").href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      $("draft").hidden = false;
+      $("draft").scrollIntoView({ behavior: "smooth" });
+      button.textContent = "Prêt";
+    } catch (e) { button.textContent = "Préparer"; alert(e.message); }
+    button.disabled = false;
+  }
+  $("copyDraft").addEventListener("click", () => {
+    const text = `Objet : ${$("draftSubject").value}\n\n${$("draftBody").value}`;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => { $("copyDraft").textContent = "Copié"; setTimeout(() => { $("copyDraft").textContent = "Copier le message"; }, 1500); });
+  });
+  ["draftSubject", "draftBody"].forEach(id => $(id).addEventListener("input", () => {
+    $("mailDraft").href = `mailto:?subject=${encodeURIComponent($("draftSubject").value)}&body=${encodeURIComponent($("draftBody").value)}`;
+  }));
 
   $("export").addEventListener("click", () => {
     const cell = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };

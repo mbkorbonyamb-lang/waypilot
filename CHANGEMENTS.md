@@ -1,3 +1,8 @@
+# WayPilot 1.18.1 — e-mail de prospection en un clic
+
+- Audit en série : bouton « Préparer » sur chaque boutique « À vérifier puis contacter ». Il publie le lien d’aperçu (code d’accès demandé une fois) et rédige l’e-mail selon le modèle validé : exemple vérifiable, montant en jeu, offre suivi 49 € HT/mois, réponse ou WhatsApp, mention « stop » pour ne plus recevoir de messages. Objet et message restent modifiables ; boutons « Copier » et « Ouvrir dans ma messagerie ».
+- L’envoi reste manuel : chaque exemple doit être vérifié sur la boutique avant envoi.
+
 # WayPilot 1.18.0 — lien d’aperçu du rapport
 
 - Nouveau bouton « Créer un lien d’aperçu à envoyer » : publie une version courte du rapport (score, montant en jeu, nombre d’anomalies par problème, un exemple vérifiable, contact) sans la liste des produits. Le lien s’ouvre sans installation et expire au bout de 90 jours.
