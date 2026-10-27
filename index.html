@@ -263,12 +263,12 @@
           <div class="price"><b>190 €</b> <small>HT · jusqu’à 100 produits</small></div>
           <p class="desc">390 € HT jusqu’à 500 produits, sur devis au-delà.</p>
           <ul><li>Audit complet et corrections présentées</li><li>Corrections appliquées sous 48 h ouvrées après votre validation</li><li>Application après votre accord et une sauvegarde</li><li>Chaque modification journalisée et annulable</li></ul>
-          <a class="btn btn-ghost contact-link" href="mailto:contact@wayzure.com?subject=Audit%20WayPilot">Demander un audit</a>
+          <a class="btn btn-ghost" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange de 15 min</a>
         </div>
       </div>
       <div class="agency">
         <p><b>Agences WooCommerce et Shopify :</b> le même service en marque blanche pour vos clients, 30 % sous ces tarifs.</p>
-        <a class="btn btn-ghost btn-small contact-link" href="mailto:contact@wayzure.com?subject=WayPilot%20agence">Nous écrire</a>
+        <a class="btn btn-ghost btn-small" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
       </div>
       <p class="fineprint">Paiement sécurisé par Stripe. Voir les <a href="cgv.html">conditions générales de vente</a>.</p>
     </div>
@@ -342,7 +342,7 @@
         <input id="boutique2" name="boutique" type="text" inputmode="url" placeholder="Site web de votre boutique" required autocomplete="url">
         <button class="btn btn-primary" type="submit">Auditer ma boutique</button>
       </form>
-      <p class="alt-cta">Vous préférez en parler ? <a class="contact-link" href="mailto:contact@wayzure.com">Écrivez-nous</a>.</p>
+      <p class="alt-cta">Vous préférez en parler ? <a href="https://cal.com/waypilot" target="_blank" rel="noopener">Réservez un échange de 15 min</a> en visio, ou <a href="mailto:contact@wayzure.com">écrivez-nous</a>.</p>
     </div>
   </section>
 </main>
@@ -357,6 +357,7 @@
       <div>
         <h4>Contact</h4>
         <ul>
+          <li><a href="https://cal.com/waypilot" rel="noopener">Réserver un échange (visio)</a></li>
           <li><a href="mailto:contact@wayzure.com">contact@wayzure.com</a></li>
           <li><a href="https://wa.me/33752222106" rel="noopener">WhatsApp +33 7 52 22 21 06</a></li>
           <li><a href="tel:+33661358652">+33 6 61 35 86 52</a></li>
@@ -375,13 +376,5 @@
     <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
   </div>
 </footer>
-<script>
-  // Contact commercial : WhatsApp (numéro international sans « + » ni espaces). Vide = liens e-mail.
-  const CONTACT_WHATSAPP = "33752222106";
-  if (CONTACT_WHATSAPP) document.querySelectorAll(".contact-link").forEach(a => {
-    a.href = `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent("Bonjour, je souhaite un audit de mon catalogue avec WayPilot.")}`;
-    a.target = "_blank"; a.rel = "noopener";
-  });
-</script>
 </body>
 </html>

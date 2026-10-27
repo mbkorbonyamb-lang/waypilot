@@ -125,8 +125,9 @@
     <div id="summary" class="message" aria-live="polite"></div>
     <div id="leadBox" class="review-card" hidden>
       <h3 style="margin-top:0">Vous voulez que ces erreurs soient corrigées ?</h3>
-      <p class="help" id="leadText">Wayzure vérifie chaque anomalie avec vous, applique les corrections validées et vous remet un rapport. Envoyez-nous ce résultat : nous revenons vers vous sous 24 h ouvrées avec le rapport commenté.</p>
-      <div class="actions"><a class="button primary" id="leadWhatsapp" target="_blank" rel="noopener">Envoyer le résultat sur WhatsApp</a><a class="button secondary" id="leadEmail">Envoyer le résultat par e-mail</a></div>
+      <p class="help" id="leadText">Wayzure vérifie chaque anomalie avec vous, applique les corrections validées et vous remet un rapport. Réservez un échange de 15 min en visio : nous regardons ce résultat ensemble. Vous pouvez aussi nous l’envoyer par e-mail, nous revenons vers vous sous 24 h ouvrées.</p>
+      <div class="actions"><a class="button primary" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange de 15 min</a><a class="button secondary" id="leadEmail">Envoyer le résultat par e-mail</a></div>
+      <p class="help" style="margin:8px 0 0">Ou sur <a id="leadWhatsapp" target="_blank" rel="noopener">WhatsApp</a>.</p>
     </div>
     <div class="review-toolbar">
       <label for="issueFilter"><strong>Filtrer les anomalies :</strong></label>
@@ -550,7 +551,7 @@
       const code = await accessCodeForRelay();
       const html = E.buildAuditReportHTML(state.result, {
         store: $("storeName").value.trim() || baseName(), source: siteOf(), teaser: true, brand: brandInfo(), seconds: state.auditSeconds,
-        contact: (brandInfo() && $("brandContact").value.trim()) || `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL}`
+        contact: (brandInfo() && $("brandContact").value.trim()) || `WhatsApp +${CONTACT_WHATSAPP.slice(0, 2)} ${CONTACT_WHATSAPP.slice(2).replace(/(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5")} ou ${CONTACT_EMAIL} · échange de 15 min : cal.com/waypilot`
       });
       const { url } = await relayPost("/rapports", { code, html, boutique: baseName() });
       info.className = "message success";
