@@ -191,14 +191,14 @@
       if (!typed || (await sha256(typed)) !== ACCESS_HASH) throw new Error("Code d’accès requis.");
       accessCode = typed;
     }
-    const html = E.buildAuditReportHTML(r.result, { store: r.site.replace(/^https?:\/\/(www\.)?/, ""), source: r.site, teaser: true, seconds: r.seconds, contact: "WhatsApp +33 7 52 22 21 06 ou contact@wayzure.com" });
+    const html = E.buildAuditReportHTML(r.result, { store: r.site.replace(/^https?:\/\/(www\.)?/, ""), source: r.site, teaser: true, seconds: r.seconds, contact: "contact@wayzure.com, ou réservez un échange de 15 min : cal.com/waypilot" });
     const res = await fetch(RELAY_URL + "/rapports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: accessCode, html, boutique: r.site.replace(/^https?:\/\/(www\.)?/, "") }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { if (res.status === 403) accessCode = ""; throw new Error(data.message || `Erreur ${res.status}.`); }
     return data.url;
   }
 
-  // Modèle validé : « nous », problème concret, un exemple vérifiable, montant en jeu, offre suivi 49 € HT, pas d’appel (WhatsApp ou réponse).
+  // Modèle validé : « nous », problème concret, un exemple vérifiable, montant en jeu, offre suivi 49 € HT, pas d’appel (réponse ou échange en visio réservé sur cal.com).
   function draftEmail(r, link) {
     const host = r.site.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
     const { atStake, example, serious } = r.summary;
@@ -217,7 +217,7 @@
       : `Au total, ${serious} anomalie${plural(serious)} peu${serious > 1 ? "vent" : "t"} faire perdre une vente ou faire douter un client.`, "");
     lines.push(`Le résumé de l’audit : ${link}`, "");
     lines.push(`Notre proposition : le suivi WayPilot à 49 € HT par mois (3 mois minimum). Nous corrigeons d’abord votre catalogue${r.stats.products > 100 ? " (au-delà de 100 produits, cette correction de départ fait l’objet d’un devis)" : " (correction comprise dans l’abonnement)"}, puis nous le contrôlons chaque mois pour que ces erreurs ne reviennent pas.`, "");
-    lines.push("Pour recevoir la liste complète, produit par produit, répondez simplement à ce message, ou écrivez-nous sur WhatsApp au +33 7 52 22 21 06.", "");
+    lines.push("Pour recevoir la liste complète, produit par produit, répondez simplement à ce message. Si vous préférez en parler, vous pouvez réserver un échange de 15 minutes en visio : https://cal.com/waypilot", "");
     lines.push("Bien cordialement,", "", "Moussa Balde", "Président — Wayzure SAS", "https://waypilot.wayzure.com", "", "Si vous ne souhaitez plus recevoir nos messages, répondez « stop ».");
     return { subject, body: lines.join("\n") };
   }
