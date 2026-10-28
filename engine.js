@@ -849,16 +849,16 @@
     return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
+  // Pas d’accroche : nom en double (souvent un coloris), fiche sans description ou sans image (choix du commerçant, ne bloque pas la vente).
+  const WEAK_HOOKS = new Set(["NAME_DUPLICATE", "DESCRIPTION_MISSING", "IMAGE_MISSING"]);
   /**
    * Résumé pour la prospection : anomalies élevées et moyennes par rubrique, et l’exemple le plus parlant à citer
    * (rubrique « ventes » d’abord, gravité élevée d’abord). Les anomalies faibles ne font pas une accroche.
    */
-  const WEAK_HOOKS = new Set(["NAME_DUPLICATE"]);
   function prospectSummary(result) {
     const rank = { [SEVERITY.HIGH]: 0, [SEVERITY.MEDIUM]: 1 };
     const order = REPORT_GROUPS.map(g => g.key);
     const counts = Object.fromEntries(order.map(k => [k, 0]));
-    // Un nom en double (souvent un coloris) n’est pas une erreur qui convainc un commerçant : pas d’accroche.
     const serious = result.issues.filter(i => i.row >= 0 && i.severity in rank && !WEAK_HOOKS.has(i.code)).map(i => {
       const [group, label] = REPORT_CODES[i.code] || ["ops", i.message];
       counts[group]++;
@@ -964,7 +964,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.19.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
