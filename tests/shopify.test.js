@@ -112,6 +112,8 @@ test("détection technique : vrais produits conservés", () => {
   assert.equal(S.isTechnical({ title: "Route Package Protection", vendor: "Route", variants: [] }), true);
   assert.equal(S.isTechnical({ title: "Sac de voyage", vendor: "Route 66", variants: [{ sku: "R66-1" }] }), false);
   assert.equal(S.isTechnical({ title: "Robe longue", vendor: "Extended Studio", variants: [{ sku: "ROBE-1" }] }), false);
+  assert.equal(S.isTechnical({ title: "Store Pickup", vendor: "Mat de Misaine", variants: [] }), true);
+  assert.equal(S.isTechnical({ title: "Sac Pickup en cuir", vendor: "Maison", variants: [] }), false);
 });
 
 test("Shopify : taille des images reprise du catalogue, sans téléchargement", () => {

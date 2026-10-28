@@ -298,3 +298,11 @@ test("durée d’audit : format lisible et reprise dans le rapport", () => {
   assert.match(E.buildAuditReportHTML(r, { date: "2026-10-24", seconds: 14 }), /Audit du 2026-10-24 · réalisé en 14 s/);
   assert.ok(!/réalisé en/.test(E.buildAuditReportHTML(r, { date: "2026-10-24" })));
 });
+
+test("prospection : description ou image manquante ne font pas une accroche", () => {
+  const r = E.analyze(E.parseCSV("ID,Type,SKU,Name,Regular price,Categories,Description,Images\n1,simple,A,Robe,10,Robes,,a.jpg\n2,simple,B,Jupe,10,Robes,Texte,\n"), {});
+  assert.ok(r.issues.some(i => i.code === "DESCRIPTION_MISSING") && r.issues.some(i => i.code === "IMAGE_MISSING"));
+  const s = E.prospectSummary(r);
+  assert.equal(s.serious, 0);
+  assert.equal(s.example, null);
+});

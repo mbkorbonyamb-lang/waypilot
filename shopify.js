@@ -69,7 +69,7 @@
   // Lignes ajoutées par des applis (retours gratuits, assurance livraison, garanties) : pas de vrais produits.
   // Elles partagent souvent une même UGS entre paliers de prix (« x-redo ») et n’ont ni description ni image.
   const TECH_VENDOR = /^(re:?do|route|seel|navidium|extend|xcover|shipaid|order ?protection)( app)?$/i;
-  const TECH_TITLE = /(package|shipping|order|delivery) protection|free returns coverage|route (package )?protection|extend protection plan|green shipping protection/i;
+  const TECH_TITLE = /(package|shipping|order|delivery) protection|free returns coverage|route (package )?protection|extend protection plan|green shipping protection|^(in-?)?store pickup|local pickup/i;
   const TECH_SKU = /^(x-redo|route|routeins|navidium|seel-)/i;
   function isTechnical(p) {
     if (TECH_VENDOR.test(clean(p.vendor)) || TECH_TITLE.test(clean(p.title))) return true;
