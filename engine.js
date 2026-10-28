@@ -260,7 +260,7 @@
     const tokens = normalize(raw).split(/\s*,\s*/).filter(Boolean);
     const known = ["variation", "variable", "grouped", "external", "simple"];
     const primary = tokens.find(t => known.includes(t)) || tokens[0] || "";
-    return { raw: clean(raw), primary, isVariation: primary === "variation", isVariable: primary === "variable", isGrouped: primary === "grouped", isGiftCard: tokens.some(t => /gift.?card|carte.?cadeau/.test(t)) };
+    return { raw: clean(raw), primary, isVariation: primary === "variation", isVariable: primary === "variable", isGrouped: primary === "grouped", isExternal: primary === "external", isGiftCard: tokens.some(t => /gift.?card|carte.?cadeau/.test(t)) };
   }
 
   function cleanId(value) { return normalize(value).replace(/^id\s*:\s*/, "").trim(); }
@@ -394,7 +394,8 @@
       }
 
       // Achetable : connu par l’audit express (API publique). Un prix absent est déjà signalé à part.
-      if (col.purchasable >= 0 && clean(get(row, "purchasable")) === "0" && !t.isVariable && !t.isGrouped && Number.isFinite(regular) && regular > 0) {
+      // Un produit externe (lien vers un autre site, prise de rendez-vous) n’a jamais de panier : ce n’est pas une erreur.
+      if (col.purchasable >= 0 && clean(get(row, "purchasable")) === "0" && !t.isVariable && !t.isGrouped && !t.isExternal && Number.isFinite(regular) && regular > 0) {
         add(i, "NOT_PURCHASABLE", SEVERITY.HIGH, "Affiché sur la boutique, mais WooCommerce refuse de l’ajouter au panier");
       }
 
@@ -964,7 +965,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.19.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

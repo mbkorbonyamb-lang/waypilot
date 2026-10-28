@@ -258,6 +258,13 @@ test("audit express : catalogue public converti (montants, slugs, achetable) et 
   assert.ok(!found.some(x => x.startsWith("176:PRICE")), "pas de prix attendu sur le parent variable");
 });
 
+test("audit express : produit externe (« Prendre rendez-vous ») sans alerte Non achetable", () => {
+  const data = storeApi();
+  data.products[1].type = "external";
+  const r = E.analyze(W.publicToCatalog(E, data), { decimal: "." });
+  assert.ok(!r.issues.some(i => i.code === "NOT_PURCHASABLE"));
+});
+
 test("audit express : lecture sans clé, variations par lots, message clair si l’API est bloquée", async () => {
   const data = storeApi();
   const calls = [];
