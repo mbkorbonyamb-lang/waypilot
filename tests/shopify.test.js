@@ -140,6 +140,15 @@ test("même SKU sur toutes les tailles d’un modèle Shopify : faible, pas éle
   assert.equal(codes.filter(c => c.startsWith("SKU_DUPLICATE")).length, 1, "autre produit : toujours élevée");
 });
 
+test("un produit par coloris, même titre et même référence de modèle : faible, pas élevée", () => {
+  const mk = (id, couleur) => ({ id, title: "Jean Lina", product_type: "", options: [{ name: "Couleur", values: [couleur] }, { name: "Taille", values: ["36", "38"] }],
+    variants: ["36", "38"].map((o, n) => ({ id: id * 10 + n, sku: "RED-PAN-LINA", price: "89.00", option1: couleur, option2: o, available: true })), images: [{ src: `https://x.test/${id}.jpg` }] });
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [mk(1, "Bleu"), mk(2, "Bleu clair")] }));
+  const codes = r.issues.map(i => i.code);
+  assert.equal(codes.filter(c => c === "SKU_SHARED_MODEL").length, 3, codes.join(" "));
+  assert.ok(!codes.includes("SKU_DUPLICATE"), codes.join(" "));
+});
+
 test("prix d’une variation 10 fois plus bas que les autres : moyenne (faute de frappe ?)", () => {
   const p = { id: 3, title: "Robe", product_type: "", options: [{ name: "Taille", values: ["S", "M", "L", "XL"] }],
     variants: ["S", "M", "L", "XL"].map((o, n) => ({ id: 30 + n, sku: `R-${o}`, price: o === "L" ? "15.90" : "159.00", option1: o, available: true })), images: [{ src: "https://x.test/r.jpg" }] };
