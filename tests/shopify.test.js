@@ -136,8 +136,17 @@ test("même SKU sur toutes les tailles d’un modèle Shopify : faible, pas éle
     variants: opts.map((o, n) => ({ id: id * 10 + n, sku: typeof sku === "function" ? sku(n) : sku, price: "159.00", option1: o, available: true })), images: [{ src: `https://x.test/${id}.jpg` }] });
   const r = E.analyze(S.shopifyToCatalog(E, { products: [mk(1, "MOE-GEN1", ["39", "40", "41"]), mk(2, n => n ? `B-${n}` : "MOE-GEN1", ["39", "40"])] }));
   const codes = r.issues.map(i => `${i.code}:${i.severity}`);
-  assert.equal(codes.filter(c => c === `SKU_SHARED_MODEL:${E.SEVERITY.LOW}`).length, 2, codes.join(" "));
-  assert.equal(codes.filter(c => c.startsWith("SKU_DUPLICATE")).length, 1, "autre produit : toujours élevée");
+  // MOE-GEN1 est porté par 4 variantes : référence du modèle, y compris sur l’autre fiche.
+  assert.equal(codes.filter(c => c === `SKU_SHARED_MODEL:${E.SEVERITY.LOW}`).length, 3, codes.join(" "));
+  assert.ok(!codes.some(c => c.startsWith("SKU_DUPLICATE")), codes.join(" "));
+});
+
+test("même produit publié deux fois (références uniques par taille reprises) : doublon élevé", () => {
+  const mk = (id, title) => ({ id, title, product_type: "", options: [{ name: "Taille", values: ["34", "36"] }],
+    variants: ["34", "36"].map((o, n) => ({ id: id * 10 + n, sku: `100000000631${n}`, price: "45.00", option1: o, available: true })), images: [{ src: `https://x.test/${id}.jpg` }] });
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [mk(1, "Bas de maillot Idyllique corail"), mk(2, "Bas de maillot Idyllique")] }));
+  const codes = r.issues.map(i => `${i.code}:${i.severity}`);
+  assert.equal(codes.filter(c => c === `SKU_DUPLICATE:${E.SEVERITY.HIGH}`).length, 2, codes.join(" "));
 });
 
 test("un produit par coloris, même titre et même référence de modèle : faible, pas élevée", () => {

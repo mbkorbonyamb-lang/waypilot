@@ -351,6 +351,10 @@
     })).filter(a => a.name);
 
     const seenNames = new Map(), seenSkus = new Map(), seenGtins = new Map();
+    // Shopify : nombre de variantes par référence. Une référence portée par 3 variantes ou plus est une référence de modèle
+    // (souvent celle du fournisseur), pas une erreur de saisie ; deux fiches qui partagent des références uniques sont, elles, en double.
+    const skuUses = new Map();
+    if (catalog.platform === "shopify" && col.sku >= 0) rows.forEach((r, n) => { const k = normalize(clean(get(r, "sku"))); if (k && types[n].isVariation) skuUses.set(k, (skuUses.get(k) || 0) + 1); });
     const sharedModelSku = new Set();
     // GTIN absent signalé seulement si le catalogue en utilise ailleurs : une marque propre n’en a souvent aucun.
     const catalogUsesGtin = col.gtin >= 0 && rows.some(r => clean(get(r, "gtin")));
@@ -484,10 +488,10 @@
             // Idem entre produits de même titre (un produit par coloris, ex. « Jean Lina » bleu et bleu clair).
             const parent = t.isVariation && catalog.platform === "shopify" ? resolveParent(get(row, "parent")) : -1;
             const firstParent = parent >= 0 && types[first].isVariation ? resolveParent(get(rows[first], "parent")) : -1;
-            const sameModel = firstParent >= 0 && (firstParent === parent || normalize(get(rows[firstParent], "name")) === normalize(get(rows[parent], "name")));
+            const sameModel = firstParent >= 0 && (firstParent === parent || normalize(get(rows[firstParent], "name")) === normalize(get(rows[parent], "name")) || (skuUses.get(k) || 0) >= 3);
             if (sameModel) {
               sharedModelSku.add(i);
-              add(i, "SKU_SHARED_MODEL", SEVERITY.LOW, `Référence « ${sku} » commune à plusieurs variantes de ce produit (référence du modèle ?) : le stock et les ventes ne se suivent pas par taille ou couleur, et un export vers un logiciel de caisse ou une place de marché peut les confondre`);
+              add(i, "SKU_SHARED_MODEL", SEVERITY.LOW, `Référence « ${sku} » commune à plusieurs variantes (référence du modèle ?) : le stock et les ventes ne se suivent pas par taille ou couleur, et un export vers un logiciel de caisse ou une place de marché peut les confondre`);
             } else add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU « ${sku} » déjà utilisée par « ${displayName(get(rows[first], "name"))} » (ligne ${lines[first]})`);
           }
           else seenSkus.set(k, i);
@@ -968,7 +972,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.19.3", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.4", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
