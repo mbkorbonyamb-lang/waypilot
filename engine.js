@@ -481,8 +481,11 @@
           if (seenSkus.has(k)) {
             const first = seenSkus.get(k);
             // Shopify : une même référence sur toutes les variantes d’un produit est souvent la référence du modèle, voulue.
+            // Idem entre produits de même titre (un produit par coloris, ex. « Jean Lina » bleu et bleu clair).
             const parent = t.isVariation && catalog.platform === "shopify" ? resolveParent(get(row, "parent")) : -1;
-            if (parent >= 0 && types[first].isVariation && resolveParent(get(rows[first], "parent")) === parent) {
+            const firstParent = parent >= 0 && types[first].isVariation ? resolveParent(get(rows[first], "parent")) : -1;
+            const sameModel = firstParent >= 0 && (firstParent === parent || normalize(get(rows[firstParent], "name")) === normalize(get(rows[parent], "name")));
+            if (sameModel) {
               sharedModelSku.add(i);
               add(i, "SKU_SHARED_MODEL", SEVERITY.LOW, `Référence « ${sku} » commune à plusieurs variantes de ce produit (référence du modèle ?) : le stock et les ventes ne se suivent pas par taille ou couleur, et un export vers un logiciel de caisse ou une place de marché peut les confondre`);
             } else add(i, "SKU_DUPLICATE", SEVERITY.HIGH, `Référence SKU « ${sku} » déjà utilisée par « ${displayName(get(rows[first], "name"))} » (ligne ${lines[first]})`);
@@ -965,7 +968,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.19.2", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.19.3", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
