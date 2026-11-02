@@ -69,6 +69,9 @@ async function authorized(body, env) {
   return Boolean(env.ACCESS_HASH) && typeof body.code === "string" && (await sha256(body.code.trim().toUpperCase())) === env.ACCESS_HASH;
 }
 
+// Adresse publique des liens d'aperçu : le site WayPilot (qui relaie /r/ vers ce relais) plutôt que workers.dev, moins engageant pour un prospect.
+function reportBase(url, env) { return /^https:\/\/[a-z0-9.-]+$/i.test(env.REPORT_BASE || "") ? env.REPORT_BASE : url.origin; }
+
 async function reports(request, url, env) {
   if (!env.RAPPORTS) return json(503, { message: "Stockage des rapports non configuré." });
   if (request.method === "GET" && url.pathname.startsWith("/r/")) {
@@ -91,14 +94,14 @@ async function reports(request, url, env) {
     const id = newId();
     const store = String(body.boutique || "").slice(0, 120);
     await env.RAPPORTS.put(`r:${id}`, body.html, { expirationTtl: REPORT_TTL, metadata: { store, created: new Date().toISOString() } });
-    return json(201, { id, url: `${url.origin}/r/${id}` });
+    return json(201, { id, url: `${reportBase(url, env)}/r/${id}` });
   }
   if (url.pathname === "/rapports/suivi") {
     const list = await env.RAPPORTS.list({ prefix: "r:", limit: 1000 });
     const rows = await Promise.all(list.keys.map(async k => {
       const id = k.name.slice(2);
       const views = JSON.parse((await env.RAPPORTS.get(`v:${id}`)) || "{}");
-      return { id, url: `${url.origin}/r/${id}`, store: (k.metadata || {}).store || "", created: (k.metadata || {}).created || "", views: views.count || 0, firstView: views.first || "", lastView: views.last || "" };
+      return { id, url: `${reportBase(url, env)}/r/${id}`, store: (k.metadata || {}).store || "", created: (k.metadata || {}).created || "", views: views.count || 0, firstView: views.first || "", lastView: views.last || "" };
     }));
     rows.sort((a, b) => b.created.localeCompare(a.created));
     return json(200, rows);

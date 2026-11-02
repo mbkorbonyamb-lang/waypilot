@@ -1,6 +1,7 @@
 // Lancer avec : node --test tests/relais-cloudflare.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { handle, cleanHost } from "../relais-cloudflare/worker.js";
 
 const ok = (body, total) => ({ ok: true, status: 200, url: "https://jaaray.site/x", text: async () => body, headers: new Headers(total ? { "X-WP-TotalPages": total } : {}) });
@@ -86,4 +87,32 @@ test("rapports : publication réservée au code, affichage sans script, ouvertur
   assert.equal((await handle(new Request("https://relais.test/r/inconnu"), fetch, env)).status, 404);
   assert.equal((await handle(new Request("https://relais.test/r/ABCDEFGHJKLM"), fetch, env)).status, 404);
   assert.equal((await handle(post("/rapports", { code: "test", html }), fetch, {})).status, 503, "sans stockage : message clair");
+});
+
+test("rapports : lien d'aperçu donné sur le site quand REPORT_BASE est configuré", async () => {
+  const env = { RAPPORTS: kv(), ACCESS_HASH: HASH, REPORT_BASE: "https://waypilot.wayzure.com" };
+  const html = "<!doctype html><html><body>Audit</body></html>";
+  const { id, url } = await (await handle(post("/rapports", { code: "test", html }), fetch, env)).json();
+  assert.equal(url, `https://waypilot.wayzure.com/r/${id}`);
+  const rows = await (await handle(post("/rapports/suivi", { code: "test" }), fetch, env)).json();
+  assert.equal(rows[0].url, url);
+  const bad = await (await handle(post("/rapports", { code: "test", html }), fetch, { ...env, REPORT_BASE: "javascript:alert(1)" })).json();
+  assert.match(bad.url, /^https:\/\/relais\.test\/r\//, "valeur invalide ignorée");
+});
+
+test("site : /r/<id> relaie le lien d'aperçu du relais", async () => {
+  // Chargé comme module quelle que soit la version de Node (le dossier functions/ n'a pas de package.json).
+  const src = await readFile(new URL("../functions/r/[id].js", import.meta.url), "utf8");
+  const { onRequestGet } = await import("data:text/javascript," + encodeURIComponent(src));
+  const calls = [];
+  const saved = globalThis.fetch;
+  globalThis.fetch = async u => { calls.push(String(u)); return new Response("<p>Audit</p>", { status: 200, headers: { "content-type": "text/html; charset=utf-8" } }); };
+  try {
+    const ok = await onRequestGet({ params: { id: "ABCDEFGHJKLM" } });
+    assert.equal(ok.status, 200);
+    assert.equal(await ok.text(), "<p>Audit</p>");
+    assert.deepEqual(calls, ["https://waypilot-relais.wayzure.workers.dev/r/ABCDEFGHJKLM"]);
+    assert.equal((await onRequestGet({ params: { id: "../rapports" } })).status, 404);
+    assert.equal(calls.length, 1, "identifiant invalide : rien n'est demandé au relais");
+  } finally { globalThis.fetch = saved; }
 });
