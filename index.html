@@ -12,73 +12,125 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f5eff'/%3E%3Cpath d='M8 16.5l5 5 11-11' stroke='%23fff' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="site.css">
   <style>
-    /* Accueil */
-    .hero { padding:72px 0 88px; background:linear-gradient(180deg,#f3f6ff 0%,#fff 100%); border-bottom:1px solid var(--line); }
-    .hero .wrap { display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; }
-    .quick { display:flex; gap:10px; margin-top:30px; max-width:560px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:8px; box-shadow:var(--shadow); }
+    /* Accueil — version « premium » : héros sombre, vraies images du rapport, maquettes produit. */
+    :root { --navy:#0a1424; --navy-2:#111f36; --gold:#c9a96e; --sand:#f4efe6; }
+    .site-header { background:rgba(10,20,36,.86); border-bottom-color:rgba(255,255,255,.08); }
+    .site-header .logo, .site-header .site-nav a:not(.btn) { color:#e8edf5; }
+    .site-header .site-nav a:not(.btn):hover { color:#fff; }
+
+    .hero { position:relative; overflow:hidden; padding:96px 0 120px; color:#c3cede;
+      background:radial-gradient(1200px 600px at 85% -10%, rgba(31,94,255,.35), transparent 60%), radial-gradient(800px 500px at -10% 110%, rgba(201,169,110,.18), transparent 60%), var(--navy); }
+    .hero .wrap { display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+    .hero h1 { color:#fff; font-size:clamp(36px,5vw,58px); letter-spacing:-.035em; }
+    .hero h1 em { font-style:normal; background:linear-gradient(90deg,#8fb0ff,#e2c896); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .hero .lead { color:#b4c0d3; }
+    .hero .kicker { background:rgba(255,255,255,.08); color:#dfe6f2; border:1px solid rgba(255,255,255,.12); }
+    .quick { display:flex; gap:10px; margin-top:32px; max-width:560px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:8px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
     .quick input { flex:1; min-width:0; border:0; padding:10px 12px; font:inherit; font-size:16px; color:var(--ink); background:transparent; }
     .quick input:focus { outline:none; }
-    .quick:focus-within { border-color:var(--blue); box-shadow:0 0 0 4px rgba(31,94,255,.12); }
-    .assure { display:flex; flex-wrap:wrap; gap:8px 22px; margin:18px 0 0; padding:0; list-style:none; font-size:14px; color:var(--muted); }
+    .quick:focus-within { box-shadow:0 0 0 4px rgba(31,94,255,.35), 0 20px 50px rgba(0,0,0,.25); }
+    .assure { display:flex; flex-wrap:wrap; gap:8px 22px; margin:18px 0 0; padding:0; list-style:none; font-size:14px; color:#9fb0c7; }
     .assure li { display:flex; align-items:center; gap:7px; }
-    .assure svg { width:16px; height:16px; color:var(--green); }
+    .assure svg { width:16px; height:16px; color:#5fd3a0; }
 
-    .mock { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 2px 4px rgba(14,26,43,.04), 0 24px 60px rgba(14,26,43,.12); overflow:hidden; }
-    .mock-top { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted); }
-    .mock-top b { color:var(--ink); }
-    .dots { display:flex; gap:6px; } .dots i { width:9px; height:9px; border-radius:50%; background:#e3e8f0; }
-    .mock-body { padding:20px 18px 18px; }
-    .mock-kpis { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-    .kpi { border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-    .kpi strong { display:block; font-size:26px; color:var(--ink); letter-spacing:-.02em; line-height:1.2; }
-    .kpi span { font-size:12px; color:var(--muted); }
-    .kpi.warn strong { color:var(--red); }
-    .issue { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line); font-size:14px; color:var(--ink); }
-    .sev { flex:none; font-size:11px; font-weight:700; border-radius:99px; padding:2px 8px; }
-    .sev.high { color:var(--red); background:var(--red-soft); }
-    .sev.mid { color:#9a5b00; background:#fff4e0; }
-    .sev.low { color:var(--muted); background:var(--bg); }
-    .mock-cap { font-size:12px; color:var(--muted); text-align:center; margin:12px 0 0; }
+    .shot { position:relative; }
+    .browser { border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 40px 90px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08); transform:perspective(1600px) rotateY(-6deg) rotateX(2deg); }
+    .browser-bar { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#eef1f6; border-bottom:1px solid #dde3ec; }
+    .browser-bar i { width:10px; height:10px; border-radius:50%; background:#d5dbe5; }
+    .browser-bar span { margin-left:8px; flex:1; background:#fff; border-radius:6px; padding:3px 10px; font-size:12px; color:#6b7a90; }
+    .browser img { width:100%; height:auto; }
+    .float { position:absolute; display:flex; align-items:center; gap:12px; background:#fff; color:var(--ink); border-radius:14px; padding:12px 16px; box-shadow:0 18px 40px rgba(0,0,0,.28); font-size:14px; line-height:1.35; }
+    .float b { display:block; }
+    .float small { color:var(--muted); }
+    .float .dot { flex:none; width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-weight:800; }
+    .float.f1 { left:-34px; bottom:56px; } .float.f1 .dot { background:var(--red-soft); color:var(--red); }
+    .float.f2 { right:-18px; top:-22px; } .float.f2 .dot { background:var(--green-soft); color:var(--green); }
+
+    .proof { background:var(--navy-2); color:#9fb0c7; padding:26px 0; border-top:1px solid rgba(255,255,255,.06); }
+    .proof .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:18px 32px; font-size:14px; }
+    .proof strong { color:#fff; font-size:22px; letter-spacing:-.02em; margin-right:8px; }
+    .proof .platforms { display:flex; gap:10px; }
+    .proof .pf { border:1px solid rgba(255,255,255,.14); border-radius:99px; padding:6px 14px; color:#dfe6f2; font-weight:600; }
+
+    /* Le problème, en image : fiche produit avant / après */
+    .pb { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+    .pcard { background:#fff; border:1px solid var(--line); border-radius:20px; overflow:hidden; box-shadow:var(--shadow); }
+    .pcard .label { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; font-size:13px; font-weight:700; border-bottom:1px solid var(--line); }
+    .pcard.before .label { color:var(--red); background:var(--red-soft); }
+    .pcard.after .label { color:var(--green); background:var(--green-soft); }
+    .pbody { display:grid; grid-template-columns:150px 1fr; gap:22px; padding:22px; align-items:start; }
+    .photo { aspect-ratio:3/4; border-radius:12px; background:linear-gradient(160deg,#efe6d6,#e2d3bb); display:grid; place-items:center; }
+    .photo svg { width:70%; height:auto; }
+    .pname { font-weight:700; color:var(--ink); font-size:17px; margin:0 0 4px; }
+    .pprice { font-size:20px; color:var(--ink); margin:0 0 14px; letter-spacing:-.02em; }
+    .pprice s { color:var(--muted); font-size:15px; margin-left:6px; }
+    .sizes { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+    .sz { min-width:44px; text-align:center; border:1px solid #cfd6e1; border-radius:8px; padding:7px 10px; font-size:14px; font-weight:600; color:var(--ink); }
+    .sz.off { color:#a7b0bd; background:repeating-linear-gradient(135deg,#f3f5f8 0 6px,#fff 6px 12px); text-decoration:line-through; }
+    .sz.sel { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+    .cart { display:block; text-align:center; border-radius:10px; padding:11px; font-weight:700; font-size:14px; }
+    .before .cart { background:#e9edf3; color:#8a96a8; }
+    .after .cart { background:var(--ink); color:#fff; }
+    .pnote { font-size:13px; color:var(--muted); margin:12px 0 0; }
 
     .features { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
-    .feature { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
-    .feature .ico { width:42px; height:42px; border-radius:11px; background:var(--blue-soft); color:var(--blue); display:grid; place-items:center; margin-bottom:16px; }
+    .feature { background:#fff; border:1px solid var(--line); border-radius:16px; padding:26px; transition:transform .2s, box-shadow .2s; }
+    .feature:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+    .feature .ico { width:44px; height:44px; border-radius:12px; background:var(--blue-soft); color:var(--blue); display:grid; place-items:center; margin-bottom:16px; }
     .feature .ico svg { width:22px; height:22px; }
     .feature p { margin:0; color:var(--muted); font-size:15px; }
 
-    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; counter-reset:step; }
-    .step { position:relative; padding-top:56px; }
-    .step::before { counter-increment:step; content:counter(step); position:absolute; top:0; left:0; width:40px; height:40px; border-radius:50%; background:var(--ink); color:#fff; font-weight:800; display:grid; place-items:center; }
+    .how { display:grid; grid-template-columns:.9fr 1.1fr; gap:56px; align-items:center; }
+    .steps { display:grid; gap:26px; counter-reset:step; }
+    .step { position:relative; padding-left:58px; }
+    .step::before { counter-increment:step; content:counter(step); position:absolute; top:0; left:0; width:40px; height:40px; border-radius:12px; background:var(--ink); color:#fff; font-weight:800; display:grid; place-items:center; }
     .step p { margin:0; color:var(--muted); font-size:15px; }
+    .report-frame { border-radius:16px; overflow:hidden; border:1px solid var(--line); box-shadow:0 30px 70px rgba(14,26,43,.16); background:#fff; }
+    .report-frame img { width:100%; height:auto; }
+    .cap { font-size:13px; color:var(--muted); margin:12px 0 0; text-align:center; }
 
     .case { display:grid; grid-template-columns:1.25fr .75fr; gap:40px; align-items:start; }
     .chip { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--green); background:var(--green-soft); border-radius:99px; padding:5px 11px; }
-    .ba { width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; font-size:15px; margin-top:22px; }
+    .ba { width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden; font-size:15px; margin-top:22px; }
     .ba th, .ba td { text-align:left; padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
     .ba tr:last-child td { border-bottom:0; }
     .ba thead th { background:var(--bg); font-size:13px; color:var(--muted); font-weight:700; }
     .ba td:first-child { color:var(--ink); font-weight:600; }
     .ba .before { color:var(--red); } .ba .after { color:var(--green); }
     .results { display:grid; gap:14px; }
-    .result { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; }
-    .result strong { display:block; font-size:36px; color:var(--ink); letter-spacing:-.03em; line-height:1.1; }
-    .result span { color:var(--muted); font-size:14px; }
+    .result { background:var(--navy); color:#9fb0c7; border-radius:16px; padding:22px 24px; }
+    .result strong { display:block; font-size:40px; color:#fff; letter-spacing:-.03em; line-height:1.1; }
+    .result span { font-size:14px; }
 
-    .offers { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; align-items:stretch; }
-    .offer { position:relative; display:flex; flex-direction:column; background:#fff; border:1px solid var(--line); border-radius:18px; padding:28px; }
-    .offer.featured { border:2px solid var(--blue); box-shadow:0 18px 48px rgba(31,94,255,.14); }
-    .badge { position:absolute; top:-12px; left:28px; background:var(--blue); color:#fff; font-size:12px; font-weight:700; border-radius:99px; padding:4px 11px; }
-    .price { margin:12px 0 4px; color:var(--ink); }
-    .price b { font-size:36px; letter-spacing:-.03em; }
-    .price small { color:var(--muted); font-size:14px; }
-    .offer .desc { color:var(--muted); font-size:15px; margin:0 0 16px; }
-    .offer ul { list-style:none; padding:0; margin:0 0 24px; display:grid; gap:9px; font-size:15px; }
+    .offers { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; align-items:stretch; }
+    .offer { position:relative; display:flex; flex-direction:column; background:#fff; border:1px solid var(--line); border-radius:20px; padding:26px 24px; }
+    .offer.featured { background:var(--navy); border-color:var(--navy); color:#b4c0d3; box-shadow:0 30px 60px rgba(10,20,36,.28); }
+    .offer.featured h3, .offer.featured .price { color:#fff; }
+    .offer.featured .price small, .offer.featured .desc { color:#9fb0c7; }
+    .badge { position:absolute; top:-12px; left:24px; background:linear-gradient(90deg,var(--blue),#5b86ff); color:#fff; font-size:12px; font-weight:700; border-radius:99px; padding:4px 11px; }
+    .badge.new { background:var(--gold); color:var(--navy); }
+    .price { margin:10px 0 4px; color:var(--ink); }
+    .price b { font-size:38px; letter-spacing:-.03em; }
+    .price small { display:block; color:var(--muted); font-size:13px; margin-top:2px; }
+    .offer .desc { color:var(--muted); font-size:14px; margin:0 0 16px; min-height:42px; }
+    .offer ul { list-style:none; padding:0; margin:0 0 24px; display:grid; gap:9px; font-size:14px; }
     .offer li { display:flex; gap:9px; }
-    .offer li::before { content:""; flex:none; width:18px; height:18px; margin-top:3px; border-radius:50%; background:var(--green-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.6L13 6.5' stroke='%230b7a4b' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
+    .offer li::before { content:""; flex:none; width:18px; height:18px; margin-top:2px; border-radius:50%; background:var(--green-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.6L13 6.5' stroke='%230b7a4b' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
+    .offer.featured li::before { background-color:rgba(95,211,160,.18); }
     .offer .btn { margin-top:auto; }
-    .agency { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:24px; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); padding:20px 24px; }
+    .agency { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:24px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px 24px; }
     .agency p { margin:0; } .agency b { color:var(--ink); }
     .fineprint { font-size:13px; color:var(--muted); margin:16px 0 0; }
+
+    .pricing-demo { margin-top:28px; display:grid; grid-template-columns:1fr 1.1fr; gap:32px; align-items:center; background:var(--sand); border-radius:20px; padding:30px; }
+    .pricing-demo h3 { font-size:22px; }
+    .pricing-demo p { margin:0; color:#5c5446; }
+    .ptable { background:#fff; border-radius:14px; box-shadow:var(--shadow); overflow:hidden; font-size:14px; }
+    .ptable div { display:grid; grid-template-columns:1.6fr .8fr .8fr; padding:11px 16px; border-bottom:1px solid var(--line); }
+    .ptable div:last-child { border-bottom:0; }
+    .ptable .h { background:var(--bg); color:var(--muted); font-weight:700; font-size:12px; }
+    .ptable .old { color:var(--muted); text-decoration:line-through; }
+    .ptable .new { color:var(--ink); font-weight:700; }
 
     .trust { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
     .trust .feature .ico { background:var(--green-soft); color:var(--green); }
@@ -91,27 +143,38 @@
     .faq details[open] summary::after { content:"–"; }
     .faq details p { color:var(--muted); margin:10px 0 0; }
 
-    .final { background:var(--ink); color:#c9d3e1; text-align:center; }
+    .final { color:#c3cede; text-align:center; background:radial-gradient(900px 400px at 50% 0%, rgba(31,94,255,.3), transparent 70%), var(--navy); }
     .final h2 { color:#fff; }
     .final p { margin:0 auto; max-width:560px; font-size:17px; }
-    .final .quick { margin:28px auto 0; border-color:transparent; }
+    .final .quick { margin:28px auto 0; }
     .final .alt-cta { margin-top:18px; font-size:14px; }
     .final .alt-cta a { color:#fff; }
 
+    @media (max-width:1060px) { .offers { grid-template-columns:1fr 1fr; } }
     @media (max-width:960px) {
-      .hero .wrap, .case { grid-template-columns:1fr; gap:40px; }
+      .hero .wrap, .case, .how, .pb, .pricing-demo { grid-template-columns:1fr; gap:40px; }
+      .browser { transform:none; }
+      .float.f1 { left:8px; } .float.f2 { right:8px; }
       .features { grid-template-columns:1fr 1fr; }
-      .offers, .trust, .steps { grid-template-columns:1fr; }
+      .trust { grid-template-columns:1fr; }
+    }
+    @media (max-width:640px) {
+      .offers { grid-template-columns:1fr; }
       .offer.featured { order:-1; }
+      .offer .desc { min-height:0; }
     }
     @media (max-width:560px) {
-      .hero { padding:44px 0 56px; }
+      .hero { padding:52px 0 72px; }
       .features { grid-template-columns:1fr; }
       .quick { flex-direction:column; }
       .quick .btn { width:100%; }
-      .ba { font-size:14px; }
-      .ba th, .ba td { padding:11px 12px; }
+      .float { font-size:13px; padding:10px 12px; }
+      .float.f1 { bottom:-26px; } .float.f2 { top:-30px; }
+      .pbody { grid-template-columns:110px 1fr; gap:16px; padding:18px; }
+      .ba { font-size:14px; } .ba th, .ba td { padding:11px 12px; }
+      .pricing-demo { padding:20px; }
     }
+    @media (prefers-reduced-motion:reduce) { .feature { transition:none; } }
   </style>
 </head>
 <body>
@@ -119,7 +182,7 @@
   <div class="wrap">
     <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a>
     <nav class="site-nav">
-      <a href="#controles">Contrôles</a>
+      <a href="#probleme">Le problème</a>
       <a href="#cas">Cas client</a>
       <a href="#offres">Offres</a>
       <a href="securite.html">Sécurité</a>
@@ -133,8 +196,8 @@
     <div class="wrap">
       <div>
         <span class="kicker">Catalogues WooCommerce et Shopify</span>
-        <h1>Les erreurs qui bloquent vos ventes, trouvées et corrigées.</h1>
-        <p class="lead">WayPilot trouve dans votre boutique WooCommerce ou Shopify les produits que vos clients ne peuvent pas commander (tailles introuvables, prix faux, variations en double), puis les corrige pour vous. Rien n’est modifié sans votre accord.</p>
+        <h1>Les erreurs qui bloquent vos ventes, <em>trouvées et corrigées.</em></h1>
+        <p class="lead">WayPilot trouve dans votre boutique les produits que vos clients ne peuvent pas commander (tailles introuvables, prix faux, variations en double), puis les corrige pour vous. Rien n’est modifié sans votre accord.</p>
         <form class="quick" action="app.html" method="get">
           <label for="boutique" class="sr">Site web de votre boutique WooCommerce ou Shopify</label>
           <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="Site web de votre boutique" required autocomplete="url">
@@ -147,26 +210,63 @@
         </ul>
       </div>
 
-      <figure style="margin:0">
-        <div class="mock" aria-hidden="true">
-          <div class="mock-top"><div class="dots"><i></i><i></i><i></i></div><span>Rapport d’audit · <b>boutique de mode</b></span></div>
-          <div class="mock-body">
-            <div class="mock-kpis">
-              <div class="kpi"><strong>67 %</strong><span>score du catalogue</span></div>
-              <div class="kpi warn"><strong>636 €</strong><span>de ventes en jeu</span></div>
-            </div>
-            <div class="issue"><span class="sev high">Élevée</span>Basket cuir – taille 41 affichée à 0 €</div>
-            <div class="issue"><span class="sev high">Élevée</span>Ensemble lin – taille XL impossible à commander</div>
-            <div class="issue"><span class="sev mid">Moyenne</span>Kimono : 445 € affiché, 446 € dans la description</div>
-            <div class="issue"><span class="sev low">Faible</span>12 images sous 500 px pour Google Shopping</div>
-          </div>
+      <figure class="shot" style="margin:0">
+        <div class="browser">
+          <div class="browser-bar"><i></i><i></i><i></i><span>Rapport d’audit WayPilot</span></div>
+          <img src="assets/rapport-exemple.jpg" width="1800" height="1280" alt="Exemple de rapport d’audit WayPilot : score 86 %, 218 € de ventes en jeu, une pointure à 0 € et une taille XL impossible à commander." fetchpriority="high">
         </div>
-        <figcaption class="mock-cap">Illustration d’un rapport. Les chiffres varient selon la boutique.</figcaption>
+        <div class="float f2" aria-hidden="true"><span class="dot">✓</span><div><b>Taille XL commandable</b><small>corrigée après votre accord</small></div></div>
+        <div class="float f1" aria-hidden="true"><span class="dot">!</span><div><b>Pointure 41 à 0 €</b><small>129 € de vente en jeu</small></div></div>
       </figure>
     </div>
   </section>
 
-  <section id="controles">
+  <div class="proof">
+    <div class="wrap">
+      <div><strong>55</strong>corrections appliquées chez JAARAY, 0 échec</div>
+      <div><strong>39</strong>prix convertis en euro, vérifiés en ligne</div>
+      <div class="platforms"><span class="pf">WooCommerce</span><span class="pf">Shopify</span></div>
+    </div>
+  </div>
+
+  <section id="probleme">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Ce que votre client voit, et que vous ne voyez pas</h2>
+        <p>Une taille affichée mais impossible à commander, et le client part. L’administration de la boutique ne le signale pas : WayPilot le trouve, puis le corrige.</p>
+      </div>
+      <div class="pb">
+        <div class="pcard before">
+          <div class="label"><span>Avant</span><span>Taille XL : aucune variation</span></div>
+          <div class="pbody">
+            <div class="photo" aria-hidden="true"><svg viewBox="0 0 100 140" fill="none"><path d="M38 8c4 6 20 6 24 0l12 6-6 18-4-2 6 44 14 58H16l14-58 6-44-4 2-6-18z" fill="#fff" fill-opacity=".85" stroke="#b9a582" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+            <div>
+              <p class="pname">Robe portefeuille en lin</p>
+              <p class="pprice">89,00 €</p>
+              <div class="sizes"><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span><span class="sz off sel">XL</span></div>
+              <span class="cart">Ce produit n’est pas disponible</span>
+              <p class="pnote">La cliente en XL ne peut pas commander.</p>
+            </div>
+          </div>
+        </div>
+        <div class="pcard after">
+          <div class="label"><span>Après WayPilot</span><span>Variation XL créée</span></div>
+          <div class="pbody">
+            <div class="photo" aria-hidden="true"><svg viewBox="0 0 100 140" fill="none"><path d="M38 8c4 6 20 6 24 0l12 6-6 18-4-2 6 44 14 58H16l14-58 6-44-4 2-6-18z" fill="#fff" fill-opacity=".85" stroke="#b9a582" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+            <div>
+              <p class="pname">Robe portefeuille en lin</p>
+              <p class="pprice">89,00 €</p>
+              <div class="sizes"><span class="sz">S</span><span class="sz">M</span><span class="sz">L</span><span class="sz sel">XL</span></div>
+              <span class="cart">Ajouter au panier</span>
+              <p class="pnote">Corrigé après votre validation, avec journal et retour arrière.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="controles">
     <div class="wrap">
       <div class="section-head">
         <h2>Ce que WayPilot contrôle</h2>
@@ -197,31 +297,37 @@
     </div>
   </section>
 
-  <section class="alt" id="comment">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Comment ça se passe</h2>
-        <p>L’audit tourne dans votre navigateur. Vos clés ne passent par aucun serveur WayPilot.</p>
+  <section id="comment">
+    <div class="wrap how">
+      <div>
+        <div class="section-head" style="margin-bottom:28px">
+          <h2>Comment ça se passe</h2>
+          <p>L’audit tourne dans votre navigateur. Vos clés ne passent par aucun serveur WayPilot.</p>
+        </div>
+        <div class="steps">
+          <div class="step"><h3>Vous donnez le site web de votre boutique</h3><p>Pour un premier audit, le site suffit : WayPilot lit le catalogue tel qu’un client le voit. Pour un audit complet sur WooCommerce, une clé API en lecture seule.</p></div>
+          <div class="step"><h3>Vous recevez un rapport clair</h3><p>Un score, les ventes en jeu, et chaque problème classé selon son effet sur vos ventes, produit par produit.</p></div>
+          <div class="step"><h3>Vous validez, nous corrigeons</h3><p>Seules les corrections que vous acceptez sont appliquées, avec un journal et la possibilité d’annuler. Jusqu’à 100 produits, c’est fait sous 48 h ouvrées. Sur Shopify, les corrections sont faites par notre équipe.</p></div>
+        </div>
       </div>
-      <div class="steps">
-        <div class="step"><h3>Vous donnez le site web de votre boutique</h3><p>Pour un premier audit, le site suffit : WayPilot lit le catalogue tel qu’un client le voit. Pour un audit complet sur WooCommerce, une clé API en lecture seule.</p></div>
-        <div class="step"><h3>WayPilot vérifie tout</h3><p>Chaque produit et chaque variation. Un score, les ventes en jeu, et chaque problème classé selon son effet sur vos ventes.</p></div>
-        <div class="step"><h3>Vous validez les corrections</h3><p>Seules les corrections que vous acceptez sont appliquées, avec un journal et la possibilité d’annuler. Jusqu’à 100 produits, c’est fait sous 48 h ouvrées. Sur Shopify, les corrections sont faites par notre équipe.</p></div>
-      </div>
+      <figure style="margin:0">
+        <div class="report-frame"><img src="assets/rapport-exemple.jpg" width="1800" height="1280" loading="lazy" alt="Rapport d’audit : score, ventes en jeu et problèmes classés par effet sur les ventes."></div>
+        <figcaption class="cap">Rapport réel de l’outil, sur une boutique de démonstration.</figcaption>
+      </figure>
     </div>
   </section>
 
-  <section id="cas">
+  <section class="alt" id="cas">
     <div class="wrap case">
       <div>
         <span class="chip">Cité avec l’accord de la boutique</span>
         <h2 style="margin-top:14px">Cas client : JAARAY</h2>
-        <p style="color:var(--muted);margin:0">Boutique de mode, 25 produits, octobre 2026. Les erreurs venaient d’imports CSV successifs. Rien ne les signalait dans l’administration WooCommerce.</p>
+        <p style="color:var(--muted);margin:0">Boutique de mode, octobre et novembre 2026. Les erreurs venaient d’imports CSV successifs. Rien ne les signalait dans l’administration WooCommerce.</p>
         <table class="ba">
           <thead><tr><th>Point contrôlé</th><th>Avant</th><th>Après</th></tr></thead>
           <tbody>
             <tr><td>Tailles L et XL de deux ensembles</td><td class="before">impossibles à commander</td><td class="after">commandables</td></tr>
-            <tr><td>Prix du kimono</td><td class="before">445 € affiché, 446 € dans la description</td><td class="after">446 € partout</td></tr>
+            <tr><td>Prix du kimono</td><td class="before">445 affiché, 446 dans la description</td><td class="after">446 partout</td></tr>
             <tr><td>Variations</td><td class="before">20 en double</td><td class="after">doublons supprimés</td></tr>
             <tr><td>Références (UGS)</td><td class="before">aucune</td><td class="after">une par produit et par taille</td></tr>
             <tr><td>Images</td><td class="before">répétées, sans texte alternatif</td><td class="after">dédoublonnées, décrites</td></tr>
@@ -230,14 +336,14 @@
         </table>
       </div>
       <div class="results">
-        <div class="result"><strong>55</strong><span>modifications appliquées par l’API, après validation</span></div>
-        <div class="result"><strong>0</strong><span>échec pendant l’application</span></div>
-        <div class="result"><strong>0</strong><span>anomalie à la relecture finale</span></div>
+        <div class="result"><strong>55</strong><span>corrections appliquées par l’API, après validation</span></div>
+        <div class="result"><strong>39</strong><span>prix convertis en euro en une opération</span></div>
+        <div class="result"><strong>0</strong><span>échec, 0 anomalie à la relecture finale</span></div>
       </div>
     </div>
   </section>
 
-  <section class="alt" id="offres">
+  <section id="offres">
     <div class="wrap">
       <div class="section-head">
         <h2>Offres</h2>
@@ -245,41 +351,60 @@
       </div>
       <div class="offers">
         <div class="offer">
-          <h3>Audit en libre-service</h3>
+          <h3>Audit</h3>
           <div class="price"><b>0 €</b></div>
           <p class="desc">Vous entrez le site web de votre boutique et lisez le rapport.</p>
           <ul><li>Catalogue public lu en lecture seule</li><li>Score et ventes en jeu</li><li>Rapport imprimable</li></ul>
           <a class="btn btn-ghost" href="app.html">Lancer l’audit</a>
         </div>
+        <div class="offer">
+          <h3>Audit et correction</h3>
+          <div class="price"><b>190 €</b> <small>jusqu’à 100 produits</small></div>
+          <p class="desc">390 € jusqu’à 500 produits, sur devis au-delà.</p>
+          <ul><li>Audit complet, corrections présentées</li><li>Appliquées sous 48 h ouvrées après votre accord</li><li>Sauvegarde avant, journal, annulable</li></ul>
+          <a class="btn btn-ghost" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
+        </div>
         <div class="offer featured">
           <span class="badge">Recommandé</span>
           <h3>Suivi mensuel</h3>
-          <div class="price"><b>49 €</b> <small>HT / mois · 3 mois minimum</small></div>
-          <p class="desc">La correction de départ est comprise, jusqu’à 100 produits.</p>
-          <ul><li>Correction de départ incluse, sous 48 h ouvrées</li><li>Nouvel audit chaque mois et après chaque gros import</li><li>Corrections courantes validées par vous</li><li>Un changement de prix en masse par mois (soldes, hausse, devise)</li><li>Journal des modifications et rapport</li></ul>
+          <div class="price"><b>49 €</b> <small>/ mois · 3 mois minimum</small></div>
+          <p class="desc">Correction de départ comprise, jusqu’à 100 produits.</p>
+          <ul><li>Correction de départ sous 48 h ouvrées</li><li>Audit chaque mois et après chaque gros import</li><li>Corrections courantes validées par vous</li><li>Un changement de prix en masse par mois</li><li>Journal et rapport mensuel</li></ul>
           <a class="btn btn-primary" href="https://buy.stripe.com/bJe9AT7hc0u8bAQc5N2go02" rel="noopener">S’abonner au suivi</a>
         </div>
         <div class="offer">
-          <h3>Audit et correction</h3>
-          <div class="price"><b>190 €</b> <small>HT · jusqu’à 100 produits</small></div>
-          <p class="desc">390 € HT jusqu’à 500 produits, sur devis au-delà.</p>
-          <ul><li>Audit complet et corrections présentées</li><li>Corrections appliquées sous 48 h ouvrées après votre validation</li><li>Application après votre accord et une sauvegarde</li><li>Chaque modification journalisée et annulable</li></ul>
-          <a class="btn btn-ghost" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange de 15 min</a>
+          <span class="badge new">Nouveau</span>
+          <h3>Prix en masse</h3>
+          <div class="price"><b>90 €</b> <small>jusqu’à 100 produits</small></div>
+          <p class="desc">Hausse annuelle, baisse, changement de devise.</p>
+          <ul><li>Arrondis choisis : 41,90 ou 39,90</li><li>Aperçu de chaque prix avant envoi</li><li>Journal, retour arrière, vérification en ligne</li></ul>
+          <a class="btn btn-ghost" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
         </div>
       </div>
-      <div class="agency">
-        <p><b>Changement de prix en masse : 90 € HT</b> jusqu’à 100 produits. Soldes, hausse annuelle, changement de devise : arrondis choisis (41,90, 39,90…), aperçu avant envoi, chaque prix journalisé et réversible, vérification sur la boutique. Inclus une fois par mois dans le suivi.</p>
-        <a class="btn btn-ghost btn-small" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
+
+      <div class="pricing-demo">
+        <div>
+          <h3>Vos nouveaux prix, vus avant d’être appliqués</h3>
+          <p>Exemple réel : passage du dirham marocain à l’euro pour JAARAY, au taux du jour, avec des prix en ,90. Chaque ligne est relue avant l’envoi, et tout peut être annulé.</p>
+        </div>
+        <div class="ptable" role="table" aria-label="Exemple de changement de prix">
+          <div class="h" role="row"><span role="columnheader">Produit</span><span role="columnheader">Avant</span><span role="columnheader">Après</span></div>
+          <div role="row"><span role="cell">Caftan beldi rose</span><span class="old" role="cell">668 MAD</span><span class="new" role="cell">62,90 €</span></div>
+          <div role="row"><span role="cell">Kimono fluide vert</span><span class="old" role="cell">446 MAD</span><span class="new" role="cell">41,90 €</span></div>
+          <div role="row"><span role="cell">Ensemble lin vert</span><span class="old" role="cell">421 MAD</span><span class="new" role="cell">38,90 €</span></div>
+          <div role="row"><span role="cell">Jupe droite violette</span><span class="old" role="cell">149 MAD</span><span class="new" role="cell">13,90 €</span></div>
+        </div>
       </div>
+
       <div class="agency">
         <p><b>Agences WooCommerce et Shopify :</b> le même service en marque blanche pour vos clients, 30 % sous ces tarifs.</p>
         <a class="btn btn-ghost btn-small" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
       </div>
-      <p class="fineprint">Paiement sécurisé par Stripe. Voir les <a href="cgv.html">conditions générales de vente</a>.</p>
+      <p class="fineprint">Prix hors taxes. Paiement sécurisé par Stripe. Voir les <a href="cgv.html">conditions générales de vente</a>.</p>
     </div>
   </section>
 
-  <section id="securite">
+  <section class="alt" id="securite">
     <div class="wrap">
       <div class="section-head">
         <h2>Vos données restent chez vous</h2>
@@ -306,7 +431,7 @@
     </div>
   </section>
 
-  <section class="alt">
+  <section>
     <div class="wrap">
       <div class="section-head"><h2>Questions fréquentes</h2></div>
       <div class="faq">
@@ -325,6 +450,10 @@
         <details>
           <summary>WayPilot peut-il casser ma boutique ?</summary>
           <p>En lecture seule, non. En mode correction, rien n’est envoyé sans votre validation, et chaque envoi est noté dans un journal et peut être annulé. Les suppressions de doublons sont définitives : nous faisons une sauvegarde avant.</p>
+        </details>
+        <details>
+          <summary>Que couvre le changement de prix en masse ?</summary>
+          <p>Les prix normaux et promotionnels des produits et de leurs variations. Les prix écrits à la main dans les descriptions, les frais de livraison, les codes promo et les réglages d’extensions (multi-devises par exemple) sont vérifiés avec vous et traités à part si besoin.</p>
         </details>
         <details>
           <summary>Faut-il installer une extension ?</summary>
@@ -351,6 +480,7 @@
     </div>
   </section>
 </main>
+
 
 <footer class="site-footer">
   <div class="wrap">
