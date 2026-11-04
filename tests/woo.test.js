@@ -479,3 +479,10 @@ test("applyChanges : réglages envoyés en dernier par le lot des réglages", as
   assert.deepEqual(calls, ["/wp-json/wc/v3/products/batch", "/wp-json/wc/v3/settings/general/batch"]);
   assert.ok(res.every(r => r.ok));
 });
+
+test("buildPriceChanges : réglage retiré par une extension = signalé, pas envoyé", () => {
+  const plan = W.buildPriceChanges(W.toCatalog(E, api()), { op: "divide", value: "10", rounding: "cent", currency: "EUR" },
+    { woocommerce_price_decimal_sep: ",", woocommerce_price_thousand_sep: " " });
+  assert.deepEqual(plan.settings, []);
+  assert.equal(plan.skipped.filter(s => /extension/.test(s.reason)).length, 2);
+});

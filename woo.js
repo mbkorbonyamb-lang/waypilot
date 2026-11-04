@@ -576,6 +576,11 @@
       const target = { woocommerce_currency: wanted, woocommerce_price_num_decimals: "2", woocommerce_price_decimal_sep: "," };
       if (clean(currentSettings.woocommerce_price_thousand_sep) === ",") target.woocommerce_price_thousand_sep = " ";
       Object.entries(target).forEach(([id, value]) => {
+        // Réglage absent de la lecture : une extension (multi-devises) l’a retiré et le gère elle-même.
+        if (!Object.prototype.hasOwnProperty.call(currentSettings, id)) {
+          skipped.push({ label: `Réglage ${id.replace("woocommerce_", "")} → ${value}`, reason: "géré par une extension (multi-devises ?) : à régler dans cette extension" });
+          return;
+        }
         const before = clean(currentSettings[id]);
         if (before === value) return;
         settings.push({ label: `Réglage ${id.replace("woocommerce_", "")} : ${before || "(vide)"} → ${value}`, payload: { id, value }, undo: { id, value: before }, group: "settings",
