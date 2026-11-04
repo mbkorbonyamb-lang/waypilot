@@ -12,10 +12,12 @@
 <header class="site-header">
   <div class="wrap">
     <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a>
-    <nav class="site-nav">
-      <a href="./#controles">Contrôles</a>
+    <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
+    <nav class="site-nav" id="menu">
+      <a href="./#probleme">Le problème</a>
       <a href="./#cas">Cas client</a>
       <a href="./#offres">Offres</a>
+      <a href="./#agences">Agences</a>
       <a href="securite.html">Sécurité</a>
       <a class="btn btn-primary btn-small" href="app.html">Ouvrir l’outil</a>
     </nav>
@@ -95,5 +97,16 @@
     <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
   </div>
 </footer>
+<script>
+/* Menu du téléphone et de la tablette */
+(function () {
+  var h = document.querySelector(".site-header"), b = h && h.querySelector(".nav-toggle");
+  if (!b) return;
+  function set(open) { h.classList.toggle("open", open); b.setAttribute("aria-expanded", open ? "true" : "false"); b.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu"); }
+  b.addEventListener("click", function () { set(!h.classList.contains("open")); });
+  h.querySelectorAll(".site-nav a").forEach(function (a) { a.addEventListener("click", function () { set(false); }); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") set(false); });
+})();
+</script>
 </body>
 </html>
