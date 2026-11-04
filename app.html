@@ -27,6 +27,7 @@
     button:disabled { background:#aab6c8; cursor:not-allowed; } button.secondary,a.button.secondary { color:var(--navy); background:#eaf0f8; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; } .notice { margin-top:15px; color:var(--muted); font-size:13px; line-height:1.5; }
     .message { margin-top:14px; font-size:14px; line-height:1.5; } .error { color:#b42318; } .success { color:#087443; }
+    .warn { background:#fff8e6; border:1px solid #f0d58a; border-radius:10px; padding:12px 14px; color:#5c4300; } .warn[hidden] { display:none; }
     .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:20px 0; }
     .metric { border:1px solid var(--border); border-radius:12px; padding:18px; background:#fbfcff; } .metric span { display:block; color:var(--muted); font-size:13px; } .metric strong { display:block; font-size:30px; margin-top:7px; }
     .table-wrap { overflow-x:auto; margin-top:18px; } table { border-collapse:collapse; width:100%; font-size:13px; } th,td { border-bottom:1px solid var(--border); padding:12px 10px; text-align:left; vertical-align:top; } th { background:#f5f8fc; }
@@ -194,6 +195,16 @@
       <p class="help">Avec une nouvelle devise, WayPilot règle aussi 2 décimales et la virgule comme séparateur. <strong>Extension de multi-devises installée ?</strong> C’est elle qui fixe la devise : changez aussi sa « devise de base » et désactivez son arrondi à l’unité, sinon la boutique garde l’ancienne devise ou affiche 42 au lieu de 41,90. Les prix écrits dans les descriptions (« 446 DH ») ne sont pas modifiés.</p>
       <div class="actions"><button type="button" id="bpPreview" class="secondary">Prévisualiser les nouveaux prix</button><button type="button" id="bpApply" disabled>Appliquer ces prix sur la boutique</button></div>
       <div id="bpSummary" class="message" aria-live="polite"></div>
+      <div id="bpReminder" class="message warn" hidden>
+        <strong>À faire à la main dans WooCommerce, avec le même taux<span id="bpReminderRate"></span> :</strong>
+        <ul style="margin:6px 0;padding-left:18px">
+          <li>Frais de livraison : Réglages › Expédition › chaque zone › chaque mode (forfait, classes de livraison).</li>
+          <li>Montant minimum de la livraison gratuite (même écran).</li>
+          <li>Codes promo à montant fixe : Marketing › Codes promo.</li>
+          <li>Frais ou minimums ajoutés par un moyen de paiement ou une extension.</li>
+        </ul>
+        WayPilot ne modifie que les prix des produits et des variations.
+      </div>
       <div id="bpTable" class="table-wrap"></div>
       <h3 id="promoTitle">Mettre en promotion</h3>
       <p class="help">Black Friday, soldes, ventes privées : un prix promo calculé sur le prix normal, avec une date de début et une date de fin. À la date de fin, WooCommerce remet seul les prix normaux. Les produits déjà en promotion sont laissés tels quels, sauf si vous cochez « Remplacer ». Aperçu, journal et annulation comme ci-dessus.</p>
@@ -826,7 +837,7 @@
   // ---------- Prix en masse ----------
   let bulkPlan = null;
   const money = n => (n === null || n === undefined || n === "" ? "" : Number(n).toFixed(2).replace(".", ","));
-  ["bpOp", "bpValue", "bpRounding", "bpCurrency"].forEach(id => $(id).addEventListener("input", () => { bulkPlan = null; $("bpApply").disabled = true; }));
+  ["bpOp", "bpValue", "bpRounding", "bpCurrency"].forEach(id => $(id).addEventListener("input", () => { bulkPlan = null; $("bpApply").disabled = true; $("bpReminder").hidden = true; }));
   $("bpPreview").addEventListener("click", async () => {
     const out = $("bpSummary");
     out.className = "message";
@@ -843,11 +854,18 @@
       $("bpTable").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, ["ID", "Élément", "Prix actuel", "Nouveau prix", "Promo"].map(t => el("th", { textContent: t })))]), el("tbody", {}, rows)]));
       bulkPlan = plan;
       $("bpApply").disabled = !plan.count;
+      showBulkReminder();
     } catch (error) {
       out.textContent = error.message || "Aperçu impossible.";
       out.classList.add("error");
     }
   });
+  function showBulkReminder() {
+    const op = $("bpOp").value, v = $("bpValue").value;
+    const conv = op !== "percent" || $("bpCurrency").value;
+    $("bpReminder").hidden = !conv;
+    $("bpReminderRate").textContent = conv && op !== "percent" && v ? ` (${op === "divide" ? "diviser" : "multiplier"} par ${v})` : "";
+  }
   async function applyBulk(plan, button, summary, what) {
     if (!plan || !state.woo || state.readOnly || !state.unlocked) return false;
     if (state.lastApply) { alert("Des modifications viennent d’être envoyées. Relisez la boutique avant d’en envoyer d’autres : sinon les prix seraient modifiés deux fois."); return false; }
@@ -869,7 +887,7 @@
       return false;
     }
   }
-  $("bpApply").addEventListener("click", async () => { if (await applyBulk(bulkPlan, "bpApply", "bpSummary", "des prix")) bulkPlan = null; });
+  $("bpApply").addEventListener("click", async () => { if (await applyBulk(bulkPlan, "bpApply", "bpSummary", "des prix")) { bulkPlan = null; showBulkReminder(); $("bpReminder").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
 
   // ---------- Promotions ----------
   let promoPlan = null;
