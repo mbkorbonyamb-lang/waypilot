@@ -7,5 +7,5 @@ workers_dev = true
 [vars]
 # Les liens d'aperçu sont donnés sur le site (functions/r/[id].js les relaie ici).
 REPORT_BASE = "https://waypilot.wayzure.com"
-ACCESS_HASH = "e9d1008baa338276c1d597a13b16ac2f2c980de9e5b2c931561befa40d49e960"
+ACCESS_HASH = "e29bab8e7194ae84db260e92073abdfae17f7cc73296789abc82dc9e5e5cdf90"
 # Le stockage KV « RAPPORTS » est ajouté par l'action GitHub au déploiement (identifiant propre au compte Cloudflare).

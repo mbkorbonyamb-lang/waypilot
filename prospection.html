@@ -179,7 +179,7 @@
 
   // ---------- E-mail de prospection ----------
   // Même code d’accès que app.html (et ACCESS_HASH du relais) : sans lui, le relais refuse de publier l’aperçu.
-  const ACCESS_HASH = "e9d1008baa338276c1d597a13b16ac2f2c980de9e5b2c931561befa40d49e960";
+  const ACCESS_HASH = "e29bab8e7194ae84db260e92073abdfae17f7cc73296789abc82dc9e5e5cdf90";
   let accessCode = "";
   async function sha256(text) {
     const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
