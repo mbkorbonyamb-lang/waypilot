@@ -150,10 +150,20 @@
         await run(`/products/${parentId}/variations/batch`, "update", v.update);
         await run(`/products/${parentId}/variations/batch`, "create", v.create);
       }
+      // Réglages (devise, décimales) en dernier : les prix sont déjà convertis quand le symbole change.
+      if (plan.settings && plan.settings.length) await run("/settings/general/batch", "update", plan.settings);
       return results;
     }
 
-    return { site, fetchCatalog, applyChanges, request };
+    /** Réglages généraux utiles au changement de devise (valeurs actuelles, pour l’annulation). */
+    async function fetchSettings() {
+      const { data } = await request("GET", "/settings/general");
+      const out = {};
+      (Array.isArray(data) ? data : []).forEach(x => { if (x && x.id) out[x.id] = clean(x.value); });
+      return out;
+    }
+
+    return { site, fetchCatalog, fetchSettings, applyChanges, request };
   }
 
   /**
@@ -279,7 +289,7 @@
       }
       rows.push(row);
       imageAlt.push(altOf(p.images || []));
-      meta.push({ kind: "product", id: p.id, sku: clean(p.sku), regularPrice: clean(p.regular_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src, alt: clean(i.alt) })), attributes: attrs });
+      meta.push({ kind: "product", id: p.id, type: p.type, name: clean(p.name), sku: clean(p.sku), regularPrice: clean(p.regular_price), salePrice: clean(p.sale_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src, alt: clean(i.alt) })), attributes: attrs });
 
       // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
       (variations[p.id] || []).slice().sort((a, b) => a.id - b.id).forEach(v => {
@@ -297,7 +307,7 @@
         }
         rows.push(vrow);
         imageAlt.push(altOf(v.image ? [v.image] : []));
-        meta.push({ kind: "variation", id: v.id, parentId: p.id, sku: clean(v.sku), regularPrice: clean(v.regular_price), attributes: vAttrs, parentAttributes: attrs });
+        meta.push({ kind: "variation", id: v.id, parentId: p.id, name: `${clean(p.name)}${options.length ? " - " + options.join(", ") : ""}`, sku: clean(v.sku), regularPrice: clean(v.regular_price), salePrice: clean(v.sale_price), attributes: vAttrs, parentAttributes: attrs });
       });
     });
 
@@ -488,6 +498,94 @@
     return { products, variations, skipped, count };
   }
 
+  // ---------- Changement de prix en masse (devise, pourcentage) ----------
+
+  /** « 10,69 » ou « 10.69 » → 10.69 ; NaN si illisible. */
+  const readNumber = v => {
+    const t = clean(v).replace(/\s/g, "").replace(",", ".");
+    return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+  };
+  const cents = x => Math.round(x * 100) / 100;
+
+  /**
+   * Arrondi d’un prix. « cent » : au centime ; « unit » : à l’euro ; « 90 » : terminaison ,90 la plus proche
+   * (41,72 → 41,90 ; 39,38 → 38,90) ; « 990 » : terminaison 9,90 la plus proche dès 20 (71,84 → 69,90), ,90 en dessous.
+   * Jamais 0 ni négatif.
+   */
+  function roundPrice(x, rule = "cent") {
+    if (!(x > 0)) return NaN;
+    const closest = list => list.filter(v => v > 0).reduce((a, b) => (Math.abs(b - x) < Math.abs(a - x) - 1e-9 ? b : a));
+    let r;
+    if (rule === "unit") r = Math.max(1, Math.round(x));
+    else if (rule === "90") { const n = Math.floor(x); r = closest([n - 1 + 0.9, n + 0.9]); }
+    else if (rule === "990" && x >= 20) { const d = Math.floor(x / 10) * 10; r = closest([d - 10 + 9.9, d + 9.9]); }
+    else if (rule === "990") return roundPrice(x, "90");
+    else r = Math.max(0.01, x);
+    return cents(r);
+  }
+
+  /** Nouveau prix : « divide » (conversion, ex. ÷ 10,69), « multiply », ou « percent » (+5 / -10). */
+  function adjustPrice(amount, { op = "divide", value, rounding = "cent" } = {}) {
+    const a = readNumber(amount), v = readNumber(value);
+    if (!(a > 0) || !Number.isFinite(v)) return NaN;
+    let x;
+    if (op === "divide") { if (!(v > 0)) return NaN; x = a / v; }
+    else if (op === "multiply") { if (!(v > 0)) return NaN; x = a * v; }
+    else if (op === "percent") { if (v <= -100) return NaN; x = a * (1 + v / 100); }
+    else return NaN;
+    return roundPrice(x, rounding);
+  }
+
+  const apiPrice = n => n.toFixed(2);
+
+  /**
+   * Plan de changement de prix sur tout le catalogue lu par la clé API : prix normal et prix promo
+   * des produits simples et des variations (le prix d’un produit variable vient de ses variations).
+   * options.currency : nouvelle devise de la boutique (ex. "EUR"), avec 2 décimales et la virgule ;
+   * currentSettings : réglages actuels (fetchSettings), pour l’annulation.
+   */
+  function buildPriceChanges(catalog, options = {}, currentSettings = {}) {
+    const { meta } = catalog;
+    if (!meta) throw new Error("Ce catalogue ne vient pas de la connexion WooCommerce.");
+    if (!Number.isFinite(readNumber(options.value))) throw new Error("Indiquez un taux ou un pourcentage valide.");
+    const products = [], variations = {}, skipped = [], preview = [];
+    meta.forEach(m => {
+      if (m.kind === "product" && (m.type === "variable" || m.type === "grouped")) return;
+      const label = `${m.name || "Produit"} (ID ${m.id})`;
+      if (!clean(m.regularPrice) || !(readNumber(m.regularPrice) > 0)) { skipped.push({ label, reason: "prix vide ou nul : à fixer à la main" }); return; }
+      const regular = adjustPrice(m.regularPrice, options);
+      if (!(regular > 0)) { skipped.push({ label, reason: "prix illisible" }); return; }
+      const payload = { id: m.id, regular_price: apiPrice(regular) };
+      const undo = { id: m.id, regular_price: m.regularPrice };
+      const changes = [{ field: "prix normal", before: m.regularPrice, after: apiPrice(regular) }];
+      let sale = NaN;
+      if (clean(m.salePrice)) {
+        sale = adjustPrice(m.salePrice, options);
+        if (!(sale > 0) || sale >= regular) { skipped.push({ label, reason: `prix promo ${m.salePrice} : après arrondi il n’est plus inférieur au prix normal` }); return; }
+        payload.sale_price = apiPrice(sale); undo.sale_price = m.salePrice;
+        changes.push({ field: "prix promo", before: m.salePrice, after: apiPrice(sale) });
+      }
+      const item = { label: `${label} : prix ${m.regularPrice} → ${apiPrice(regular)}${sale > 0 ? `, promo ${m.salePrice} → ${apiPrice(sale)}` : ""}`, payload, undo, changes, parentId: m.parentId };
+      preview.push({ id: m.id, name: m.name || "", before: m.regularPrice, after: regular, saleBefore: m.salePrice || "", saleAfter: sale > 0 ? sale : null });
+      if (m.kind === "variation") (variations[m.parentId] = variations[m.parentId] || { update: [], create: [], delete: [] }).update.push(item);
+      else products.push(item);
+    });
+    const settings = [];
+    const wanted = clean(options.currency).toUpperCase();
+    if (wanted) {
+      const target = { woocommerce_currency: wanted, woocommerce_price_num_decimals: "2", woocommerce_price_decimal_sep: "," };
+      if (clean(currentSettings.woocommerce_price_thousand_sep) === ",") target.woocommerce_price_thousand_sep = " ";
+      Object.entries(target).forEach(([id, value]) => {
+        const before = clean(currentSettings[id]);
+        if (before === value) return;
+        settings.push({ label: `Réglage ${id.replace("woocommerce_", "")} : ${before || "(vide)"} → ${value}`, payload: { id, value }, undo: { id, value: before }, group: "settings",
+          changes: [{ field: id, before, after: value }] });
+      });
+    }
+    const count = products.length + settings.length + Object.values(variations).reduce((s, v) => s + v.update.length, 0);
+    return { products, variations, settings, skipped, count, preview };
+  }
+
   // ---------- Journal et retour arrière ----------
 
   const csvCell = v => {
@@ -512,21 +610,22 @@
    * suppression des variations créées. Les suppressions ne sont pas réversibles (sauvegarde).
    */
   function buildRollback(results) {
-    const products = [], variations = {}, notReversible = [];
+    const products = [], variations = {}, settings = [], notReversible = [];
     const slot = pid => (variations[pid] = variations[pid] || { update: [], create: [], delete: [] });
     results.filter(r => r.ok && r.item).forEach(r => {
       const { item, kind } = r;
       const label = `Annulation : ${r.label}`;
-      if (kind === "delete") notReversible.push(r.label);
+      if (item.group === "settings") settings.push({ label, payload: item.undo, group: "settings" });
+      else if (kind === "delete") notReversible.push(r.label);
       else if (kind === "create") { if (r.id) slot(item.parentId).delete.push({ label, payload: r.id, parentId: item.parentId }); }
       else if (item.parentId) slot(item.parentId).update.push({ label, payload: item.undo, parentId: item.parentId });
       else products.push({ label, payload: item.undo });
     });
-    const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.delete.length, 0);
-    return { products, variations, skipped: [], count, notReversible };
+    const count = products.length + settings.length + Object.values(variations).reduce((s, v) => s + v.update.length + v.delete.length, 0);
+    return { products, variations, settings, skipped: [], count, notReversible };
   }
 
-  const api = { normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, sizeFromSrcset, buildChanges, buildJournalCSV, buildRollback };
+  const api = { roundPrice, adjustPrice, buildPriceChanges, normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, sizeFromSrcset, buildChanges, buildJournalCSV, buildRollback };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotWoo = api;
 })(typeof window !== "undefined" ? window : globalThis);

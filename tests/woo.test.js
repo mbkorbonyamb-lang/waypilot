@@ -407,3 +407,75 @@ test("montant en jeu : taille non commandable au prix des autres tailles, produi
   assert.match(html, /867 € en jeu<\/strong> : 2 articles/);
   assert.match(html, /446 € en jeu/);
 });
+
+test("roundPrice : arrondis psychologiques", () => {
+  assert.equal(W.roundPrice(41.72, "90"), 41.9);
+  assert.equal(W.roundPrice(39.38, "90"), 38.9);
+  assert.equal(W.roundPrice(0.4, "90"), 0.9, "jamais 0 ni négatif");
+  assert.equal(W.roundPrice(71.84, "990"), 69.9);
+  assert.equal(W.roundPrice(76, "990"), 79.9);
+  assert.equal(W.roundPrice(13.94, "990"), 13.9, "sous 20 : terminaison ,90");
+  assert.equal(W.roundPrice(41.725, "cent"), 41.73);
+  assert.equal(W.roundPrice(41.5, "unit"), 42);
+});
+
+test("adjustPrice : conversion, multiplication, pourcentage", () => {
+  assert.equal(W.adjustPrice("446", { op: "divide", value: "10,69", rounding: "90" }), 41.9);
+  assert.equal(W.adjustPrice("100", { op: "percent", value: "5", rounding: "cent" }), 105);
+  assert.equal(W.adjustPrice("100", { op: "percent", value: "-10", rounding: "cent" }), 90);
+  assert.equal(W.adjustPrice("10", { op: "multiply", value: "10.69", rounding: "unit" }), 107);
+  assert.ok(Number.isNaN(W.adjustPrice("", { op: "divide", value: "10" })));
+  assert.ok(Number.isNaN(W.adjustPrice("10", { op: "divide", value: "0" })));
+});
+
+test("buildPriceChanges : produits simples et variations, devise, annulation", () => {
+  const data = api();
+  data.products.push({ id: 144, type: "simple", name: "Pantalon lin", status: "publish", sku: "", regular_price: "", sale_price: "", description: "", short_description: "",
+    categories: [], images: [], stock_status: "instock", manage_stock: false, stock_quantity: null, attributes: [] });
+  data.products.push({ id: 300, type: "simple", name: "Jupe promo", status: "publish", sku: "", regular_price: "200", sale_price: "150", description: "", short_description: "",
+    categories: [], images: [], stock_status: "instock", manage_stock: false, stock_quantity: null, attributes: [] });
+  const c = W.toCatalog(E, data);
+  const plan = W.buildPriceChanges(c, { op: "divide", value: "10,69", rounding: "90", currency: "EUR" },
+    { woocommerce_currency: "MAD", woocommerce_price_num_decimals: "0", woocommerce_price_decimal_sep: ",", woocommerce_price_thousand_sep: "," });
+  assert.ok(!plan.products.some(p => p.payload.id === 170), "le parent variable n’a pas de prix propre");
+  assert.equal(plan.products.find(p => p.payload.id === 200).payload.regular_price, "41.90", "445 MAD ÷ 10,69 = 41,63 → 41,90");
+  assert.equal(plan.variations[170].update[0].payload.regular_price, "27.90", "300 ÷ 10,69 = 28,06 → 27,90");
+  const promo = plan.products.find(p => p.payload.id === 300);
+  assert.equal(promo.payload.regular_price, "18.90");
+  assert.equal(promo.payload.sale_price, "13.90");
+  assert.deepEqual(promo.undo, { id: 300, regular_price: "200", sale_price: "150" });
+  assert.equal(plan.skipped.length, 1, "prix vide signalé");
+  assert.match(plan.skipped[0].label, /Pantalon lin/);
+  assert.deepEqual(plan.settings.map(s => s.payload), [
+    { id: "woocommerce_currency", value: "EUR" }, { id: "woocommerce_price_num_decimals", value: "2" }, { id: "woocommerce_price_thousand_sep", value: " " }]);
+  assert.equal(plan.count, plan.products.length + plan.settings.length + 1);
+  assert.equal(plan.preview.length, 3);
+
+  const results = [...plan.products, ...plan.settings].map(item => ({ ok: true, label: item.label, item, kind: "update" }));
+  const back = W.buildRollback(results);
+  assert.deepEqual(back.settings.map(s => s.payload), plan.settings.map(s => s.undo));
+  assert.equal(back.products.length, plan.products.length);
+});
+
+test("buildPriceChanges : promo qui n’est plus inférieure après arrondi = ignorée", () => {
+  const data = api();
+  data.products[1].regular_price = "100"; data.products[1].sale_price = "99";
+  const plan = W.buildPriceChanges(W.toCatalog(E, data), { op: "divide", value: "10", rounding: "unit" });
+  assert.ok(plan.skipped.some(s => /promo/.test(s.reason)));
+  assert.ok(!plan.products.some(p => p.payload.id === 200));
+});
+
+test("applyChanges : réglages envoyés en dernier par le lot des réglages", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push(new URL(url).pathname);
+    const body = JSON.parse(init.body);
+    return new Response(JSON.stringify({ update: body.update.map(x => ({ id: x.id })) }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const client = W.createClient({ url: "https://shop.test", key: "ck_x", secret: "cs_y", fetchImpl });
+  const plan = { products: [{ label: "p", payload: { id: 1, regular_price: "1.90" } }], variations: {},
+    settings: [{ label: "s", payload: { id: "woocommerce_currency", value: "EUR" }, undo: { id: "woocommerce_currency", value: "MAD" }, group: "settings" }] };
+  const res = await client.applyChanges(plan);
+  assert.deepEqual(calls, ["/wp-json/wc/v3/products/batch", "/wp-json/wc/v3/settings/general/batch"]);
+  assert.ok(res.every(r => r.ok));
+});
