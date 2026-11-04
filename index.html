@@ -17,6 +17,7 @@
     .site-header { background:rgba(10,20,36,.86); border-bottom-color:rgba(255,255,255,.08); }
     .site-header .logo, .site-header .site-nav a:not(.btn) { color:#e8edf5; }
     .site-header .site-nav a:not(.btn):hover { color:#fff; }
+    .site-header .site-nav a:not(.btn)::after { background:var(--gold); }
 
     .hero { position:relative; overflow:hidden; padding:96px 0 120px; color:#c3cede;
       background:radial-gradient(1200px 600px at 85% -10%, rgba(31,94,255,.35), transparent 60%), radial-gradient(800px 500px at -10% 110%, rgba(201,169,110,.18), transparent 60%), var(--navy); }
@@ -143,7 +144,7 @@
     .faq details[open] summary::after { content:"–"; }
     .faq details p { color:var(--muted); margin:10px 0 0; }
 
-    .final { color:#c3cede; text-align:center; background:radial-gradient(900px 400px at 50% 0%, rgba(31,94,255,.3), transparent 70%), var(--navy); }
+    .final { padding:64px 0; color:#c3cede; text-align:center; background:radial-gradient(900px 400px at 50% 0%, rgba(31,94,255,.3), transparent 70%), var(--navy); }
     .final h2 { color:#fff; }
     .final p { margin:0 auto; max-width:560px; font-size:17px; }
     .final .quick { margin:28px auto 0; }
@@ -174,7 +175,81 @@
       .ba { font-size:14px; } .ba th, .ba td { padding:11px 12px; }
       .pricing-demo { padding:20px; }
     }
-    @media (prefers-reduced-motion:reduce) { .feature { transition:none; } }
+    /* Agences : section dédiée */
+    .agency-link { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:24px; padding:18px 24px; border-radius:16px; background:linear-gradient(90deg,var(--navy),#1a2c4d); color:#d7dfeb; text-decoration:none; transition:transform .2s, box-shadow .2s; }
+    .agency-link b { color:#fff; }
+    .agency-link .arrow { color:var(--gold); font-size:22px; transition:transform .2s; }
+    .agency-link:hover { transform:translateY(-2px); box-shadow:0 16px 36px rgba(10,20,36,.25); }
+    .agency-link:hover .arrow { transform:translateX(5px); }
+    .agences { color:#b4c0d3; background:radial-gradient(900px 500px at 100% 0%, rgba(201,169,110,.20), transparent 60%), radial-gradient(700px 500px at 0% 100%, rgba(31,94,255,.22), transparent 60%), var(--navy); }
+    .agences .wrap { display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; }
+    .agences h2 { color:#fff; font-size:clamp(28px,3.6vw,40px); }
+    .agences h2 em { font-style:normal; color:var(--gold); }
+    .agences .lead { color:#b4c0d3; font-size:17px; }
+    .kicker.gold { background:rgba(201,169,110,.14); color:#e9d3a6; border:1px solid rgba(201,169,110,.35); }
+    .ag-points { list-style:none; padding:0; margin:28px 0; display:grid; gap:16px; }
+    .ag-points li { display:flex; gap:14px; font-size:15px; }
+    .ag-points b { display:block; color:#fff; }
+    .ag-points .n { flex:none; width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:rgba(201,169,110,.16); color:var(--gold); font-weight:800; }
+    .ag-prices { border:1px solid rgba(255,255,255,.1); border-radius:14px; overflow:hidden; font-size:15px; }
+    .ag-prices div { display:flex; justify-content:space-between; gap:12px; padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.08); transition:background .2s; }
+    .ag-prices div:last-child { border-bottom:0; }
+    .ag-prices div:hover { background:rgba(255,255,255,.04); }
+    .ag-prices s { color:#7d8ba1; margin-right:10px; }
+    .ag-prices b { color:#fff; }
+    .ag-cta { display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; }
+    .btn-gold { background:var(--gold); color:var(--navy); }
+    .btn-gold:hover { background:#d8bb85; box-shadow:0 10px 26px rgba(201,169,110,.35); }
+    .btn-outline-light { background:transparent; color:#fff; border:1px solid rgba(255,255,255,.28); }
+    .btn-outline-light:hover { border-color:#fff; background:rgba(255,255,255,.06); }
+    .ag-note { font-size:13px; color:#8797ad; margin:14px 0 0; }
+    .ag-visual { position:relative; padding:20px 10px; }
+    .wl { background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 40px 90px rgba(0,0,0,.45); color:var(--text); transform:perspective(1600px) rotateY(5deg); transition:transform .4s; }
+    .wl:hover { transform:perspective(1600px) rotateY(0); }
+    .wl-top { display:flex; align-items:center; gap:12px; padding:16px 20px; background:#6d4bd8; color:#fff; }
+    .wl-top small { display:block; color:#e2dafb; font-size:12px; }
+    .wl-logo { width:38px; height:38px; border-radius:10px; background:#fff; color:#6d4bd8; display:grid; place-items:center; font-weight:800; }
+    .wl-body { padding:20px; }
+    .wl-score { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+    .wl-score svg { width:76px; height:76px; }
+    .wl-score b { display:block; font-size:28px; color:var(--ink); letter-spacing:-.02em; }
+    .wl-score small { color:var(--muted); font-size:13px; }
+    .wl-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--line); font-size:14px; color:var(--ink); }
+    .wl-row i { flex:none; width:9px; height:9px; border-radius:50%; }
+    .wl-row i.hi { background:#d92d20; } .wl-row i.md { background:#f79009; }
+    .wl-foot { margin-top:8px; padding-top:12px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+    .wl-tag { position:absolute; background:var(--gold); color:var(--navy); font-weight:700; font-size:13px; border-radius:99px; padding:7px 14px; box-shadow:0 12px 26px rgba(0,0,0,.3); }
+    .wl-tag.t1 { top:0; right:-6px; } .wl-tag.t2 { bottom:4px; left:-14px; background:#fff; }
+    @media (max-width:960px) { .agences .wrap { grid-template-columns:1fr; gap:40px; } .wl { transform:none; } .wl-tag.t1 { right:4px; } .wl-tag.t2 { left:4px; } }
+    @media (max-width:560px) { .ag-prices div { flex-direction:column; gap:2px; } .ag-cta .btn { width:100%; } .agency-link { padding:16px 18px; } }
+
+    /* Survol et mouvement */
+    .offer { transition:transform .25s, box-shadow .25s, border-color .25s; }
+    .offer:hover { transform:translateY(-5px); box-shadow:0 22px 48px rgba(14,26,43,.12); border-color:#cdd7e6; }
+    .offer.featured:hover { box-shadow:0 34px 70px rgba(10,20,36,.38); }
+    .pcard, .result, .report-frame { transition:transform .25s, box-shadow .25s; }
+    .pcard:hover, .result:hover { transform:translateY(-4px); box-shadow:0 22px 48px rgba(14,26,43,.14); }
+    .report-frame:hover { transform:translateY(-4px); }
+    .ptable div:not(.h) { transition:background .2s; }
+    .ptable div:not(.h):hover { background:#faf7f1; }
+    .ba tbody tr { transition:background .2s; } .ba tbody tr:hover { background:#f9fbfd; }
+    .faq summary { transition:color .2s; } .faq summary:hover { color:var(--blue); }
+    .proof .pf { transition:border-color .2s, background .2s; } .proof .pf:hover { border-color:rgba(255,255,255,.4); background:rgba(255,255,255,.05); }
+    .browser { transition:transform .5s; } .shot:hover .browser { transform:perspective(1600px) rotateY(-2deg) rotateX(1deg); }
+    @keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+    @keyframes rise { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+    .anim .hero .wrap > div:first-child { animation:rise .8s ease both; }
+    .anim .hero .shot { animation:rise .9s .15s ease both; }
+    .anim .float.f2 { animation:bob 5s 1s ease-in-out infinite; }
+    .anim .float.f1 { animation:bob 6s ease-in-out infinite; }
+    .anim .wl-tag.t1 { animation:bob 5.5s ease-in-out infinite; }
+    .anim .wl-tag.t2 { animation:bob 6.5s 1.2s ease-in-out infinite; }
+    .anim .reveal { opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease; transition-delay:var(--d,0s); }
+    .anim .reveal.in { opacity:1; transform:none; }
+    .anim .reveal.in.offer:hover, .anim .reveal.in.pcard:hover, .anim .reveal.in.result:hover { transform:translateY(-5px); transition-delay:0s; }
+    .anim .wl .ring { stroke-dashoffset:314; transition:stroke-dashoffset 1.4s .3s ease; }
+    .anim .wl.in .ring { stroke-dashoffset:44; }
+    @media (prefers-reduced-motion:reduce) { .feature, .offer, .pcard, .result, .browser, .wl { transition:none; } }
   </style>
 </head>
 <body>
@@ -185,6 +260,7 @@
       <a href="#probleme">Le problème</a>
       <a href="#cas">Cas client</a>
       <a href="#offres">Offres</a>
+      <a href="#agences">Agences</a>
       <a href="securite.html">Sécurité</a>
       <a class="btn btn-primary btn-small" href="app.html">Ouvrir l’outil</a>
     </nav>
@@ -396,11 +472,48 @@
         </div>
       </div>
 
-      <div class="agency">
-        <p><b>Agences WooCommerce et Shopify :</b> le même service en marque blanche pour vos clients, 30 % sous ces tarifs.</p>
-        <a class="btn btn-ghost btn-small" href="https://cal.com/waypilot" target="_blank" rel="noopener">Réserver un échange</a>
-      </div>
+      <a class="agency-link" href="#agences"><span><b>Vous êtes une agence ?</b> Le même service, sous votre marque, 30 % sous ces tarifs.</span><span class="arrow" aria-hidden="true">→</span></a>
       <p class="fineprint">Prix hors taxes. Paiement sécurisé par Stripe. Voir les <a href="cgv.html">conditions générales de vente</a>.</p>
+    </div>
+  </section>
+
+  <section class="agences" id="agences">
+    <div class="wrap">
+      <div class="ag-copy">
+        <span class="kicker gold">Pour les agences WooCommerce et Shopify</span>
+        <h2>Proposez l’audit et la correction à vos clients, <em>sous votre marque.</em></h2>
+        <p class="lead">Vous gérez des boutiques. Nous trouvons ce qui bloque leurs ventes et nous le corrigeons. Le rapport porte votre nom et vos couleurs, et c’est vous qui fixez le prix de revente.</p>
+        <ul class="ag-points">
+          <li><span class="n">1</span><div><b>Rapport à votre marque</b>Votre nom, votre couleur, votre contact. Prêt à envoyer à votre client.</div></li>
+          <li><span class="n">2</span><div><b>Nous faisons la correction</b>Après validation, sous 48 h ouvrées, avec un journal et un retour arrière possible.</div></li>
+          <li><span class="n">3</span><div><b>Une marge sur chaque boutique</b>30 % sous nos tarifs publics, sur chaque prestation et chaque mois de suivi.</div></li>
+        </ul>
+        <div class="ag-prices" role="table" aria-label="Tarifs agences">
+          <div role="row"><span role="cell">Audit et correction, jusqu’à 100 produits</span><span role="cell"><s>190 €</s><b>133 €</b></span></div>
+          <div role="row"><span role="cell">Suivi mensuel, par boutique</span><span role="cell"><s>49 €</s><b>34,30 €</b></span></div>
+          <div role="row"><span role="cell">Changement de prix en masse</span><span role="cell"><s>90 €</s><b>63 €</b></span></div>
+        </div>
+        <div class="ag-cta">
+          <a class="btn btn-gold" href="https://cal.com/waypilot" target="_blank" rel="noopener">Tester sur une boutique cliente</a>
+          <a class="btn btn-outline-light" href="https://wa.me/33752222106" rel="noopener">Écrire sur WhatsApp</a>
+        </div>
+        <p class="ag-note">Premier audit d’une boutique cliente offert. Prix hors taxes.</p>
+      </div>
+
+      <div class="ag-visual" aria-hidden="true">
+        <div class="wl">
+          <div class="wl-top"><span class="wl-logo">AB</span><div><b>Atelier Boréal</b><small>Rapport qualité du catalogue</small></div></div>
+          <div class="wl-body">
+            <div class="wl-score"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#ece8f5" stroke-width="12"/><circle class="ring" cx="60" cy="60" r="50" fill="none" stroke="#6d4bd8" stroke-width="12" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="44" transform="rotate(-90 60 60)"/></svg><div><b>86 %</b><small>boutique-cliente.fr</small></div></div>
+            <div class="wl-row"><i class="hi"></i><span>Taille 42 affichée mais pas commandable</span></div>
+            <div class="wl-row"><i class="hi"></i><span>Variation à 0 € sur un article à 59 €</span></div>
+            <div class="wl-row"><i class="md"></i><span>Même référence sur deux produits</span></div>
+            <div class="wl-foot">Contact : hello@atelier-boreal.fr</div>
+          </div>
+        </div>
+        <div class="wl-tag t1">Votre logo, vos couleurs</div>
+        <div class="wl-tag t2">Votre prix de revente</div>
+      </div>
     </div>
   </section>
 
@@ -511,5 +624,41 @@
     <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
   </div>
 </footer>
+<script>
+/* Animations douces : apparition au défilement, compteurs. Désactivées si l’utilisateur réduit les animations. */
+(function () {
+  if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.documentElement.classList.add("anim");
+  var sel = ".section-head, .pcard, .feature, .step, .report-frame, .result, .offer, .pricing-demo, .agency-link, .ag-copy, .ag-visual, .wl, .faq details, .final h2";
+  var groups = new Map();
+  document.querySelectorAll(sel).forEach(function (el) {
+    el.classList.add("reveal");
+    var n = groups.get(el.parentNode) || 0;
+    groups.set(el.parentNode, n + 1);
+    el.style.setProperty("--d", Math.min(n, 5) * 0.08 + "s");
+  });
+  function count(el) {
+    var end = parseInt(el.textContent, 10);
+    if (!(end > 0) || String(end) !== el.textContent.trim()) return;
+    var t0 = null;
+    function step(t) {
+      if (!t0) t0 = t;
+      var k = Math.min((t - t0) / 1200, 1);
+      el.textContent = Math.round(end * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("in");
+      e.target.querySelectorAll(".result strong, .proof strong").forEach(count);
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".reveal, .proof").forEach(function (el) { io.observe(el); });
+})();
+</script>
 </body>
 </html>
