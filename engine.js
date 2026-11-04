@@ -972,7 +972,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.20.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.21.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

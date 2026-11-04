@@ -289,7 +289,7 @@
       }
       rows.push(row);
       imageAlt.push(altOf(p.images || []));
-      meta.push({ kind: "product", id: p.id, type: p.type, name: clean(p.name), sku: clean(p.sku), regularPrice: clean(p.regular_price), salePrice: clean(p.sale_price), images: (p.images || []).map(i => ({ id: i.id, src: i.src, alt: clean(i.alt) })), attributes: attrs });
+      meta.push({ kind: "product", id: p.id, type: p.type, name: clean(p.name), sku: clean(p.sku), regularPrice: clean(p.regular_price), salePrice: clean(p.sale_price), saleFrom: clean(p.date_on_sale_from), saleTo: clean(p.date_on_sale_to), categories: (p.categories || []).map(c => clean(c.name)), images: (p.images || []).map(i => ({ id: i.id, src: i.src, alt: clean(i.alt) })), attributes: attrs });
 
       // Ordre croissant des ID : en cas de doublon, la variation d’origine sert de référence.
       (variations[p.id] || []).slice().sort((a, b) => a.id - b.id).forEach(v => {
@@ -307,7 +307,7 @@
         }
         rows.push(vrow);
         imageAlt.push(altOf(v.image ? [v.image] : []));
-        meta.push({ kind: "variation", id: v.id, parentId: p.id, name: `${clean(p.name)}${options.length ? " - " + options.join(", ") : ""}`, sku: clean(v.sku), regularPrice: clean(v.regular_price), salePrice: clean(v.sale_price), attributes: vAttrs, parentAttributes: attrs });
+        meta.push({ kind: "variation", id: v.id, parentId: p.id, name: `${clean(p.name)}${options.length ? " - " + options.join(", ") : ""}`, sku: clean(v.sku), regularPrice: clean(v.regular_price), salePrice: clean(v.sale_price), saleFrom: clean(v.date_on_sale_from), saleTo: clean(v.date_on_sale_to), categories: (p.categories || []).map(c => clean(c.name)), attributes: vAttrs, parentAttributes: attrs });
       });
     });
 
@@ -591,6 +591,60 @@
     return { products, variations, settings, skipped, count, preview };
   }
 
+  const isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(clean(d));
+  const categoryNames = catalog => [...new Set(catalog.meta.flatMap(m => m.kind === "product" ? m.categories || [] : []))].filter(Boolean).sort((a, b) => a.localeCompare(b, "fr"));
+
+  /**
+   * Plan de promotion : prix promo = prix normal − X %, arrondi, avec dates de début et de fin facultatives
+   * (WooCommerce retire la promo seul à la date de fin). options.mode « remove » retire les promos en cours.
+   * options.category limite aux produits d’une catégorie ; options.replace remplace les promos déjà en place
+   * (sinon elles sont laissées telles quelles). L’annulation remet prix promo et dates d’avant.
+   * Dates vides envoyées à null : l’API REST refuse une chaîne vide pour un champ date-time.
+   */
+  function buildPromoChanges(catalog, options = {}) {
+    const { meta } = catalog;
+    if (!meta) throw new Error("Ce catalogue ne vient pas de la connexion WooCommerce.");
+    const remove = options.mode === "remove";
+    const pct = readNumber(options.percent);
+    if (!remove && !(pct > 0 && pct < 100)) throw new Error("Indiquez une remise entre 1 et 99 %.");
+    const from = clean(options.from), to = clean(options.to);
+    if (!remove) {
+      if ((from && !isDay(from)) || (to && !isDay(to))) throw new Error("Dates au format AAAA-MM-JJ.");
+      if (from && to && to < from) throw new Error("La date de fin est avant la date de début.");
+    }
+    const category = clean(options.category).toLowerCase();
+    const products = [], variations = {}, skipped = [], preview = [];
+    const inCategory = m => !category || (m.categories || []).some(c => c.toLowerCase() === category);
+    meta.forEach(m => {
+      if (m.kind === "product" && (m.type === "variable" || m.type === "grouped")) return;
+      if (!inCategory(m)) return;
+      const label = `${m.name || "Produit"} (ID ${m.id})`;
+      const current = clean(m.salePrice);
+      const undo = { id: m.id, sale_price: current, date_on_sale_from: m.saleFrom || null, date_on_sale_to: m.saleTo || null };
+      let payload, changes, after = null;
+      if (remove) {
+        if (!current) return;
+        payload = { id: m.id, sale_price: "", date_on_sale_from: null, date_on_sale_to: null };
+        changes = [{ field: "prix promo", before: current, after: "" }];
+      } else {
+        const regular = readNumber(m.regularPrice);
+        if (!(regular > 0)) { skipped.push({ label, reason: "prix normal vide ou nul : à fixer à la main" }); return; }
+        if (current && !options.replace) { skipped.push({ label, reason: `déjà en promotion (${current}) : laissée telle quelle` }); return; }
+        after = roundPrice(regular * (1 - pct / 100), options.rounding || "cent");
+        if (!(after > 0) || after >= regular) { skipped.push({ label, reason: `après arrondi, la promo (${after > 0 ? apiPrice(after) : "?"}) n’est plus inférieure au prix ${m.regularPrice}` }); return; }
+        payload = { id: m.id, sale_price: apiPrice(after), date_on_sale_from: from ? `${from}T00:00:00` : null, date_on_sale_to: to ? `${to}T23:59:59` : null };
+        changes = [{ field: "prix promo", before: current, after: apiPrice(after) }];
+        if (from || to) changes.push({ field: "dates de promo", before: [m.saleFrom, m.saleTo].filter(Boolean).join(" → "), after: `${from || "aujourd’hui"} → ${to || "sans fin"}` });
+      }
+      const item = { label: `${label} : promo ${current || "aucune"} → ${after ? apiPrice(after) : "retirée"}`, payload, undo, changes, parentId: m.parentId };
+      preview.push({ id: m.id, name: m.name || "", regular: m.regularPrice, saleBefore: current, saleAfter: after });
+      if (m.kind === "variation") (variations[m.parentId] = variations[m.parentId] || { update: [], create: [], delete: [] }).update.push(item);
+      else products.push(item);
+    });
+    const count = products.length + Object.values(variations).reduce((s, v) => s + v.update.length, 0);
+    return { products, variations, settings: [], skipped, count, preview };
+  }
+
   // ---------- Journal et retour arrière ----------
 
   const csvCell = v => {
@@ -630,7 +684,7 @@
     return { products, variations, settings, skipped: [], count, notReversible };
   }
 
-  const api = { roundPrice, adjustPrice, buildPriceChanges, normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, sizeFromSrcset, buildChanges, buildJournalCSV, buildRollback };
+  const api = { roundPrice, adjustPrice, buildPriceChanges, buildPromoChanges, categoryNames, normalizeStoreUrl, createClient, createPublicClient, toCatalog, publicToCatalog, splitLanguages, sizeFromSrcset, buildChanges, buildJournalCSV, buildRollback };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotWoo = api;
 })(typeof window !== "undefined" ? window : globalThis);
