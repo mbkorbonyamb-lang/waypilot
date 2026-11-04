@@ -191,7 +191,7 @@
         <div><label class="label" for="bpRounding">Arrondi</label><select id="bpRounding" class="field" style="margin-top:7px"><option value="90">Terminaison ,90 la plus proche (41,90)</option><option value="990">Terminaison 9,90 dès 20 (69,90)</option><option value="cent">Au centime</option><option value="unit">À l’unité</option></select></div>
         <div><label class="label" for="bpCurrency">Nouvelle devise de la boutique</label><select id="bpCurrency" class="field" style="margin-top:7px"><option value="">Ne pas changer</option><option value="EUR">Euro (EUR)</option><option value="MAD">Dirham marocain (MAD)</option><option value="XOF">Franc CFA (XOF)</option><option value="USD">Dollar US (USD)</option><option value="GBP">Livre sterling (GBP)</option><option value="CHF">Franc suisse (CHF)</option><option value="CAD">Dollar canadien (CAD)</option></select></div>
       </div>
-      <p class="help">Avec une nouvelle devise, WayPilot règle aussi 2 décimales et la virgule comme séparateur.</p>
+      <p class="help">Avec une nouvelle devise, WayPilot règle aussi 2 décimales et la virgule comme séparateur. <strong>Extension de multi-devises installée ?</strong> C’est elle qui fixe la devise : changez aussi sa « devise de base » et désactivez son arrondi à l’unité, sinon la boutique garde l’ancienne devise ou affiche 42 au lieu de 41,90. Les prix écrits dans les descriptions (« 446 DH ») ne sont pas modifiés.</p>
       <div class="actions"><button type="button" id="bpPreview" class="secondary">Prévisualiser les nouveaux prix</button><button type="button" id="bpApply" disabled>Appliquer ces prix sur la boutique</button></div>
       <div id="bpSummary" class="message" aria-live="polite"></div>
       <div id="bpTable" class="table-wrap"></div>
