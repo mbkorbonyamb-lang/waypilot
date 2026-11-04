@@ -182,6 +182,20 @@
       <div id="wooApplySummary" class="message" aria-live="polite"></div>
       <div id="wooResults" class="table-wrap"></div>
     </div>
+    <div id="bulkPrice" class="review-card" hidden>
+      <h3 style="margin-top:0">Modifier les prix en masse</h3>
+      <p class="help">Conversion de devise, hausse ou baisse en pourcentage, prix psychologiques. S’applique au prix normal et au prix promo de tous les produits simples et de toutes les variations lus. Rien n’est envoyé avant l’aperçu et votre confirmation ; journal et annulation comme pour les corrections. Frais de livraison et codes promo à montant fixe : à adapter à la main.</p>
+      <div class="settings">
+        <div><label class="label" for="bpOp">Opération</label><select id="bpOp" class="field" style="margin-top:7px"><option value="divide">Diviser par un taux (conversion de devise)</option><option value="multiply">Multiplier par un taux</option><option value="percent">Hausse ou baisse en %</option></select></div>
+        <div><label class="label" for="bpValue">Taux ou pourcentage</label><input id="bpValue" class="field" type="text" inputmode="decimal" placeholder="Ex. 10,69 ou 5 ou -10" style="margin-top:7px"></div>
+        <div><label class="label" for="bpRounding">Arrondi</label><select id="bpRounding" class="field" style="margin-top:7px"><option value="90">Terminaison ,90 la plus proche (41,90)</option><option value="990">Terminaison 9,90 dès 20 (69,90)</option><option value="cent">Au centime</option><option value="unit">À l’unité</option></select></div>
+        <div><label class="label" for="bpCurrency">Nouvelle devise de la boutique</label><select id="bpCurrency" class="field" style="margin-top:7px"><option value="">Ne pas changer</option><option value="EUR">Euro (EUR)</option><option value="MAD">Dirham marocain (MAD)</option><option value="XOF">Franc CFA (XOF)</option><option value="USD">Dollar US (USD)</option><option value="GBP">Livre sterling (GBP)</option><option value="CHF">Franc suisse (CHF)</option><option value="CAD">Dollar canadien (CAD)</option></select></div>
+      </div>
+      <p class="help">Avec une nouvelle devise, WayPilot règle aussi 2 décimales et la virgule comme séparateur.</p>
+      <div class="actions"><button type="button" id="bpPreview" class="secondary">Prévisualiser les nouveaux prix</button><button type="button" id="bpApply" disabled>Appliquer ces prix sur la boutique</button></div>
+      <div id="bpSummary" class="message" aria-live="polite"></div>
+      <div id="bpTable" class="table-wrap"></div>
+    </div>
   </section>
 </main>
 <footer>WayPilot · Contrôle qualité des catalogues e-commerce. · <a href="mentions-legales.html">Mentions légales</a> · <a href="cgv.html">CGV</a></footer>
@@ -308,6 +322,7 @@
     $("wooApply").hidden = !fromWoo;
     $("wooApplyButton").hidden = state.readOnly;
     $("wooReadOnlyNotice").hidden = !state.readOnly;
+    $("bulkPrice").hidden = !fromWoo || state.readOnly || !state.unlocked;
     const isPublic = state.catalog.source === "public";
     if (isPublic && issues.length) $("summary").textContent = `${stats.products} produits et ${stats.variations} variations visibles par les clients. ${issues.length} anomalies, dont ${stats.high} de gravité élevée.`;
     if (stats.atStake && stats.atStake.items) $("summary").textContent += ` ${E.formatMoney(stats.atStake.total, stats.atStake.currency)} en jeu : ${stats.atStake.items} article(s) non commandable(s) ou mal tarifé(s), au prix d’une vente de chacun.`;
@@ -789,6 +804,54 @@
     }
   });
 
+
+  // ---------- Prix en masse ----------
+  let bulkPlan = null;
+  const money = n => (n === null || n === undefined || n === "" ? "" : Number(n).toFixed(2).replace(".", ","));
+  ["bpOp", "bpValue", "bpRounding", "bpCurrency"].forEach(id => $(id).addEventListener("input", () => { bulkPlan = null; $("bpApply").disabled = true; }));
+  $("bpPreview").addEventListener("click", async () => {
+    const out = $("bpSummary");
+    out.className = "message";
+    bulkPlan = null; $("bpApply").disabled = true; $("bpTable").replaceChildren();
+    if (!state.woo || state.readOnly || !state.unlocked) return;
+    try {
+      const currency = $("bpCurrency").value;
+      const settings = currency ? await state.woo.fetchSettings() : {};
+      const plan = W.buildPriceChanges(state.catalog, { op: $("bpOp").value, value: $("bpValue").value, rounding: $("bpRounding").value, currency }, settings);
+      const n = plan.preview.length;
+      out.textContent = `${n} prix à modifier${plan.settings.length ? `, ${plan.settings.length} réglage(s) de la boutique` : ""}${plan.skipped.length ? ` ; ${plan.skipped.length} élément(s) ignoré(s) : ${plan.skipped.map(s => `${s.label} (${s.reason})`).join(" ; ")}` : ""}.`;
+      const rows = plan.preview.map(r => el("tr", {}, [el("td", { textContent: String(r.id) }), el("td", { textContent: r.name }), el("td", { textContent: r.before }), el("td", { textContent: money(r.after) }), el("td", { textContent: r.saleBefore ? `${r.saleBefore} → ${money(r.saleAfter)}` : "" })]));
+      plan.settings.forEach(s => rows.push(el("tr", {}, [el("td", { textContent: "" }), el("td", { textContent: s.label }), el("td", {}), el("td", {}), el("td", {})])));
+      $("bpTable").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, ["ID", "Élément", "Prix actuel", "Nouveau prix", "Promo"].map(t => el("th", { textContent: t })))]), el("tbody", {}, rows)]));
+      bulkPlan = plan;
+      $("bpApply").disabled = !plan.count;
+    } catch (error) {
+      out.textContent = error.message || "Aperçu impossible.";
+      out.classList.add("error");
+    }
+  });
+  $("bpApply").addEventListener("click", async () => {
+    if (!bulkPlan || !state.woo || state.readOnly || !state.unlocked) return;
+    if (state.lastApply) { alert("Des modifications viennent d’être envoyées. Relisez la boutique avant de changer les prix : sinon les prix seraient convertis deux fois."); return; }
+    if (!confirm(`${bulkPlan.count} modification(s) sur ${state.woo.site}. Les nouveaux prix sont immédiats sur la boutique. Continuer ?`)) return;
+    const plan = bulkPlan;
+    $("bpApply").disabled = true;
+    $("wooApplySummary").className = "message";
+    $("wooApplySummary").textContent = "Envoi des prix en cours…";
+    try {
+      const results = await state.woo.applyChanges(plan, n => { $("wooApplySummary").textContent = `Envoi des prix en cours… ${n}/${plan.count}`; });
+      plan.skipped.forEach(s => results.push({ label: s.label, ok: false, error: "Ignoré : " + s.reason }));
+      state.lastApply = results;
+      bulkPlan = null;
+      showResults(results, "appliquée(s)");
+      $("bpSummary").textContent = "Prix envoyés. Résultat, journal et annulation : voir « Appliquer sur la boutique » ci-dessus. Relisez la boutique pour vérifier.";
+      $("wooApply").scrollIntoView({ behavior: "smooth" });
+    } catch (error) {
+      $("wooApplySummary").textContent = error.message;
+      $("wooApplySummary").classList.add("error");
+    }
+  });
+
   // ---------- Fichier ----------
   function clearState() {
     Object.assign(state, { file: null, catalog: null, result: null, woo: null, readOnly: false, lastApply: null, auditSeconds: 0 });
@@ -796,6 +859,7 @@
     $("wooUndo").hidden = true;
     $("wooResults").replaceChildren();
     $("wooApplySummary").textContent = "";
+    bulkPlan = null; $("bpApply").disabled = true; $("bpTable").replaceChildren(); $("bpSummary").textContent = "";
     state.verifiedExisting.clear();
     state.manual.clear();
     $("results").hidden = true;
