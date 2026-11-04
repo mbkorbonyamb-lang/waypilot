@@ -195,6 +195,19 @@
       <div class="actions"><button type="button" id="bpPreview" class="secondary">Prévisualiser les nouveaux prix</button><button type="button" id="bpApply" disabled>Appliquer ces prix sur la boutique</button></div>
       <div id="bpSummary" class="message" aria-live="polite"></div>
       <div id="bpTable" class="table-wrap"></div>
+      <h3 id="promoTitle">Mettre en promotion</h3>
+      <p class="help">Black Friday, soldes, ventes privées : un prix promo calculé sur le prix normal, avec une date de début et une date de fin. À la date de fin, WooCommerce remet seul les prix normaux. Les produits déjà en promotion sont laissés tels quels, sauf si vous cochez « Remplacer ». Aperçu, journal et annulation comme ci-dessus.</p>
+      <div class="settings">
+        <div><label class="label" for="pmPercent">Remise (%)</label><input id="pmPercent" class="field" type="text" inputmode="decimal" placeholder="Ex. 20" style="margin-top:7px"></div>
+        <div><label class="label" for="pmRounding">Arrondi du prix promo</label><select id="pmRounding" class="field" style="margin-top:7px"><option value="90">Terminaison ,90 la plus proche (47,90)</option><option value="990">Terminaison 9,90 dès 20 (69,90)</option><option value="cent">Au centime</option><option value="unit">À l’unité</option></select></div>
+        <div><label class="label" for="pmFrom">Début (facultatif)</label><input id="pmFrom" class="field" type="date" style="margin-top:7px"></div>
+        <div><label class="label" for="pmTo">Fin (facultatif)</label><input id="pmTo" class="field" type="date" style="margin-top:7px"></div>
+        <div><label class="label" for="pmCategory">Catégorie</label><select id="pmCategory" class="field" style="margin-top:7px"><option value="">Tout le catalogue</option></select></div>
+        <div><label class="label" style="display:flex;gap:8px;align-items:center;margin-top:30px"><input id="pmReplace" type="checkbox"> Remplacer les promos en cours</label></div>
+      </div>
+      <div class="actions"><button type="button" id="pmPreview" class="secondary">Prévisualiser la promotion</button><button type="button" id="pmRemove" class="secondary">Prévisualiser le retrait des promos</button><button type="button" id="pmApply" disabled>Appliquer sur la boutique</button></div>
+      <div id="pmSummary" class="message" aria-live="polite"></div>
+      <div id="pmTable" class="table-wrap"></div>
     </div>
   </section>
 </main>
@@ -323,6 +336,11 @@
     $("wooApplyButton").hidden = state.readOnly;
     $("wooReadOnlyNotice").hidden = !state.readOnly;
     $("bulkPrice").hidden = !fromWoo || state.readOnly || !state.unlocked;
+    if (!$("bulkPrice").hidden) {
+      const keep = $("pmCategory").value;
+      $("pmCategory").replaceChildren(el("option", { value: "", textContent: "Tout le catalogue" }), ...W.categoryNames(state.catalog).map(n => el("option", { value: n, textContent: n })));
+      $("pmCategory").value = keep;
+    }
     const isPublic = state.catalog.source === "public";
     if (isPublic && issues.length) $("summary").textContent = `${stats.products} produits et ${stats.variations} variations visibles par les clients. ${issues.length} anomalies, dont ${stats.high} de gravité élevée.`;
     if (stats.atStake && stats.atStake.items) $("summary").textContent += ` ${E.formatMoney(stats.atStake.total, stats.atStake.currency)} en jeu : ${stats.atStake.items} article(s) non commandable(s) ou mal tarifé(s), au prix d’une vente de chacun.`;
@@ -830,27 +848,54 @@
       out.classList.add("error");
     }
   });
-  $("bpApply").addEventListener("click", async () => {
-    if (!bulkPlan || !state.woo || state.readOnly || !state.unlocked) return;
-    if (state.lastApply) { alert("Des modifications viennent d’être envoyées. Relisez la boutique avant de changer les prix : sinon les prix seraient convertis deux fois."); return; }
-    if (!confirm(`${bulkPlan.count} modification(s) sur ${state.woo.site}. Les nouveaux prix sont immédiats sur la boutique. Continuer ?`)) return;
-    const plan = bulkPlan;
-    $("bpApply").disabled = true;
+  async function applyBulk(plan, button, summary, what) {
+    if (!plan || !state.woo || state.readOnly || !state.unlocked) return false;
+    if (state.lastApply) { alert("Des modifications viennent d’être envoyées. Relisez la boutique avant d’en envoyer d’autres : sinon les prix seraient modifiés deux fois."); return false; }
+    if (!confirm(`${plan.count} modification(s) sur ${state.woo.site}. Les nouveaux prix sont immédiats sur la boutique. Continuer ?`)) return false;
+    $(button).disabled = true;
     $("wooApplySummary").className = "message";
-    $("wooApplySummary").textContent = "Envoi des prix en cours…";
+    $("wooApplySummary").textContent = `Envoi ${what} en cours…`;
     try {
-      const results = await state.woo.applyChanges(plan, n => { $("wooApplySummary").textContent = `Envoi des prix en cours… ${n}/${plan.count}`; });
+      const results = await state.woo.applyChanges(plan, n => { $("wooApplySummary").textContent = `Envoi ${what} en cours… ${n}/${plan.count}`; });
       plan.skipped.forEach(s => results.push({ label: s.label, ok: false, error: "Ignoré : " + s.reason }));
       state.lastApply = results;
-      bulkPlan = null;
       showResults(results, "appliquée(s)");
-      $("bpSummary").textContent = "Prix envoyés. Résultat, journal et annulation : voir « Appliquer sur la boutique » ci-dessus. Relisez la boutique pour vérifier.";
+      $(summary).textContent = "Envoyé. Résultat, journal et annulation : voir « Appliquer sur la boutique » ci-dessus. Relisez la boutique pour vérifier.";
       $("wooApply").scrollIntoView({ behavior: "smooth" });
+      return true;
     } catch (error) {
       $("wooApplySummary").textContent = error.message;
       $("wooApplySummary").classList.add("error");
+      return false;
     }
-  });
+  }
+  $("bpApply").addEventListener("click", async () => { if (await applyBulk(bulkPlan, "bpApply", "bpSummary", "des prix")) bulkPlan = null; });
+
+  // ---------- Promotions ----------
+  let promoPlan = null;
+  ["pmPercent", "pmRounding", "pmFrom", "pmTo", "pmCategory", "pmReplace"].forEach(id => $(id).addEventListener("input", () => { promoPlan = null; $("pmApply").disabled = true; }));
+  function previewPromo(mode) {
+    const out = $("pmSummary");
+    out.className = "message";
+    promoPlan = null; $("pmApply").disabled = true; $("pmTable").replaceChildren();
+    if (!state.woo || state.readOnly || !state.unlocked) return;
+    try {
+      const plan = W.buildPromoChanges(state.catalog, { mode, percent: $("pmPercent").value, rounding: $("pmRounding").value, from: $("pmFrom").value, to: $("pmTo").value, category: $("pmCategory").value, replace: $("pmReplace").checked });
+      const n = plan.preview.length;
+      const dates = mode === "remove" ? "" : ($("pmFrom").value || $("pmTo").value ? ` du ${$("pmFrom").value || "jour de l’envoi"} au ${$("pmTo").value || "retrait manuel"}` : " sans date de fin");
+      out.textContent = `${n} ${mode === "remove" ? "promo(s) à retirer" : "prix promo à poser"}${dates}${plan.skipped.length ? ` ; ${plan.skipped.length} élément(s) ignoré(s) : ${plan.skipped.map(s => `${s.label} (${s.reason})`).join(" ; ")}` : ""}.`;
+      const rows = plan.preview.map(r => el("tr", {}, [el("td", { textContent: String(r.id) }), el("td", { textContent: r.name }), el("td", { textContent: r.regular }), el("td", { textContent: r.saleBefore }), el("td", { textContent: r.saleAfter ? money(r.saleAfter) : "retirée" })]));
+      $("pmTable").replaceChildren(el("table", {}, [el("thead", {}, [el("tr", {}, ["ID", "Élément", "Prix normal", "Promo actuelle", "Nouvelle promo"].map(t => el("th", { textContent: t })))]), el("tbody", {}, rows)]));
+      promoPlan = plan;
+      $("pmApply").disabled = !plan.count;
+    } catch (error) {
+      out.textContent = error.message || "Aperçu impossible.";
+      out.classList.add("error");
+    }
+  }
+  $("pmPreview").addEventListener("click", () => previewPromo("apply"));
+  $("pmRemove").addEventListener("click", () => previewPromo("remove"));
+  $("pmApply").addEventListener("click", async () => { if (await applyBulk(promoPlan, "pmApply", "pmSummary", "des promotions")) promoPlan = null; });
 
   // ---------- Fichier ----------
   function clearState() {
@@ -860,6 +905,7 @@
     $("wooResults").replaceChildren();
     $("wooApplySummary").textContent = "";
     bulkPlan = null; $("bpApply").disabled = true; $("bpTable").replaceChildren(); $("bpSummary").textContent = "";
+    promoPlan = null; $("pmApply").disabled = true; $("pmTable").replaceChildren(); $("pmSummary").textContent = "";
     state.verifiedExisting.clear();
     state.manual.clear();
     $("results").hidden = true;

@@ -486,3 +486,49 @@ test("buildPriceChanges : réglage retiré par une extension = signalé, pas env
   assert.deepEqual(plan.settings, []);
   assert.equal(plan.skipped.filter(s => /extension/.test(s.reason)).length, 2);
 });
+
+test("buildPromoChanges : remise en %, arrondi, dates, catégorie, promos existantes, annulation", () => {
+  const data = api();
+  data.products.push({ id: 300, type: "simple", name: "Jupe promo", status: "publish", sku: "", regular_price: "200", sale_price: "150", description: "", short_description: "",
+    date_on_sale_from: "2026-10-01T00:00:00", date_on_sale_to: null,
+    categories: [{ name: "Jupes" }], images: [], stock_status: "instock", manage_stock: false, stock_quantity: null, attributes: [] });
+  data.products.push({ id: 301, type: "simple", name: "Jupe longue", status: "publish", sku: "", regular_price: "59.90", sale_price: "", description: "", short_description: "",
+    categories: [{ name: "Jupes" }], images: [], stock_status: "instock", manage_stock: false, stock_quantity: null, attributes: [] });
+  const c = W.toCatalog(E, data);
+
+  assert.throws(() => W.buildPromoChanges(c, { percent: "0" }), /entre 1 et 99/);
+  assert.throws(() => W.buildPromoChanges(c, { percent: "20", from: "27/11/2026" }), /AAAA-MM-JJ/);
+  assert.throws(() => W.buildPromoChanges(c, { percent: "20", from: "2026-11-30", to: "2026-11-27" }), /avant la date de début/);
+
+  const plan = W.buildPromoChanges(c, { percent: "20", rounding: "90", from: "2026-11-27", to: "2026-11-30", category: "jupes" });
+  assert.equal(plan.products.length, 1, "seule la jupe sans promo, dans la catégorie");
+  const it = plan.products[0];
+  assert.deepEqual(it.payload, { id: 301, sale_price: "47.90", date_on_sale_from: "2026-11-27T00:00:00", date_on_sale_to: "2026-11-30T23:59:59" }, "59,90 − 20 % = 47,92 → 47,90");
+  assert.deepEqual(it.undo, { id: 301, sale_price: "", date_on_sale_from: null, date_on_sale_to: null });
+  assert.equal(plan.skipped.length, 1);
+  assert.match(plan.skipped[0].reason, /déjà en promotion/);
+  assert.ok(!plan.products.some(p => p.payload.id === 200), "hors catégorie");
+
+  const all = W.buildPromoChanges(c, { percent: "20", replace: true });
+  const replaced = all.products.find(p => p.payload.id === 300);
+  assert.equal(replaced.payload.sale_price, "160.00");
+  assert.equal(replaced.payload.date_on_sale_from, null);
+  assert.deepEqual(replaced.undo, { id: 300, sale_price: "150", date_on_sale_from: "2026-10-01T00:00:00", date_on_sale_to: null });
+  assert.ok(all.variations[170] && all.variations[170].update.length, "les variations reçoivent aussi la promo");
+  assert.ok(!all.products.some(p => p.payload.id === 170), "pas de promo sur le parent variable");
+
+  const off = W.buildPromoChanges(c, { mode: "remove" });
+  assert.deepEqual(off.products.map(p => p.payload), [{ id: 300, sale_price: "", date_on_sale_from: null, date_on_sale_to: null }]);
+  const back = W.buildRollback(off.products.map(item => ({ ok: true, label: item.label, item, kind: "update" })));
+  assert.deepEqual(back.products[0].payload, { id: 300, sale_price: "150", date_on_sale_from: "2026-10-01T00:00:00", date_on_sale_to: null });
+
+  assert.ok(W.categoryNames(c).includes("Jupes"));
+});
+
+test("buildPromoChanges : remise qui, arrondie, n’est plus inférieure au prix = ignorée", () => {
+  const data = api();
+  data.products.push({ id: 302, type: "simple", name: "Bracelet", status: "publish", sku: "", regular_price: "1", sale_price: "", description: "", short_description: "",
+    categories: [], images: [], stock_status: "instock", manage_stock: false, stock_quantity: null, attributes: [] });
+  const plan = W.buildPromoChanges(W.toCatalog(E, data), { percent: "5", rounding: "unit" });
+  assert.ok(plan.skipped.some(s => /Bracelet/.test(s.label) && /n’est plus inférieure/.test(s.reason)));
+});
