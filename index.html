@@ -119,6 +119,7 @@
     .offer li::before { content:""; flex:none; width:18px; height:18px; margin-top:2px; border-radius:50%; background:var(--green-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.3l2.6 2.6L13 6.5' stroke='%230b7a4b' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat; }
     .offer.featured li::before { background-color:rgba(95,211,160,.18); }
     .offer .btn { margin-top:auto; }
+    @media (min-width:1061px) { .offer h3 { min-height:3.2em; } }
     .agency { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-top:24px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px 24px; }
     .agency p { margin:0; } .agency b { color:var(--ink); }
     .fineprint { font-size:13px; color:var(--muted); margin:16px 0 0; }
@@ -466,12 +467,12 @@
           <h3>Suivi mensuel</h3>
           <div class="price"><b>49 €</b> <small>/ mois · 3 mois minimum</small></div>
           <p class="desc">Correction de départ comprise, jusqu’à 100 produits.</p>
-          <ul><li>Correction de départ sous 48 h ouvrées</li><li>Audit chaque mois et après chaque gros import</li><li>Corrections courantes validées par vous</li><li>Un changement de prix en masse par mois</li><li>Journal et rapport mensuel</li></ul>
+          <ul><li>Correction de départ sous 48 h ouvrées</li><li>Audit chaque mois et après chaque gros import</li><li>Corrections courantes validées par vous</li><li>Une modification des prix en masse par mois</li><li>Journal et rapport mensuel</li></ul>
           <a class="btn btn-primary" href="https://buy.stripe.com/bJe9AT7hc0u8bAQc5N2go02" rel="noopener">S’abonner au suivi</a>
         </div>
         <div class="offer">
           <span class="badge new">Nouveau</span>
-          <h3>Prix en masse</h3>
+          <h3>Modification des prix en masse</h3>
           <div class="price"><b>90 €</b> <small>jusqu’à 100 produits</small></div>
           <p class="desc">Hausse, baisse, changement de devise, promotions datées (Black Friday, soldes).</p>
           <ul><li>Arrondis choisis : 41,90 ou 39,90</li><li>Aperçu de chaque prix avant envoi</li><li>Journal, retour arrière, vérification en ligne</li></ul>
@@ -512,7 +513,7 @@
         <div class="ag-prices" role="table" aria-label="Tarifs agences">
           <div role="row"><span role="cell">Audit et correction, jusqu’à 100 produits</span><span role="cell"><s>190 €</s><b>133 €</b></span></div>
           <div role="row"><span role="cell">Suivi mensuel, par boutique</span><span role="cell"><s>49 €</s><b>34,30 €</b></span></div>
-          <div role="row"><span role="cell">Changement de prix en masse</span><span role="cell"><s>90 €</s><b>63 €</b></span></div>
+          <div role="row"><span role="cell">Modification des prix en masse</span><span role="cell"><s>90 €</s><b>63 €</b></span></div>
         </div>
         <div class="ag-cta">
           <a class="btn btn-gold" href="https://cal.com/waypilot" target="_blank" rel="noopener">Tester sur une boutique cliente</a>
@@ -587,7 +588,7 @@
           <p>En lecture seule, non. En mode correction, rien n’est envoyé sans votre validation, et chaque envoi est noté dans un journal et peut être annulé. Les suppressions de doublons sont définitives : nous faisons une sauvegarde avant.</p>
         </details>
         <details>
-          <summary>Que couvre le changement de prix en masse ?</summary>
+          <summary>Que couvre la modification des prix en masse ?</summary>
           <p>Les prix normaux et promotionnels des produits et de leurs variations : hausse, baisse, conversion de devise, ou promotion en % avec date de début et de fin (WooCommerce remet les prix normaux seul à la fin). Les prix écrits à la main dans les descriptions, les frais de livraison, les codes promo et les réglages d’extensions (multi-devises par exemple) sont vérifiés avec vous et traités à part si besoin.</p>
         </details>
         <details>
