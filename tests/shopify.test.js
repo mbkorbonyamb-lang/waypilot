@@ -202,3 +202,21 @@ test("rapport d’aperçu : totaux et un exemple, sans la liste des produits", (
   assert.match(teaser, /remises sur demande : contact@wayzure.com/);
   assert.match(teaser, /159 en jeu/);
 });
+
+test("prix par quantité ou surface (Pour 1 m², Pour 5 m²…) : écart normal, pas de prix aberrant", () => {
+  const values = ["Pour 1 m²", "Pour 5 m²", "Pour 10 m²", "Pour 20 m²"];
+  const prices = ["12.50", "55.00", "95.00", "180.00"];
+  const p = { id: 5, title: "Sacs nutritifs pour morilles", product_type: "", options: [{ name: "Taille", values }],
+    variants: values.map((o, n) => ({ id: 50 + n, sku: `SN-${n}`, price: prices[n], option1: o, available: true })), images: [{ src: "https://x.test/s.jpg" }] };
+  const r = E.analyze(S.shopifyToCatalog(E, { products: [p] }));
+  assert.ok(!r.issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"));
+  assert.equal(r.stats.atStake.items, 0);
+  const lots = { ...p, options: [{ name: "Quantité", values: ["1", "5", "10"] }], variants: ["1", "5", "10"].map((o, n) => ({ id: 60 + n, sku: `L-${n}`, price: ["9.00", "40.00", "95.00"][n], option1: o, available: true })) };
+  assert.ok(!E.analyze(S.shopifyToCatalog(E, { products: [lots] })).issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"));
+});
+
+test("écart ×5 sans forme de faute de frappe (gamme de prix étalée) : pas d’alerte", () => {
+  const p = { id: 6, title: "Lampe", product_type: "", options: [{ name: "Couleur", values: ["Blanc", "Noir", "Or", "Laiton"] }],
+    variants: ["Blanc", "Noir", "Or", "Laiton"].map((o, n) => ({ id: 70 + n, sku: `LA-${n}`, price: ["40.00", "45.00", "200.00", "210.00"][n], option1: o, available: true })), images: [{ src: "https://x.test/l.jpg" }] };
+  assert.ok(!E.analyze(S.shopifyToCatalog(E, { products: [p] })).issues.some(i => i.code === "VARIATION_PRICE_OUTLIER"));
+});

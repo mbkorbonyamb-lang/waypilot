@@ -296,6 +296,16 @@
 
   const SIZE_TOKENS = { xs: "XS", s: "S", m: "M", l: "L", xl: "XL", xxl: "XXL", xxxl: "XXXL", "2xl": "2XL", "3xl": "3XL", "4xl": "4XL" };
 
+  // Variations dont le prix dépend de la quantité : nom d’option ou valeur avec une unité (5 m², 250 g, lot de 3, 12 mois…).
+  const QUANTITY_OPTION = /quantit|quantity|qte|poids|weight|surface|volume|contenance|capacit|format|conditionnement|lot|pack|nombre|duree|abonnement|dimension|longueur|largeur|montant|amount/;
+  function isQuantityValue(value) {
+    const v = normalize(value);
+    if (!/\d/.test(v)) return /\b(lot|pack|duo|trio|coffret|kit|abonnement)\b/.test(v);
+    // Tailles de vêtements et de chaussures : même prix attendu (38, 42,5, 2XL, T3).
+    if (SIZE_TOKENS[v] || /^\d{2}([.,]5)?$/.test(v) || /^(t|taille)\s?\d$/.test(v)) return false;
+    return true;
+  }
+
   // Une virgule échappée « \, » (export WooCommerce) fait partie de la valeur : « 100\,00 € ».
   function splitValues(raw) { return String(raw ?? "").split(/\s*(?<!\\)[,|;]\s*/).map(v => v.replace(/\\([,|;])/g, "$1").trim()).filter(Boolean); }
 
@@ -548,12 +558,20 @@
       const priced = children.map(c => ({ c, v: parseAmount(clean(get(rows[c], "price")), decimal) })).filter(x => Number.isFinite(x.v) && x.v > 0);
       // Bon ou carte cadeau : chaque variation est un montant, les écarts sont voulus.
       const giftCard = types[p].isGiftCard || /cadeau|gift/i.test(clean(get(parentRow, "name")));
-      if (priced.length >= 3 && !giftCard) {
+      // Quantité, surface, poids, lot, durée… : le prix suit la variation, un grand écart est normal (5 m² ≠ 50 m²).
+      const quantityPriced = children.some(c => attributesOf(rows[c]).some(a => QUANTITY_OPTION.test(normalize(a.name)) || isQuantityValue(a.value)));
+      if (priced.length >= 3 && !giftCard && !quantityPriced) {
         const sorted = priced.map(x => x.v).sort((a, b) => a - b);
         const median = sorted[Math.floor(sorted.length / 2)];
         const amount = v => v.toFixed(2).replace(".", ",");
-        priced.filter(x => x.v * 5 <= median || x.v >= median * 5).forEach(x => add(x.c, "VARIATION_PRICE_OUTLIER", SEVERITY.MEDIUM,
-          `Prix ${amount(x.v)} très différent des autres variations du même produit (${amount(median)} en général) : chiffre oublié ou en trop ?`));
+        // Faute de frappe = un chiffre oublié ou en trop, ou une virgule déplacée : écart proche de ×10 ou ×100.
+        const typo = v => { const r = v > median ? v / median : median / v; return (r >= 7 && r <= 13) || (r >= 70 && r <= 130); };
+        // Les autres variations doivent être cohérentes entre elles (pas une gamme de prix étalée).
+        const outliers = priced.filter(x => typo(x.v));
+        const others = priced.filter(x => !outliers.includes(x));
+        const coherent = others.length >= 2 && others.every(x => x.v >= median / 2 && x.v <= median * 2);
+        if (coherent && outliers.length * 2 < priced.length) outliers.forEach(x => add(x.c, "VARIATION_PRICE_OUTLIER", SEVERITY.MEDIUM,
+          `Prix ${amount(x.v)} environ ${x.v > median ? Math.round(x.v / median) : Math.round(median / x.v)} fois ${x.v > median ? "plus élevé" : "plus bas"} que les autres variations du même produit (${amount(median)}) : chiffre oublié ou en trop ?`));
       }
       const parentAttrs = new Map(attributesOf(parentRow).map(a => [normalize(a.name), a]));
       // Attributs réellement utilisés par les variations de ce parent.
@@ -972,7 +990,7 @@ ${teaser ? `<div class="cta"><strong>La liste produit par produit et les correct
     return missing;
   }
 
-  const api = { VERSION: "1.21.0", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
+  const api = { VERSION: "1.21.1", SEVERITY, FOLLOWUP, normalize, parseCSV, catalogFromRows: buildCatalog, parseAmount, extractAmounts, productType, analyze, followupFor, buildReportCSV, buildCorrectedCSV, buildAuditReportHTML, prospectSummary, formatMoney, formatDuration, missingColumnsForVariations, safeCell, gtinProblem };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WayPilotEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
