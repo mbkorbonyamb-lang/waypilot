@@ -27,5 +27,6 @@ Prérequis : un secret `HF_TOKEN` (jeton Hugging Face avec droit d'écriture) da
 - Adresse officielle : `https://waypilot.wayzure.com`. Les pages indexables (`index.html`, `app.html`, `securite.html`) portent une balise `canonical` vers cette adresse, sans `.html` (Cloudflare Pages redirige `/app.html` vers `/app`).
 - `robots.txt` et `sitemap.xml` à la racine. Ajouter toute nouvelle page publique au sitemap et mettre à jour `lastmod`.
 - `_headers` (Cloudflare Pages) envoie `X-Robots-Tag: noindex` sur `waypilot.pages.dev` et ses aperçus, pour éviter un doublon dans Google. Le Space Hugging Face est couvert par les balises `canonical`.
+- Guides (pages de contenu pour Google) : `guide-*.html`, liés depuis le pied de page de l'accueil et de `securite.html`.
 - `cgv.html`, `mentions-legales.html` et `prospection.html` restent en `noindex`.
 - Image de partage (LinkedIn, WhatsApp…) : `assets/partage.jpg` (1200 × 630). Icônes : `favicon.ico`, `assets/icone-192.png`, `assets/apple-touch-icon.png`.
