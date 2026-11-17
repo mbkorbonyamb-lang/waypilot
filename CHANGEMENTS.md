@@ -1,3 +1,10 @@
+# WayPilot 1.21.1 — prix aberrant : moins de fausses alertes
+
+- « Prix d’une variation très différent » ne compare plus les variations de quantité, surface, poids, lot, durée ou format (« Pour 1 m² » / « Pour 5 m² », « Lot de 3 », « 250 g »…) : leur prix suit la variation. Cas réel : 26 fausses alertes sur une boutique de culture de champignons.
+- L’alerte n’apparaît plus que pour une faute de frappe probable : écart proche de ×10 ou ×100 (chiffre oublié ou en trop, virgule déplacée), et autres variations du produit cohérentes entre elles. Une gamme de prix étalée (40 € / 200 €) ne déclenche plus rien.
+- Le message donne l’écart (« environ 10 fois plus bas »). Le montant en jeu et le verdict de l’audit en série baissent d’autant.
+- 2 tests ajoutés.
+
 # WayPilot 1.18.1 — e-mail de prospection en un clic
 
 - Audit en série : bouton « Préparer » sur chaque boutique « À vérifier puis contacter ». Il publie le lien d’aperçu (code d’accès demandé une fois) et rédige l’e-mail selon le modèle validé : exemple vérifiable, montant en jeu, offre suivi 49 € HT/mois, réponse ou WhatsApp, mention « stop » pour ne plus recevoir de messages. Objet et message restent modifiables ; boutons « Copier » et « Ouvrir dans ma messagerie ».
