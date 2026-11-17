@@ -1,0 +1,10 @@
+# Cloudflare Pages. L'adresse technique waypilot.pages.dev (et ses aperçus) ne doit pas apparaître dans Google :
+# seule https://waypilot.wayzure.com est indexée (balises canonical dans les pages).
+https://waypilot.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.waypilot.pages.dev/*
+  X-Robots-Tag: noindex
+
+/prospection.html
+  X-Robots-Tag: noindex, nofollow

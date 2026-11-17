@@ -21,3 +21,11 @@ WayPilot analyse un export CSV WooCommerce dans le navigateur (aucun envoi vers 
 Le Space Hugging Face `waypilot/waypilot` est mis à jour automatiquement à chaque fusion sur `main`, si les tests passent (`.github/workflows/huggingface.yml`). Seuls `index.html` (accueil), `app.html` (outil), `mentions-legales.html`, `engine.js` et `woo.js` sont envoyés ; le README du Space n'est pas modifié. Le dossier `relais/` est publié sur le Space `waypilot/relais` (créé s'il n'existe pas).
 
 Prérequis : un secret `HF_TOKEN` (jeton Hugging Face avec droit d'écriture) dans les réglages du dépôt.
+
+## Référencement (Google)
+
+- Adresse officielle : `https://waypilot.wayzure.com`. Les pages indexables (`index.html`, `app.html`, `securite.html`) portent une balise `canonical` vers cette adresse, sans `.html` (Cloudflare Pages redirige `/app.html` vers `/app`).
+- `robots.txt` et `sitemap.xml` à la racine. Ajouter toute nouvelle page publique au sitemap et mettre à jour `lastmod`.
+- `_headers` (Cloudflare Pages) envoie `X-Robots-Tag: noindex` sur `waypilot.pages.dev` et ses aperçus, pour éviter un doublon dans Google. Le Space Hugging Face est couvert par les balises `canonical`.
+- `cgv.html`, `mentions-legales.html` et `prospection.html` restent en `noindex`.
+- Image de partage (LinkedIn, WhatsApp…) : `assets/partage.jpg` (1200 × 630). Icônes : `favicon.ico`, `assets/icone-192.png`, `assets/apple-touch-icon.png`.
