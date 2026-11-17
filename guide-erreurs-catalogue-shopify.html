@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Erreurs de catalogue Shopify : variantes à 0 €, SKU en double, prix — WayPilot</title>
+  <meta name="description" content="Variantes à 0 €, prix très différent d’une taille à l’autre, SKU partagée entre deux produits : les erreurs de catalogue Shopify à vérifier, et lesquelles comptent vraiment.">
+  <link rel="canonical" href="https://waypilot.wayzure.com/guide-erreurs-catalogue-shopify">
+  <meta property="og:site_name" content="WayPilot">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:url" content="https://waypilot.wayzure.com/guide-erreurs-catalogue-shopify">
+  <meta property="og:title" content="Erreurs de catalogue sur Shopify : celles qui coûtent des ventes, et celles qui peuvent attendre">
+  <meta property="og:description" content="Variantes à 0 €, prix très différent d’une taille à l’autre, SKU partagée entre deux produits : les erreurs de catalogue Shopify à vérifier, et lesquelles comptent vraiment.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://waypilot.wayzure.com/assets/partage.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="assets/icone-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="site.css">
+  <style>
+    .doc h3 { font-size:18px; margin:28px 0 8px; }
+    .doc .note { border-left:4px solid var(--blue); background:var(--blue-soft); padding:12px 16px; border-radius:6px; }
+    .doc .cta-box { margin:44px 0 0; padding:22px 24px; border:1px solid var(--line); border-radius:14px; background:var(--bg); }
+    .doc .cta-box h2 { margin-top:0; }
+    .doc .cta-box form { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .doc .cta-box input { flex:1; min-width:200px; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font:inherit; font-size:16px; }
+    .doc .more { margin-top:36px; font-size:15px; }
+  </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Erreurs de catalogue sur Shopify : celles qui coûtent des ventes, et celles qui peuvent attendre",
+  "description": "Variantes à 0 €, prix très différent d’une taille à l’autre, SKU partagée entre deux produits : les erreurs de catalogue Shopify à vérifier, et lesquelles comptent vraiment.",
+  "inLanguage": "fr-FR",
+  "datePublished": "2026-11-17",
+  "dateModified": "2026-11-17",
+  "mainEntityOfPage": "https://waypilot.wayzure.com/guide-erreurs-catalogue-shopify",
+  "image": "https://waypilot.wayzure.com/assets/partage.jpg",
+  "author": {
+    "@type": "Organization",
+    "name": "WayPilot",
+    "url": "https://waypilot.wayzure.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "WayPilot",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://waypilot.wayzure.com/assets/icone-192.png"
+    }
+  }
+}
+  </script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wm">Way<em>Pilot</em></span></a>
+    <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
+    <nav class="site-nav" id="menu">
+      <a href="./#probleme">Le problème</a>
+      <a href="./#cas">Cas client</a>
+      <a href="./#offres">Offres</a>
+      <a href="./#agences">Agences</a>
+      <a href="securite.html">Sécurité</a>
+      <a class="btn btn-primary btn-small" href="app.html">Ouvrir l’outil</a>
+    </nav>
+  </div>
+</header>
+<main class="doc">
+  <h1>Erreurs de catalogue sur Shopify : celles qui coûtent des ventes, et celles qui peuvent attendre</h1>
+  <p class="updated">Guide WayPilot · 17 novembre 2026</p>
+  <p>Shopify protège mieux le catalogue que WooCommerce : deux variantes ne peuvent pas avoir exactement la même combinaison d’options, et une variante a toujours un prix. Les erreurs qui restent sont plus discrètes, et souvent nées d’une duplication de produit ou d’un import.</p>
+  <p>Toutes n’ont pas le même poids. Nous les classons par effet sur les ventes, parce que c’est ce qui décide de l’ordre dans lequel les corriger.</p>
+
+  <h2>Ce qui peut coûter des ventes</h2>
+  <h3>Une variante à 0 €</h3>
+  <p>Shopify accepte un prix à 0. Une taille peut donc être vendue gratuitement, ou afficher « 0,00 € » dans les résultats de recherche de la boutique. Nous l’avons vu sur une paire de baskets à 159 €, dont quatre pointures étaient à 0 €. Exceptions normales : les cartes cadeaux, les échantillons offerts, les produits vendus sur devis.</p>
+  <h3>Un prix très éloigné des autres tailles</h3>
+  <p>Une taille à 12,90 € quand les autres sont à 129 € : un zéro oublié, en général. L’audit compare les prix uniquement entre tailles et couleurs d’un même modèle. Quand les variantes sont des quantités ou des formats (un sachet, un lot de cinq, 5 m²), un écart de prix est normal et n’est pas signalé.</p>
+
+  <h2>Ce qui fausse votre gestion, sans gêner le client</h2>
+  <h3>Une SKU utilisée par deux produits différents</h3>
+  <p>Après une duplication, le nouveau produit garde souvent la référence de l’ancien. Le client ne voit rien, mais un logisticien, une caisse ou un outil de stock qui travaille par SKU peut mélanger les deux articles. À corriger si vous utilisez l’un de ces outils. Sinon, ça peut attendre.</p>
+  <p class="note">Une même SKU sur toutes les tailles d’un même produit est fréquente sur Shopify, et voulue chez certains marchands. Nous la signalons comme point faible, pas comme erreur.</p>
+
+  <h2>Ce qui joue sur Google</h2>
+  <ul>
+    <li><strong>Codes-barres (GTIN) invalides ou en double</strong> : Google Shopping peut refuser ou fusionner les produits.</li>
+    <li><strong>Images trop petites</strong> : en dessous de 500 pixels, la photo est floue sur mobile et peut être rejetée par Google Shopping.</li>
+    <li><strong>Texte alternatif des images absent</strong> : utile pour la recherche d’images et l’accessibilité.</li>
+  </ul>
+
+  <h2>Comment vérifier</h2>
+  <p>Dans l’administration Shopify, <em>Produits</em>, puis le filtre ou l’export CSV : triez par prix de variante pour trouver les 0 €, et par SKU pour trouver les doublons. Pour les écarts de prix entre tailles, il faut ouvrir chaque produit.</p>
+  <p>L’audit WayPilot fait ces contrôles en quelques secondes à partir du catalogue public de la boutique, sans application à installer. Il indique pour chaque alerte si elle est à corriger ou seulement à confirmer.</p>
+
+  <div class="cta-box">
+    <h2>Vérifier votre boutique en une fois</h2>
+    <p>Indiquez le site web de votre boutique : l’audit lit le catalogue public, sans clé ni installation, et liste les produits concernés. Rien n’est modifié.</p>
+    <form action="app.html" method="get">
+      <label for="boutique" class="sr">Site web de votre boutique WooCommerce ou Shopify</label>
+      <input id="boutique" name="boutique" type="text" inputmode="url" placeholder="Site web de votre boutique" required autocomplete="url">
+      <button class="btn btn-primary" type="submit">Lancer l’audit gratuit</button>
+    </form>
+  </div>
+  <div class="more"><strong>Autres guides :</strong><ul><li><a href="guide-tailles-woocommerce.html">Taille impossible à commander sur WooCommerce</a></li><li><a href="guide-variations-double-woocommerce.html">Variations en double sur WooCommerce</a></li></ul></div>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="logo" href="./"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#1f5eff"/><path d="M8 16.5l5 5 11-11" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>WayPilot</a>
+        <p style="margin:0;max-width:320px">Contrôle qualité des catalogues WooCommerce et Shopify. Une marque de Wayzure SAS.</p>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:contact@wayzure.com">contact@wayzure.com</a></li>
+          <li><a href="https://wa.me/33752222106" rel="noopener">WhatsApp +33 7 52 22 21 06</a></li>
+          <li><a href="tel:+33661358652">+33 6 61 35 86 52</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>WayPilot</h4>
+        <ul>
+          <li><a href="app.html">Ouvrir l’outil</a></li>
+          <li><a href="securite.html">Sécurité et données</a></li>
+          <li><a href="guide-tailles-woocommerce.html">Guide : tailles impossibles à commander</a></li>
+          <li><a href="guide-variations-double-woocommerce.html">Guide : variations en double</a></li>
+          <li><a href="guide-erreurs-catalogue-shopify.html">Guide : erreurs de catalogue Shopify</a></li>
+          <li><a href="cgv.html">Conditions générales de vente</a></li>
+          <li><a href="mentions-legales.html">Mentions légales</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal-line">© 2026 Wayzure SAS · SIREN 901 524 082 · 132 avenue Jean Jaurès, 92140 Clamart · Ce site ne dépose aucun cookie.</p>
+  </div>
+</footer>
+<script>
+/* Menu du téléphone et de la tablette */
+(function () {
+  var h = document.querySelector(".site-header"), b = h && h.querySelector(".nav-toggle");
+  if (!b) return;
+  function set(open) { h.classList.toggle("open", open); b.setAttribute("aria-expanded", open ? "true" : "false"); b.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu"); }
+  b.addEventListener("click", function () { set(!h.classList.contains("open")); });
+  h.querySelectorAll(".site-nav a").forEach(function (a) { a.addEventListener("click", function () { set(false); }); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") set(false); });
+})();
+</script>
+</body>
+</html>
