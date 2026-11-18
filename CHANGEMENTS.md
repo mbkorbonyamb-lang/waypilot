@@ -1,3 +1,10 @@
+# WayPilot 1.21.2 — suivi des erreurs (Sentry)
+
+- Les erreurs des pages partent vers Sentry (plan gratuit), une fois la variable de dépôt `SENTRY_DSN` posée. Sans elle, rien ne change.
+- Rien n'est téléchargé tant qu'aucune erreur ne survient ; le module Sentry est hébergé avec le site (`sentry.min.js`), aucun appel à un site tiers.
+- Rien de personnel ne part : adresse IP, en-têtes et paramètres retirés ; e-mails, téléphones, liens `/r/…` et adresses des boutiques auditées masqués ; traces de console supprimées. Ni vidéo de session, ni mesure de performance.
+- 3 tests ajoutés (`tests/erreurs.test.js`).
+
 # WayPilot 1.21.1 — prix aberrant : moins de fausses alertes
 
 - « Prix d’une variation très différent » ne compare plus les variations de quantité, surface, poids, lot, durée ou format (« Pour 1 m² » / « Pour 5 m² », « Lot de 3 », « 250 g »…) : leur prix suit la variation. Cas réel : 26 fausses alertes sur une boutique de culture de champignons.
