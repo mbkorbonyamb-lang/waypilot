@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node --test tests/engine.test.js tests/woo.test.js tests/shopify.test.js
+      - run: node --test tests/engine.test.js tests/woo.test.js tests/shopify.test.js tests/erreurs.test.js
       - run: python3 -m unittest discover -s tests -p "relais_test.py"
       - run: node --test tests/relais-cloudflare.test.mjs
 
@@ -38,6 +38,12 @@ jobs:
             sed -i "s#const RELAY_URL = \"[^\"]*\";#const RELAY_URL = \"${RELAIS_URL%/}\";#" app.html prospection.html
             grep -n "const RELAY_URL" app.html prospection.html
           fi
+      - name: Adresse du suivi des erreurs (Sentry)
+        # Variable de dépôt SENTRY_DSN : posée dans erreurs.js. Sans elle, le suivi des erreurs reste coupé.
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+        run: |
+          if [ -n "$SENTRY_DSN" ]; then sed -i "s#__SENTRY_DSN__#${SENTRY_DSN}#" erreurs.js; fi
       - name: Envoyer les fichiers sur le Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -55,7 +61,7 @@ jobs:
           HfApi(token=os.environ["HF_TOKEN"]).create_commit(
               repo_id=os.environ["HF_SPACE"],
               repo_type="space",
-              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "prospection.html", "mentions-legales.html", "cgv.html", "securite.html", "guide-tailles-woocommerce.html", "guide-variations-double-woocommerce.html", "guide-erreurs-catalogue-shopify.html", "site.css", "engine.js", "woo.js", "shopify.js", "favicon.ico", "assets/rapport-exemple.jpg", "assets/partage.jpg", "assets/icone-192.png", "assets/apple-touch-icon.png")],
+              operations=[CommitOperationAdd(path_in_repo=f, path_or_fileobj=f) for f in ("index.html", "app.html", "prospection.html", "mentions-legales.html", "cgv.html", "securite.html", "guide-tailles-woocommerce.html", "guide-variations-double-woocommerce.html", "guide-erreurs-catalogue-shopify.html", "site.css", "engine.js", "woo.js", "shopify.js", "erreurs.js", "sentry.min.js", "favicon.ico", "assets/rapport-exemple.jpg", "assets/partage.jpg", "assets/icone-192.png", "assets/apple-touch-icon.png")],
               commit_message=f"Publication depuis GitHub ({os.environ['GITHUB_SHA'][:7]})",
           )
           print("Space mis à jour.")
@@ -116,9 +122,13 @@ jobs:
           command: deploy
       - name: Préparer le site
         if: steps.secrets.outputs.ok == 'oui'
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
         run: |
+          # Adresse du suivi des erreurs (variable de dépôt SENTRY_DSN) ; sans elle, suivi coupé.
+          if [ -n "$SENTRY_DSN" ]; then sed -i "s#__SENTRY_DSN__#${SENTRY_DSN}#" erreurs.js; fi
           mkdir -p site
-          cp index.html app.html prospection.html mentions-legales.html cgv.html securite.html guide-tailles-woocommerce.html guide-variations-double-woocommerce.html guide-erreurs-catalogue-shopify.html site.css engine.js woo.js shopify.js robots.txt sitemap.xml favicon.ico _headers site/ && cp -r assets site/
+          cp index.html app.html prospection.html mentions-legales.html cgv.html securite.html guide-tailles-woocommerce.html guide-variations-double-woocommerce.html guide-erreurs-catalogue-shopify.html site.css engine.js woo.js shopify.js erreurs.js sentry.min.js robots.txt sitemap.xml favicon.ico _headers site/ && cp -r assets site/
       - name: Créer le projet Pages au premier passage
         if: steps.secrets.outputs.ok == 'oui'
         env:

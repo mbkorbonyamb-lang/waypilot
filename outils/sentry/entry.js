@@ -1,0 +1,2 @@
+import { init, captureException, globalHandlersIntegration, linkedErrorsIntegration, dedupeIntegration, breadcrumbsIntegration, httpContextIntegration, browserApiErrorsIntegration } from "@sentry/browser";
+window.WaypilotSentry = { init, captureException, integrations: { globalHandlersIntegration, linkedErrorsIntegration, dedupeIntegration, breadcrumbsIntegration, httpContextIntegration, browserApiErrorsIntegration } };
